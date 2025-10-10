@@ -26,6 +26,7 @@ from evotoolkit.tools.llm import HttpsApi
 # 示例 1: 函数近似任务
 # ============================================================================
 
+
 class MyOptimizationTask(PythonTask):
     """特定问题优化的自定义任务"""
 
@@ -44,27 +45,24 @@ class MyOptimizationTask(PythonTask):
     def _process_data(self, data):
         """处理输入数据并创建 task_info"""
         self.data = data
-        self.task_info = {
-            'data_size': len(data),
-            'description': '函数近似任务'
-        }
+        self.task_info = {"data_size": len(data), "description": "函数近似任务"}
 
     def _evaluate_code_impl(self, candidate_code: str) -> EvaluationResult:
         """评估候选代码并返回评估结果"""
         try:
             # 1. 执行代码
-            namespace = {'np': np}
+            namespace = {"np": np}
             exec(candidate_code, namespace)
 
             # 2. 检查函数是否存在
-            if 'my_function' not in namespace:
+            if "my_function" not in namespace:
                 return EvaluationResult(
                     valid=False,
-                    score=float('-inf'),
-                    additional_info={'error': 'Function "my_function" not found'}
+                    score=float("-inf"),
+                    additional_info={"error": 'Function "my_function" not found'},
                 )
 
-            evolved_func = namespace['my_function']
+            evolved_func = namespace["my_function"]
 
             # 3. 计算适应度（score 越高越好）
             predictions = np.array([evolved_func(x) for x in self.data])
@@ -72,16 +70,14 @@ class MyOptimizationTask(PythonTask):
             score = -mse  # 负 MSE，越高越好
 
             return EvaluationResult(
-                valid=True,
-                score=score,
-                additional_info={'mse': mse}
+                valid=True, score=score, additional_info={"mse": mse}
             )
 
         except Exception as e:
             return EvaluationResult(
                 valid=False,
-                score=float('-inf'),
-                additional_info={'error': f'Evaluation error: {str(e)}'}
+                score=float("-inf"),
+                additional_info={"error": f"Evaluation error: {str(e)}"},
             )
 
     def get_base_task_description(self) -> str:
@@ -111,30 +107,27 @@ def my_function(x):
     return x
 '''
         eval_res = self.evaluate_code(initial_code)
-        return Solution(
-            sol_string=initial_code,
-            evaluation_res=eval_res
-        )
+        return Solution(sol_string=initial_code, evaluation_res=eval_res)
 
 
 # ============================================================================
 # 示例 2: 字符串匹配任务
 # ============================================================================
 
+
 class StringMatchTask(PythonTask):
     """进化生成目标字符串的函数的任务"""
 
     def __init__(self, target_string, timeout_seconds=30.0):
         self.target = target_string
-        super().__init__(data={'target': target_string}, timeout_seconds=timeout_seconds)
+        super().__init__(
+            data={"target": target_string}, timeout_seconds=timeout_seconds
+        )
 
     def _process_data(self, data):
         """处理输入数据"""
         self.data = data
-        self.task_info = {
-            'target': self.target,
-            'target_length': len(self.target)
-        }
+        self.task_info = {"target": self.target, "target_length": len(self.target)}
 
     def _evaluate_code_impl(self, candidate_code: str) -> EvaluationResult:
         """评估代码"""
@@ -142,14 +135,14 @@ class StringMatchTask(PythonTask):
         try:
             exec(candidate_code, namespace)
 
-            if 'generate_string' not in namespace:
+            if "generate_string" not in namespace:
                 return EvaluationResult(
                     valid=False,
-                    score=float('-inf'),
-                    additional_info={'error': 'Function "generate_string" not found'}
+                    score=float("-inf"),
+                    additional_info={"error": 'Function "generate_string" not found'},
                 )
 
-            generated = namespace['generate_string']()
+            generated = namespace["generate_string"]()
             # 编辑距离越小越好，所以用负值作为 score
             distance = self.levenshtein_distance(generated, self.target)
             score = -distance  # 越高越好
@@ -157,13 +150,11 @@ class StringMatchTask(PythonTask):
             return EvaluationResult(
                 valid=True,
                 score=score,
-                additional_info={'distance': distance, 'generated': generated}
+                additional_info={"distance": distance, "generated": generated},
             )
         except Exception as e:
             return EvaluationResult(
-                valid=False,
-                score=float('-inf'),
-                additional_info={'error': str(e)}
+                valid=False, score=float("-inf"), additional_info={"error": str(e)}
             )
 
     def levenshtein_distance(self, s1, s2):
@@ -202,20 +193,18 @@ class StringMatchTask(PythonTask):
 
     def make_init_sol_wo_other_info(self) -> Solution:
         """创建初始解"""
-        initial_code = f'''def generate_string():
+        initial_code = '''def generate_string():
     """初始简单实现"""
     return ""
 '''
         eval_res = self.evaluate_code(initial_code)
-        return Solution(
-            sol_string=initial_code,
-            evaluation_res=eval_res
-        )
+        return Solution(sol_string=initial_code, evaluation_res=eval_res)
 
 
 # ============================================================================
 # 主函数：运行示例
 # ============================================================================
+
 
 def run_function_approximation_example():
     """运行函数近似示例"""
@@ -234,17 +223,19 @@ def run_function_approximation_example():
 
     # 设置 LLM
     llm_api = HttpsApi(
-        api_url=os.environ.get("LLM_API_URL", "https://api.openai.com/v1/chat/completions"),
+        api_url=os.environ.get(
+            "LLM_API_URL", "https://api.openai.com/v1/chat/completions"
+        ),
         key=os.environ.get("LLM_API_KEY", "your-api-key-here"),
-        model="gpt-4o"
+        model="gpt-4o",
     )
 
     # 求解
     result = evotoolkit.solve(
         interface=interface,
-        output_path='./results/custom_task_func_approx',
+        output_path="./results/custom_task_func_approx",
         running_llm=llm_api,
-        max_generations=5
+        max_generations=5,
     )
 
     print(f"\n最佳得分: {result.evaluation_res.score:.4f}")
@@ -266,17 +257,19 @@ def run_string_match_example():
 
     # 设置 LLM
     llm_api = HttpsApi(
-        api_url=os.environ.get("LLM_API_URL", "https://api.openai.com/v1/chat/completions"),
+        api_url=os.environ.get(
+            "LLM_API_URL", "https://api.openai.com/v1/chat/completions"
+        ),
         key=os.environ.get("LLM_API_KEY", "your-api-key-here"),
-        model="gpt-4o"
+        model="gpt-4o",
     )
 
     # 求解
     result = evotoolkit.solve(
         interface=interface,
-        output_path='./results/custom_task_string_match',
+        output_path="./results/custom_task_string_match",
         running_llm=llm_api,
-        max_generations=5
+        max_generations=5,
     )
 
     print(f"\n最佳得分: {result.evaluation_res.score:.4f}")
@@ -287,7 +280,9 @@ def run_string_match_example():
 
 if __name__ == "__main__":
     # 检查环境变量
-    if os.environ.get("LLM_API_KEY") == "your-api-key-here" or not os.environ.get("LLM_API_KEY"):
+    if os.environ.get("LLM_API_KEY") == "your-api-key-here" or not os.environ.get(
+        "LLM_API_KEY"
+    ):
         print("警告: 请设置环境变量 LLM_API_KEY")
         print("示例: export LLM_API_KEY='your-key-here'")
         exit(1)

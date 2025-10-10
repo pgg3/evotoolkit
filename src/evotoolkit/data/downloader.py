@@ -6,7 +6,6 @@
 Dataset downloader from GitHub releases.
 """
 
-import os
 import shutil
 import tempfile
 import zipfile
@@ -20,6 +19,7 @@ from .constants import get_release_url, get_required_files
 
 class DownloadError(Exception):
     """Raised when dataset download fails."""
+
     pass
 
 
@@ -37,20 +37,17 @@ def download_with_progress(url: str, dest_path: Path, chunk_size: int = 8192) ->
     """
     try:
         # Create request with timeout
-        req = urllib.request.Request(
-            url,
-            headers={'User-Agent': 'EvoToolkit/1.0'}
-        )
+        req = urllib.request.Request(url, headers={"User-Agent": "EvoToolkit/1.0"})
 
         with urllib.request.urlopen(req, timeout=30) as response:
-            total_size = int(response.headers.get('content-length', 0))
+            total_size = int(response.headers.get("content-length", 0))
 
             # Download to temporary file first
             dest_path.parent.mkdir(parents=True, exist_ok=True)
-            temp_path = dest_path.with_suffix('.tmp')
+            temp_path = dest_path.with_suffix(".tmp")
 
             try:
-                with open(temp_path, 'wb') as f:
+                with open(temp_path, "wb") as f:
                     downloaded = 0
                     while True:
                         chunk = response.read(chunk_size)
@@ -62,7 +59,7 @@ def download_with_progress(url: str, dest_path: Path, chunk_size: int = 8192) ->
                         # Print progress
                         if total_size > 0:
                             progress = (downloaded / total_size) * 100
-                            print(f"\rDownloading: {progress:.1f}%", end='', flush=True)
+                            print(f"\rDownloading: {progress:.1f}%", end="", flush=True)
 
                 print()  # New line after progress
 
@@ -125,7 +122,7 @@ def extract_zip(zip_path: Path, extract_to: Path) -> None:
     """
     try:
         print(f"Extracting to {extract_to}...")
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(extract_to)
         print("Extraction complete.")
     except zipfile.BadZipFile as e:
@@ -169,9 +166,7 @@ def download_dataset_category(category: str, target_dir: Path) -> Path:
 
 
 def ensure_dataset_downloaded(
-    category: str,
-    dataset_name: str,
-    data_dir: Optional[Path] = None
+    category: str, dataset_name: str, data_dir: Optional[Path] = None
 ) -> Path:
     """
     Ensure dataset is downloaded and available.
@@ -207,7 +202,9 @@ def ensure_dataset_downloaded(
     # Need to download - check if we already have category but missing specific dataset
     if category_dir.exists():
         print(f"Dataset '{dataset_name}' not found in existing {category} directory.")
-        print(f"This might indicate incomplete download. Re-downloading entire category...")
+        print(
+            "This might indicate incomplete download. Re-downloading entire category..."
+        )
         # Clean up existing directory to ensure fresh download
         shutil.rmtree(category_dir)
 

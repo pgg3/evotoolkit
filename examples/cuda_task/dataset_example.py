@@ -22,7 +22,7 @@ import evotoolkit
 from evotoolkit.task.cuda_engineering import (
     CudaTask,
     CudaTaskInfoMaker,
-    EvoEngineerFullCudaInterface
+    EvoEngineerFullCudaInterface,
 )
 from evotoolkit.task.cuda_engineering.evaluator import Evaluator
 from evotoolkit.tools.llm import HttpsApi
@@ -41,9 +41,9 @@ def main():
 
     # Step 1: Load dataset
     print("\n[1/5] Loading predefined CUDA dataset...")
-    dataset_path = '../../../rtx4090_cu12_4_py311_torch_2_4_0.json'
+    dataset_path = "../../../rtx4090_cu12_4_py311_torch_2_4_0.json"
 
-    with open(dataset_path, 'r') as f:
+    with open(dataset_path, "r") as f:
         dataset = json.load(f)
 
     print(f"Loaded {len(dataset)} tasks from dataset")
@@ -59,7 +59,7 @@ def main():
     task_name = "10_3D_tensor_matrix_multiplication"
     task_data = dataset[task_name]
 
-    print(f"\nTask details:")
+    print("\nTask details:")
     print(f"- org_py_code: {'Provided' if task_data['org_py_code'] else 'Empty'}")
     print(f"- func_py_code: {'Provided' if task_data['func_py_code'] else 'Empty'}")
     print(f"- cuda_code: {'Provided' if task_data['cuda_code'] else 'Empty'}")
@@ -77,7 +77,7 @@ def main():
         org_py_code=task_data["org_py_code"],
         func_py_code=task_data["func_py_code"],
         cuda_code=task_data["cuda_code"],
-        fake_mode=False  # Set True for testing without GPU
+        fake_mode=False,  # Set True for testing without GPU
     )
 
     task = CudaTask(data=task_info, temp_path=temp_path, fake_mode=False)
@@ -93,9 +93,11 @@ def main():
     # Configure LLM API
     # Set LLM_API_URL and LLM_API_KEY environment variables before running
     llm_api = HttpsApi(
-        api_url=os.environ.get("LLM_API_URL", "https://api.openai.com/v1/chat/completions"),
+        api_url=os.environ.get(
+            "LLM_API_URL", "https://api.openai.com/v1/chat/completions"
+        ),
         key=os.environ.get("LLM_API_KEY", "your-api-key-here"),
-        model="gpt-4o"
+        model="gpt-4o",
     )
 
     # Step 5: Run evolution
@@ -105,11 +107,11 @@ def main():
 
     result = evotoolkit.solve(
         interface=interface,
-        output_path=f'./dataset_results_{task_name}',
+        output_path=f"./dataset_results_{task_name}",
         running_llm=llm_api,
         max_generations=10,
         pop_size=5,
-        max_sample_nums=20
+        max_sample_nums=20,
     )
 
     # Display results
@@ -119,7 +121,7 @@ def main():
     print(f"\nTask: {task_name}")
     print(f"Initial runtime: {task.task_info['cuda_info']['runtime']:.4f} ms")
     print(f"Optimized runtime: {-result.evaluation_res.score:.4f} ms")
-    speedup = task.task_info['cuda_info']['runtime'] / (-result.evaluation_res.score)
+    speedup = task.task_info["cuda_info"]["runtime"] / (-result.evaluation_res.score)
     print(f"Speedup: {speedup:.2f}x")
     print(f"\nResults saved to: ./dataset_results_{task_name}/")
 

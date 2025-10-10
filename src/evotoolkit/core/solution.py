@@ -23,7 +23,12 @@ class EvaluationResult:
 class Solution:
     """Represents a candidate solution in the evolutionary process."""
 
-    def __init__(self, sol_string, other_info: dict = None, evaluation_res: EvaluationResult = None):
+    def __init__(
+        self,
+        sol_string,
+        other_info: dict = None,
+        evaluation_res: EvaluationResult = None,
+    ):
         self.sol_string = sol_string
         self.other_info = other_info
         self.evaluation_res = evaluation_res

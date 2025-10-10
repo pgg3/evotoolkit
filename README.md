@@ -11,7 +11,7 @@ pip install evotoolkit
 ```
 
 ```python
-import evotoolkit  # Note: import name is different from package name
+import evotoolkit  
 ```
 
 ## Quick Start

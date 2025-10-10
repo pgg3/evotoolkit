@@ -28,7 +28,7 @@ from evotoolkit.task.cuda_engineering import (
     EvoEngineerFreeCudaInterface,
     EvoEngineerInsightCudaInterface,
     EoHCudaInterface,
-    FunSearchCudaInterface
+    FunSearchCudaInterface,
 )
 from evotoolkit.task.cuda_engineering.evaluator import Evaluator
 from evotoolkit.tools.llm import HttpsApi
@@ -78,7 +78,7 @@ def get_init_inputs():
     return []
 '''
 
-    cuda_code = '''
+    cuda_code = """
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 
@@ -119,7 +119,7 @@ torch::Tensor matmul_cuda(torch::Tensor A, torch::Tensor B) {
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("forward", &matmul_cuda, "Matrix multiplication (CUDA)");
 }
-'''
+"""
 
     temp_path = tempfile.mkdtemp()
     evaluator = Evaluator(temp_path)
@@ -131,7 +131,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
         org_py_code=org_py_code,
         func_py_code=func_py_code,
         cuda_code=cuda_code,
-        fake_mode=False
+        fake_mode=False,
     )
 
     return CudaTask(data=task_info, temp_path=temp_path, fake_mode=False)
@@ -153,18 +153,18 @@ def run_algorithm(algorithm_name, interface_class, task, llm_api, output_dir):
         running_llm=llm_api,
         max_generations=10,
         pop_size=5,
-        max_sample_nums=20
+        max_sample_nums=20,
     )
 
     print(f"\n{algorithm_name} completed!")
     print(f"Best runtime: {-result.evaluation_res.score:.4f} ms")
 
     return {
-        'algorithm': algorithm_name,
-        'runtime': -result.evaluation_res.score,
-        'score': result.evaluation_res.score,
-        'solution': result.sol_string,
-        'output_path': output_dir
+        "algorithm": algorithm_name,
+        "runtime": -result.evaluation_res.score,
+        "score": result.evaluation_res.score,
+        "solution": result.sol_string,
+        "output_path": output_dir,
     }
 
 
@@ -184,27 +184,33 @@ def main():
     print("\n[2/2] Configuring LLM API...")
     # Set LLM_API_URL and LLM_API_KEY environment variables before running
     llm_api = HttpsApi(
-        api_url=os.environ.get("LLM_API_URL", "https://api.openai.com/v1/chat/completions"),
+        api_url=os.environ.get(
+            "LLM_API_URL", "https://api.openai.com/v1/chat/completions"
+        ),
         key=os.environ.get("LLM_API_KEY", "your-api-key-here"),
-        model="gpt-4o"
+        model="gpt-4o",
     )
 
     # Define algorithms to compare
     algorithms = [
         ("EvoEngineerFull", EvoEngineerFullCudaInterface, "./results_evoengineer_full"),
         ("EvoEngineerFree", EvoEngineerFreeCudaInterface, "./results_evoengineer_free"),
-        ("EvoEngineerInsight", EvoEngineerInsightCudaInterface, "./results_evoengineer_insight"),
+        (
+            "EvoEngineerInsight",
+            EvoEngineerInsightCudaInterface,
+            "./results_evoengineer_insight",
+        ),
         ("EoH", EoHCudaInterface, "./results_eoh"),
-        ("FunSearch", FunSearchCudaInterface, "./results_funsearch")
+        ("FunSearch", FunSearchCudaInterface, "./results_funsearch"),
     ]
 
     # Run all algorithms
     results = []
-    initial_runtime = task.task_info['cuda_info']['runtime']
+    initial_runtime = task.task_info["cuda_info"]["runtime"]
 
     for algo_name, interface_class, output_dir in algorithms:
         result = run_algorithm(algo_name, interface_class, task, llm_api, output_dir)
-        result['speedup'] = initial_runtime / result['runtime']
+        result["speedup"] = initial_runtime / result["runtime"]
         results.append(result)
 
     # Display comparison
@@ -213,7 +219,7 @@ def main():
     print("=" * 60)
 
     # Sort by runtime (lower is better)
-    results.sort(key=lambda x: x['runtime'])
+    results.sort(key=lambda x: x["runtime"])
 
     print(f"\nInitial runtime: {initial_runtime:.4f} ms\n")
     print("Ranking (lower runtime is better):")
@@ -230,7 +236,7 @@ def main():
     print("=" * 60)
 
     print(f"\nBest kernel from {results[0]['algorithm']}:")
-    print(results[0]['solution'][:500] + "...")
+    print(results[0]["solution"][:500] + "...")
 
 
 if __name__ == "__main__":

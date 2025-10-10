@@ -9,6 +9,7 @@ from evotoolkit.core import Solution, BaseTask
 
 class BaseMethodInterface(abc.ABC):
     """Base Adapter"""
+
     def __init__(self, task: BaseTask):
         self.task = task
 

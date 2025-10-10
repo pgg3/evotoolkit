@@ -20,7 +20,7 @@ import evotoolkit
 from evotoolkit.task.cuda_engineering import (
     CudaTask,
     CudaTaskInfoMaker,
-    EvoEngineerFullCudaInterface
+    EvoEngineerFullCudaInterface,
 )
 from evotoolkit.task.cuda_engineering.evaluator import Evaluator
 from evotoolkit.tools.llm import HttpsApi
@@ -79,7 +79,7 @@ def get_init_inputs():
     # Step 2: Define initial CUDA kernel
     print("\n[2/5] Defining initial CUDA kernel...")
 
-    cuda_code = '''
+    cuda_code = """
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 
@@ -120,7 +120,7 @@ torch::Tensor matmul_cuda(torch::Tensor A, torch::Tensor B) {
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("forward", &matmul_cuda, "Matrix multiplication (CUDA)");
 }
-'''
+"""
 
     # Step 3: Create CUDA task
     print("\n[3/5] Creating CUDA optimization task...")
@@ -135,14 +135,10 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
         org_py_code=org_py_code,
         func_py_code=func_py_code,
         cuda_code=cuda_code,
-        fake_mode=False  # Set True for testing without GPU
+        fake_mode=False,  # Set True for testing without GPU
     )
 
-    task = CudaTask(
-        data=task_info,
-        temp_path=temp_path,
-        fake_mode=False
-    )
+    task = CudaTask(data=task_info, temp_path=temp_path, fake_mode=False)
 
     print(f"GPU Type: {task.task_info['gpu_type']}")
     print(f"CUDA Version: {task.task_info['cuda_version']}")
@@ -160,9 +156,11 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     # Configure LLM API
     # Set LLM_API_URL and LLM_API_KEY environment variables before running
     llm_api = HttpsApi(
-        api_url=os.environ.get("LLM_API_URL", "https://api.openai.com/v1/chat/completions"),
+        api_url=os.environ.get(
+            "LLM_API_URL", "https://api.openai.com/v1/chat/completions"
+        ),
         key=os.environ.get("LLM_API_KEY", "your-api-key-here"),
-        model="gpt-4o"
+        model="gpt-4o",
     )
 
     # Run evolution
@@ -173,11 +171,11 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
 
     result = evotoolkit.solve(
         interface=interface,
-        output_path='./cuda_optimization_results',
+        output_path="./cuda_optimization_results",
         running_llm=llm_api,
         max_generations=10,
         pop_size=5,
-        max_sample_nums=20
+        max_sample_nums=20,
     )
 
     # Display results
@@ -186,8 +184,10 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     print("=" * 60)
     print(f"\nInitial runtime: {-init_sol.evaluation_res.score:.4f} ms")
     print(f"Optimized runtime: {-result.evaluation_res.score:.4f} ms")
-    print(f"Speedup: {(-init_sol.evaluation_res.score) / (-result.evaluation_res.score):.2f}x")
-    print(f"\nResults saved to: ./cuda_optimization_results/")
+    print(
+        f"Speedup: {(-init_sol.evaluation_res.score) / (-result.evaluation_res.score):.2f}x"
+    )
+    print("\nResults saved to: ./cuda_optimization_results/")
     print(f"\nBest kernel:\n{result.sol_string[:500]}...")
 
 

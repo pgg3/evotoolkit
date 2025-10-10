@@ -61,4 +61,4 @@ MAKE SURE THE PROPOSED SOLUTION FOLLOWS THE REQUIRED FORMAT.
 FOLLOW EXACTLY THIS FORMAT. DO NOT ADD ANYTHING ELSE.
 """
 
-        return [{'role': 'user', 'content': prompt}]
+        return [{"role": "user", "content": prompt}]

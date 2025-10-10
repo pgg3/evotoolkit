@@ -23,33 +23,37 @@ from evotoolkit.registry import register_task
 DATASET_INFO = {
     "bactgrow": {
         "description": "E. Coli bacterial growth rate prediction",
-        "inputs": ["b (population density)", "s (substrate concentration)",
-                   "temp (temperature)", "pH (pH level)"],
+        "inputs": [
+            "b (population density)",
+            "s (substrate concentration)",
+            "temp (temperature)",
+            "pH (pH level)",
+        ],
         "output": "db (growth rate)",
         "input_cols": ["b", "s", "temp", "pH"],
-        "output_col": "db"
+        "output_col": "db",
     },
     "oscillator1": {
         "description": "Damped nonlinear oscillator acceleration",
         "inputs": ["x (position)", "v (velocity)"],
         "output": "dv (acceleration)",
         "input_cols": ["x", "v"],
-        "output_col": "dv"
+        "output_col": "dv",
     },
     "oscillator2": {
         "description": "Damped nonlinear oscillator (variant 2)",
         "inputs": ["x (position)", "v (velocity)"],
         "output": "dv (acceleration)",
         "input_cols": ["x", "v"],
-        "output_col": "dv"
+        "output_col": "dv",
     },
     "stressstrain": {
         "description": "Stress prediction in Aluminium rod",
         "inputs": ["strain", "temp (temperature)"],
         "output": "stress",
         "input_cols": ["strain", "temp"],
-        "output_col": "stress"
-    }
+        "output_col": "stress",
+    },
 }
 
 
@@ -67,7 +71,7 @@ class ScientificRegressionTask(PythonTask):
         dataset_name: Literal["bactgrow", "oscillator1", "oscillator2", "stressstrain"],
         data_dir: str | Path | None = None,
         max_params: int = 10,
-        timeout_seconds: float = 60.0
+        timeout_seconds: float = 60.0,
     ):
         """
         Initialize scientific regression task.
@@ -92,15 +96,15 @@ class ScientificRegressionTask(PythonTask):
         train_data, test_data = self._load_dataset(dataset_name, data_dir)
 
         # Store data
-        self.train_inputs = train_data['inputs']
-        self.train_outputs = train_data['outputs']
-        self.test_inputs = test_data['inputs']
-        self.test_outputs = test_data['outputs']
+        self.train_inputs = train_data["inputs"]
+        self.train_outputs = train_data["outputs"]
+        self.test_inputs = test_data["inputs"]
+        self.test_outputs = test_data["outputs"]
 
         # Pass to parent
         super().__init__(
-            data={'train': train_data, 'test': test_data},
-            timeout_seconds=timeout_seconds
+            data={"train": train_data, "test": test_data},
+            timeout_seconds=timeout_seconds,
         )
 
     def _load_dataset(self, dataset_name: str, data_dir: str | Path | None):
@@ -114,7 +118,7 @@ class ScientificRegressionTask(PythonTask):
 
         try:
             # Get dataset path, will auto-download if needed
-            base_dir = get_dataset_path('scientific_regression', data_dir=data_dir)
+            base_dir = get_dataset_path("scientific_regression", data_dir=data_dir)
             dataset_path = base_dir / dataset_name
         except DownloadError as e:
             raise FileNotFoundError(
@@ -136,12 +140,12 @@ class ScientificRegressionTask(PythonTask):
 
         # Extract inputs and outputs
         train_data = {
-            'inputs': train_df[info['input_cols']].values,
-            'outputs': train_df[info['output_col']].values
+            "inputs": train_df[info["input_cols"]].values,
+            "outputs": train_df[info["output_col"]].values,
         }
         test_data = {
-            'inputs': test_df[info['input_cols']].values,
-            'outputs': test_df[info['output_col']].values
+            "inputs": test_df[info["input_cols"]].values,
+            "outputs": test_df[info["output_col"]].values,
         }
 
         return train_data, test_data
@@ -150,11 +154,11 @@ class ScientificRegressionTask(PythonTask):
         """Process input data and create task_info."""
         self.data = data
         self.task_info = {
-            'dataset_name': self.dataset_name,
-            'train_size': len(data['train']['inputs']),
-            'test_size': len(data['test']['inputs']),
-            'n_inputs': data['train']['inputs'].shape[1],
-            'max_params': self.max_params
+            "dataset_name": self.dataset_name,
+            "train_size": len(data["train"]["inputs"]),
+            "test_size": len(data["test"]["inputs"]),
+            "n_inputs": data["train"]["inputs"].shape[1],
+            "max_params": self.max_params,
         }
 
     def _evaluate_code_impl(self, candidate_code: str) -> EvaluationResult:
@@ -165,43 +169,52 @@ class ScientificRegressionTask(PythonTask):
         """
         # Create namespace with required modules
         namespace = {
-            '__builtins__': {
-                'len': len, 'range': range, 'enumerate': enumerate,
-                'zip': zip, 'map': map, 'filter': filter,
-                'sum': sum, 'min': min, 'max': max, 'abs': abs,
-                'print': print, 'str': str, 'int': int, 'float': float,
-                'list': list, 'dict': dict, 'tuple': tuple, 'set': set,
-                '__import__': __import__,
+            "__builtins__": {
+                "len": len,
+                "range": range,
+                "enumerate": enumerate,
+                "zip": zip,
+                "map": map,
+                "filter": filter,
+                "sum": sum,
+                "min": min,
+                "max": max,
+                "abs": abs,
+                "print": print,
+                "str": str,
+                "int": int,
+                "float": float,
+                "list": list,
+                "dict": dict,
+                "tuple": tuple,
+                "set": set,
+                "__import__": __import__,
             },
-            'np': np,
+            "np": np,
         }
 
         # Execute the code
         exec(candidate_code, namespace)
 
         # Check if equation function exists
-        if 'equation' not in namespace:
+        if "equation" not in namespace:
             return EvaluationResult(
                 valid=False,
-                score=float('-inf'),
-                additional_info={'error': 'Function "equation" not found in code'}
+                score=float("-inf"),
+                additional_info={"error": 'Function "equation" not found in code'},
             )
 
-        equation_func = namespace['equation']
+        equation_func = namespace["equation"]
 
         # Evaluate on training data
         try:
             train_score, train_warnings = self._evaluate_equation(
-                equation_func,
-                self.train_inputs,
-                self.train_outputs
+                equation_func, self.train_inputs, self.train_outputs
             )
 
             # Evaluate on test data
             test_score, test_warnings = self._evaluate_equation(
-                equation_func,
-                self.test_inputs,
-                self.test_outputs
+                equation_func, self.test_inputs, self.test_outputs
             )
 
             # Combine all warnings
@@ -210,11 +223,11 @@ class ScientificRegressionTask(PythonTask):
             if train_score is None or test_score is None:
                 return EvaluationResult(
                     valid=False,
-                    score=float('-inf'),
+                    score=float("-inf"),
                     additional_info={
-                        'error': 'Optimization failed or returned NaN/Inf',
-                        'warnings': all_warnings
-                    }
+                        "error": "Optimization failed or returned NaN/Inf",
+                        "warnings": all_warnings,
+                    },
                 )
 
             # Use train_score as fitness (already -MSE, higher is better)
@@ -225,18 +238,18 @@ class ScientificRegressionTask(PythonTask):
                 valid=True,
                 score=score,
                 additional_info={
-                    'train_mse': -train_score,  # Convert -MSE back to MSE for logging
-                    'test_mse': -test_score,     # Convert -MSE back to MSE for logging
-                    'n_params': self.max_params,
-                    'warnings': all_warnings if all_warnings else []
-                }
+                    "train_mse": -train_score,  # Convert -MSE back to MSE for logging
+                    "test_mse": -test_score,  # Convert -MSE back to MSE for logging
+                    "n_params": self.max_params,
+                    "warnings": all_warnings if all_warnings else [],
+                },
             )
 
         except Exception as e:
             return EvaluationResult(
                 valid=False,
-                score=float('-inf'),
-                additional_info={'error': f'Evaluation error: {str(e)}'}
+                score=float("-inf"),
+                additional_info={"error": f"Evaluation error: {str(e)}"},
             )
 
     def _evaluate_equation(self, equation_func, inputs, outputs):
@@ -257,11 +270,14 @@ class ScientificRegressionTask(PythonTask):
                 if inputs.shape[1] == 2:
                     y_pred = equation_func(inputs[:, 0], inputs[:, 1], params)
                 elif inputs.shape[1] == 4:
-                    y_pred = equation_func(inputs[:, 0], inputs[:, 1],
-                                           inputs[:, 2], inputs[:, 3], params)
+                    y_pred = equation_func(
+                        inputs[:, 0], inputs[:, 1], inputs[:, 2], inputs[:, 3], params
+                    )
                 else:
                     # Generic case
-                    y_pred = equation_func(*[inputs[:, i] for i in range(inputs.shape[1])], params)
+                    y_pred = equation_func(
+                        *[inputs[:, i] for i in range(inputs.shape[1])], params
+                    )
 
                 mse = np.mean((y_pred - outputs) ** 2)
                 return mse
@@ -276,8 +292,8 @@ class ScientificRegressionTask(PythonTask):
                 result = minimize(
                     loss,
                     x0=[1.0] * self.max_params,
-                    method='BFGS',
-                    options={'maxiter': 1000}
+                    method="BFGS",
+                    options={"maxiter": 1000},
                 )
 
                 # Collect warning messages
@@ -301,28 +317,34 @@ class ScientificRegressionTask(PythonTask):
     def get_base_task_description(self) -> str:
         """Get task description for the specific dataset."""
         info = self.dataset_info
-        input_names = info['input_cols']
-        output_name = info['output_col']
+        input_names = info["input_cols"]
+        output_name = info["output_col"]
 
         # Build input signature
         if len(input_names) == 2:
             signature = f"{input_names[0]}: np.ndarray, {input_names[1]}: np.ndarray, params: np.ndarray"
         elif len(input_names) == 4:
-            signature = ", ".join([f"{name}: np.ndarray" for name in input_names]) + ", params: np.ndarray"
+            signature = (
+                ", ".join([f"{name}: np.ndarray" for name in input_names])
+                + ", params: np.ndarray"
+            )
         else:
-            signature = ", ".join([f"input{i}: np.ndarray" for i in range(len(input_names))]) + ", params: np.ndarray"
+            signature = (
+                ", ".join([f"input{i}: np.ndarray" for i in range(len(input_names))])
+                + ", params: np.ndarray"
+            )
 
         return f"""You are an expert in scientific symbolic regression and mathematical modeling.
 
-Task: {info['description']}
+Task: {info["description"]}
 
 Your goal is to discover a mathematical equation that predicts {output_name} from:
-{chr(10).join(f"  - {inp}" for inp in info['inputs'])}
+{chr(10).join(f"  - {inp}" for inp in info["inputs"])}
 
 Requirements:
 - Define a function named 'equation' with signature: equation({signature}) -> np.ndarray
 - Use numpy operations for vectorized computation
-- The 'params' array contains {self.max_params} optimizable constants (params[0] to params[{self.max_params-1}])
+- The 'params' array contains {self.max_params} optimizable constants (params[0] to params[{self.max_params - 1}])
 - Return predictions as a numpy array matching the shape of inputs
 - Focus on discovering the mathematical structure; parameters will be auto-optimized
 
@@ -348,7 +370,7 @@ Fitness: Your equation will be evaluated by optimizing parameters to minimize MS
     def make_init_sol_wo_other_info(self) -> Solution:
         """Create initial solution with simple linear equation."""
         info = self.dataset_info
-        input_names = info['input_cols']
+        input_names = info["input_cols"]
 
         # Build simple linear combination
         if len(input_names) == 2:
@@ -356,12 +378,18 @@ Fitness: Your equation will be evaluated by optimizing parameters to minimize MS
             signature = f"{input_names[0]}, {input_names[1]}, params"
         elif len(input_names) == 4:
             terms = [f"params[{i}] * {name}" for i, name in enumerate(input_names)]
-            equation_body = f"    return {' + '.join(terms)} + params[{len(input_names)}]"
+            equation_body = (
+                f"    return {' + '.join(terms)} + params[{len(input_names)}]"
+            )
             signature = ", ".join(input_names) + ", params"
         else:
             terms = [f"params[{i}] * input{i}" for i in range(len(input_names))]
-            equation_body = f"    return {' + '.join(terms)} + params[{len(input_names)}]"
-            signature = ", ".join([f"input{i}" for i in range(len(input_names))]) + ", params"
+            equation_body = (
+                f"    return {' + '.join(terms)} + params[{len(input_names)}]"
+            )
+            signature = (
+                ", ".join([f"input{i}" for i in range(len(input_names))]) + ", params"
+            )
 
         initial_code = f'''import numpy as np
 
@@ -373,8 +401,4 @@ def equation({signature}):
         # Evaluate the initial solution
         eval_res = self.evaluate_code(initial_code)
 
-        return Solution(
-            sol_string=initial_code,
-            evaluation_res=eval_res,
-            other_info={}
-        )
+        return Solution(sol_string=initial_code, evaluation_res=eval_res, other_info={})

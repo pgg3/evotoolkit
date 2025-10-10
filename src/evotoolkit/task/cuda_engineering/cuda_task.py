@@ -14,22 +14,26 @@ from typing import Optional, Dict, Any
 from evotoolkit.core import BaseTask, Solution, EvaluationResult
 from .evaluator import Evaluator
 
+
 class CudaTaskInfoMaker:
     @classmethod
     def make_task_info(
-            cls,
-            evaluator: Evaluator,
-            gpu_type:str, cuda_version:str,
-            org_py_code:str, func_py_code:str, cuda_code:str,
-            fake_mode:bool=False,
-            **kwargs
+        cls,
+        evaluator: Evaluator,
+        gpu_type: str,
+        cuda_version: str,
+        org_py_code: str,
+        func_py_code: str,
+        cuda_code: str,
+        fake_mode: bool = False,
+        **kwargs,
     ) -> dict:
         task_info = {
             "gpu_type": gpu_type,
             "cuda_version": cuda_version,
             "org_py_code": org_py_code,
             "func_py_code": func_py_code,
-            "cuda_code": cuda_code
+            "cuda_code": cuda_code,
         }
         # LOCK_FILE = os.path.join(tempfile.gettempdir(), "evotool_cross_process.lock")
         # shutil.rmtree(LOCK_FILE, ignore_errors=True)
@@ -42,13 +46,11 @@ class CudaTaskInfoMaker:
                 "runtime": 0.1,
                 "prof_string": "xxx",
                 "compilation_error": False,
-                "comparison_error": False
+                "comparison_error": False,
             }
             task_info["cuda_info"] = info_dict
             return task_info
-        cuda_info_dict = evaluator.get_cuda_runtime_sandbox(
-            func_py_code, cuda_code
-        )
+        cuda_info_dict = evaluator.get_cuda_runtime_sandbox(func_py_code, cuda_code)
         info_dict = {
             "name": "baseline",
             "thought": "baseline",
@@ -57,7 +59,7 @@ class CudaTaskInfoMaker:
             "runtime": cuda_info_dict["runtime"],
             "prof_string": cuda_info_dict["prof_string"],
             "compilation_error": False,
-            "comparison_error": False
+            "comparison_error": False,
         }
         task_info["cuda_info"] = info_dict
         return task_info
@@ -71,7 +73,12 @@ class CudaTask(BaseTask):
     providing a common base for CUDA kernel optimization tasks.
     """
 
-    def __init__(self, data: Dict[str, Any], temp_path: Optional[str] = None, fake_mode: bool = False):
+    def __init__(
+        self,
+        data: Dict[str, Any],
+        temp_path: Optional[str] = None,
+        fake_mode: bool = False,
+    ):
         """
         Initialize the CUDA task with input data.
 
@@ -95,7 +102,7 @@ class CudaTask(BaseTask):
 
     def get_task_type(self) -> str:
         """Get task type as 'Cuda'."""
-        return 'Cuda'
+        return "Cuda"
 
     def get_base_task_description(self) -> str:
         """Get the base task description using task info"""
@@ -111,15 +118,15 @@ class CudaTask(BaseTask):
             valid=True,
             score=-self.task_info["cuda_info"]["runtime"],
             additional_info={
-                "code": self.task_info['cuda_code'],
+                "code": self.task_info["cuda_code"],
                 "temp_str": None,
                 "runtime": self.task_info["cuda_info"]["runtime"],
                 "prof_string": self.task_info["cuda_info"]["prof_string"],
                 "compilation_error": False,
                 "comparison_error": False,
                 "error_msg": None,
-                "exception": None
-            }
+                "exception": None,
+            },
         )
         init_sol.evaluation_res = evaluation_res
         return init_sol
@@ -140,13 +147,12 @@ class CudaTask(BaseTask):
                         "compilation_error": False,
                         "comparison_error": False,
                         "error_msg": None,
-                        "exception": None
-                    }
+                        "exception": None,
+                    },
                 )
 
             cuda_comparison_result = self.evaluator.compare_func_cuda_sandbox(
-                self.func_py_code,
-                candidate_code
+                self.func_py_code, candidate_code
             )
 
             additional_info = {
@@ -154,31 +160,35 @@ class CudaTask(BaseTask):
                 "temp_str": cuda_comparison_result.get("temp_str"),
                 "runtime": None,
                 "prof_string": None,
-                "compilation_error": cuda_comparison_result.get("compilation_error", False),
-                "comparison_error": not cuda_comparison_result.get("correctness", False),
-                "error_msg": cuda_comparison_result.get("error_msg", None)
+                "compilation_error": cuda_comparison_result.get(
+                    "compilation_error", False
+                ),
+                "comparison_error": not cuda_comparison_result.get(
+                    "correctness", False
+                ),
+                "error_msg": cuda_comparison_result.get("error_msg", None),
             }
 
             if cuda_comparison_result.get("correctness", False):
                 cuda_runtime_result = self.evaluator.get_cuda_runtime_sandbox(
                     self.func_py_code,
                     candidate_code,
-                    cuda_comparison_result.get("temp_str")
+                    cuda_comparison_result.get("temp_str"),
                 )
                 additional_info["runtime"] = cuda_runtime_result.get("runtime")
                 additional_info["prof_string"] = cuda_runtime_result.get("prof_string")
 
                 score = -cuda_runtime_result.get("runtime")
                 valid = True
-                additional_info["error_msg"] = cuda_runtime_result.get("error_msg", None)
+                additional_info["error_msg"] = cuda_runtime_result.get(
+                    "error_msg", None
+                )
             else:
                 score = None
                 valid = False
 
             return EvaluationResult(
-                valid=valid,
-                score=score,
-                additional_info=additional_info
+                valid=valid, score=score, additional_info=additional_info
             )
 
         except Exception as e:
@@ -193,6 +203,6 @@ class CudaTask(BaseTask):
                     "compilation_error": True,
                     "comparison_error": True,
                     "error_msg": str(e),
-                    "exception": True
-                }
+                    "exception": True,
+                },
             )

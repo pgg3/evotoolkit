@@ -29,7 +29,7 @@ class EoHStringInterface(EoHInterface):
 
 Do not give additional explanations.
 """
-        return [{'role': 'user', 'content': prompt}]
+        return [{"role": "user", "content": prompt}]
 
     def get_prompt_e1(self, selected_individuals: List[Solution]) -> List[dict]:
         """Generate E1 (initialization from population) prompt."""
@@ -38,11 +38,11 @@ Do not give additional explanations.
         # Create prompt content for all individuals
         indivs_prompt = ""
         for i, indi in enumerate(selected_individuals):
-            if 'algorithm' in indi.other_info and indi.other_info['algorithm']:
-                algorithm_desc = indi.other_info['algorithm']
+            if "algorithm" in indi.other_info and indi.other_info["algorithm"]:
+                algorithm_desc = indi.other_info["algorithm"]
             else:
-                algorithm_desc = f"Solution {i+1}"
-            indivs_prompt += f'No. {i + 1} approach and the corresponding solution are:\n{algorithm_desc}\n{indi.sol_string}\n'
+                algorithm_desc = f"Solution {i + 1}"
+            indivs_prompt += f"No. {i + 1} approach and the corresponding solution are:\n{algorithm_desc}\n{indi.sol_string}\n"
 
         prompt = f"""
 {task_description}
@@ -56,7 +56,7 @@ Please help me create a new solution that has a totally different form from the 
 
 Do not give additional explanations.
 """
-        return [{'role': 'user', 'content': prompt}]
+        return [{"role": "user", "content": prompt}]
 
     def get_prompt_e2(self, selected_individuals: List[Solution]) -> List[dict]:
         """Generate E2 (guided crossover) prompt."""
@@ -65,11 +65,11 @@ Do not give additional explanations.
         # Create prompt content for all individuals
         indivs_prompt = ""
         for i, indi in enumerate(selected_individuals):
-            if 'algorithm' in indi.other_info and indi.other_info['algorithm']:
-                algorithm_desc = indi.other_info['algorithm']
+            if "algorithm" in indi.other_info and indi.other_info["algorithm"]:
+                algorithm_desc = indi.other_info["algorithm"]
             else:
-                algorithm_desc = f"Solution {i+1}"
-            indivs_prompt += f'No. {i + 1} approach and the corresponding solution are:\n{algorithm_desc}\n{indi.sol_string}\n'
+                algorithm_desc = f"Solution {i + 1}"
+            indivs_prompt += f"No. {i + 1} approach and the corresponding solution are:\n{algorithm_desc}\n{indi.sol_string}\n"
 
         prompt = f"""
 {task_description}
@@ -84,14 +84,14 @@ Please help me create a new solution that has a totally different form from the 
 
 Do not give additional explanations.
 """
-        return [{'role': 'user', 'content': prompt}]
+        return [{"role": "user", "content": prompt}]
 
     def get_prompt_m1(self, individual: Solution) -> List[dict]:
         """Generate M1 (mutation) prompt."""
         task_description = self.task.get_base_task_description()
 
-        if 'algorithm' in individual.other_info and individual.other_info['algorithm']:
-            algorithm_desc = individual.other_info['algorithm']
+        if "algorithm" in individual.other_info and individual.other_info["algorithm"]:
+            algorithm_desc = individual.other_info["algorithm"]
         else:
             algorithm_desc = "Current solution"
 
@@ -109,4 +109,4 @@ Please assist me in identifying issues with the current solution and make necess
 
 Do not give additional explanations.
 """
-        return [{'role': 'user', 'content': prompt}]
+        return [{"role": "user", "content": prompt}]

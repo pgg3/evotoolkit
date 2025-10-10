@@ -29,8 +29,14 @@ class ScientificRegressionInterface(EvoEngineerPythonInterface):
     physical and biological principles.
     """
 
-    def get_operator_prompt(self, operator_name, selected_individuals,
-                           current_best_sol, random_thoughts, **kwargs):
+    def get_operator_prompt(
+        self,
+        operator_name,
+        selected_individuals,
+        current_best_sol,
+        random_thoughts,
+        **kwargs,
+    ):
         """Customize prompt for mutation operator to emphasize scientific principles."""
 
         if operator_name == "mutation":
@@ -58,21 +64,24 @@ Output format:
             return [{"role": "user", "content": prompt}]
 
         # Use default prompts for init and crossover operators
-        return super().get_operator_prompt(operator_name, selected_individuals,
-                                          current_best_sol, random_thoughts, **kwargs)
+        return super().get_operator_prompt(
+            operator_name,
+            selected_individuals,
+            current_best_sol,
+            random_thoughts,
+            **kwargs,
+        )
 
 
 def main():
-    print("="*60)
+    print("=" * 60)
     print("Custom Prompt Scientific Regression Example")
-    print("="*60)
+    print("=" * 60)
 
     # Create task
     print("\n[1/3] Creating scientific regression task...")
     task = ScientificRegressionTask(
-        dataset_name="bactgrow",
-        max_params=10,
-        timeout_seconds=60.0
+        dataset_name="bactgrow", max_params=10, timeout_seconds=60.0
     )
     print(f"Dataset: {task.dataset_name}")
 
@@ -86,28 +95,28 @@ def main():
     llm_api = HttpsApi(
         api_url="https://api.openai.com/v1/chat/completions",
         key=os.getenv("OPENAI_API_KEY", "your-api-key-here"),
-        model="gpt-4o"
+        model="gpt-4o",
     )
 
     # Run evolution
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Starting evolution with custom prompts...")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
     result = evotoolkit.solve(
         interface=interface,
-        output_path='./custom_prompt_results',
+        output_path="./custom_prompt_results",
         running_llm=llm_api,
         max_generations=3,
-        pop_size=5
+        pop_size=5,
     )
 
     # Display results
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Evolution completed!")
-    print("="*60)
+    print("=" * 60)
     print(f"\nBest solution score: {result.evaluation_res.score:.6f}")
-    print(f"Results saved to: ./custom_prompt_results/")
+    print("Results saved to: ./custom_prompt_results/")
     print(f"\nBest equation:\n{result.sol_string}")
 
 

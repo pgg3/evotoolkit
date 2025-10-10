@@ -11,9 +11,9 @@ from .evoengineer_insight_interface import EvoEngineerInsightCudaInterface
 from .evoengineer_free_interface import EvoEngineerFreeCudaInterface
 
 __all__ = [
-    'EoHCudaInterface',
-    'FunSearchCudaInterface',
-    'EvoEngineerFullCudaInterface',
-    'EvoEngineerInsightCudaInterface',
-    'EvoEngineerFreeCudaInterface',
+    "EoHCudaInterface",
+    "FunSearchCudaInterface",
+    "EvoEngineerFullCudaInterface",
+    "EvoEngineerInsightCudaInterface",
+    "EvoEngineerFreeCudaInterface",
 ]

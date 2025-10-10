@@ -5,14 +5,12 @@
 from abc import ABC, abstractmethod
 import json
 import numpy as np
-from typing import Optional, List
+from typing import Optional
 from .history_manager import HistoryManager
 
 
 class BaseRunStateDict(ABC):
-    def __init__(
-            self, task_info:dict
-    ):
+    def __init__(self, task_info: dict):
         self.task_info = task_info
         self._history_manager: Optional[HistoryManager] = None
 
@@ -24,7 +22,7 @@ class BaseRunStateDict(ABC):
                 "__numpy_array__": True,
                 "dtype": str(value.dtype),
                 "shape": list(value.shape),
-                "data": value.tolist()
+                "data": value.tolist(),
             }
         elif isinstance(value, dict):
             return {k: BaseRunStateDict._serialize_value(v) for k, v in value.items()}
@@ -42,9 +40,13 @@ class BaseRunStateDict(ABC):
         """Convert serialized numpy arrays back to original format"""
         if isinstance(value, dict):
             if value.get("__numpy_array__"):
-                return np.array(value["data"], dtype=value["dtype"]).reshape(value["shape"])
+                return np.array(value["data"], dtype=value["dtype"]).reshape(
+                    value["shape"]
+                )
             else:
-                return {k: BaseRunStateDict._deserialize_value(v) for k, v in value.items()}
+                return {
+                    k: BaseRunStateDict._deserialize_value(v) for k, v in value.items()
+                }
         elif isinstance(value, list):
             return [BaseRunStateDict._deserialize_value(item) for item in value]
         else:
@@ -57,19 +59,19 @@ class BaseRunStateDict(ABC):
 
     @classmethod
     @abstractmethod
-    def from_json(cls, data: dict) -> 'BaseRunStateDict':
+    def from_json(cls, data: dict) -> "BaseRunStateDict":
         """Create instance from JSON data"""
         pass
 
     def to_json_file(self, file_path: str) -> None:
         """Save the run state to a JSON file"""
-        with open(file_path, 'w', encoding='utf-8') as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             json.dump(self.to_json(), f, indent=2, ensure_ascii=False)
 
     @classmethod
-    def from_json_file(cls, file_path: str) -> 'BaseRunStateDict':
+    def from_json_file(cls, file_path: str) -> "BaseRunStateDict":
         """Load instance from JSON file"""
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
         return cls.from_json(data)
 
@@ -81,4 +83,3 @@ class BaseRunStateDict(ABC):
     def save_current_history(self) -> None:
         """保存当前进度的历史记录（由子类实现具体逻辑）"""
         pass
-

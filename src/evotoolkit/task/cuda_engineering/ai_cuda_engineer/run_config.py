@@ -13,17 +13,17 @@ class AiCudaEngineerConfig:
     """Configuration class for AI CUDA Engineer (no inheritance)."""
 
     def __init__(
-            self,
-            task_info: dict,
-            output_path: str,
-            evaluator: Evaluator,
-            conversion_llm: HttpsApi,
-            translation_llm: HttpsApi,
-            evo_llm_list: List[HttpsApi],
-            embedding_llm: HttpsApi,
-            rag_llm: HttpsApi,
-            conversion_retry: int = 10,
-            verbose: bool = True
+        self,
+        task_info: dict,
+        output_path: str,
+        evaluator: Evaluator,
+        conversion_llm: HttpsApi,
+        translation_llm: HttpsApi,
+        evo_llm_list: List[HttpsApi],
+        embedding_llm: HttpsApi,
+        rag_llm: HttpsApi,
+        conversion_retry: int = 10,
+        verbose: bool = True,
     ):
         self.task_info = task_info
         self.output_path = output_path

@@ -13,7 +13,7 @@ from .eoh_interface import EoHStringInterface
 from .funsearch_interface import FunSearchStringInterface
 
 __all__ = [
-    'EvoEngineerStringInterface',
-    'EoHStringInterface',
-    'FunSearchStringInterface',
+    "EvoEngineerStringInterface",
+    "EoHStringInterface",
+    "FunSearchStringInterface",
 ]

@@ -9,7 +9,7 @@ This module provides decorators and factory functions to simplify
 the creation of evolutionary optimization workflows.
 """
 
-from typing import Dict, Type, Any, Optional, Callable
+from typing import Dict, Type, Any, Callable
 from evotoolkit.core import BaseTask, BaseMethodInterface
 
 
@@ -20,9 +20,9 @@ _ALGORITHM_REGISTRY: Dict[str, Dict[str, Any]] = {}
 
 # Interface naming mapping: algorithm_name -> interface_class_prefix
 _INTERFACE_PREFIX_MAP = {
-    'eoh': 'EoH',
-    'evoengineer': 'EvoEngineer',
-    'funsearch': 'FunSearch'
+    "eoh": "EoH",
+    "evoengineer": "EvoEngineer",
+    "funsearch": "FunSearch",
 }
 
 # Reverse mapping: interface_class_prefix -> algorithm_name
@@ -44,11 +44,13 @@ def register_task(name: str) -> Callable:
     Returns:
         Decorator function
     """
+
     def decorator(task_class: Type[BaseTask]) -> Type[BaseTask]:
         if name in _TASK_REGISTRY:
             raise ValueError(f"Task '{name}' is already registered")
         _TASK_REGISTRY[name] = task_class
         return task_class
+
     return decorator
 
 
@@ -70,14 +72,13 @@ def register_algorithm(name: str, config: Type) -> Callable:
     Returns:
         Decorator function
     """
+
     def decorator(algorithm_class: Type) -> Type:
         if name in _ALGORITHM_REGISTRY:
             raise ValueError(f"Algorithm '{name}' is already registered")
-        _ALGORITHM_REGISTRY[name] = {
-            'class': algorithm_class,
-            'config': config
-        }
+        _ALGORITHM_REGISTRY[name] = {"class": algorithm_class, "config": config}
         return algorithm_class
+
     return decorator
 
 
@@ -95,10 +96,8 @@ def get_task_class(name: str) -> Type[BaseTask]:
         ValueError: If task name is not registered
     """
     if name not in _TASK_REGISTRY:
-        available = ', '.join(_TASK_REGISTRY.keys())
-        raise ValueError(
-            f"Task '{name}' not found. Available tasks: {available}"
-        )
+        available = ", ".join(_TASK_REGISTRY.keys())
+        raise ValueError(f"Task '{name}' not found. Available tasks: {available}")
     return _TASK_REGISTRY[name]
 
 
@@ -116,14 +115,16 @@ def get_algorithm_info(name: str) -> Dict[str, Any]:
         ValueError: If algorithm name is not registered
     """
     if name not in _ALGORITHM_REGISTRY:
-        available = ', '.join(_ALGORITHM_REGISTRY.keys())
+        available = ", ".join(_ALGORITHM_REGISTRY.keys())
         raise ValueError(
             f"Algorithm '{name}' not found. Available algorithms: {available}"
         )
     return _ALGORITHM_REGISTRY[name]
 
 
-def get_interface_class(algorithm_name: str, task: BaseTask) -> Type[BaseMethodInterface]:
+def get_interface_class(
+    algorithm_name: str, task: BaseTask
+) -> Type[BaseMethodInterface]:
     """
     Automatically select and return the appropriate Interface class
     based on algorithm name and task type.
@@ -142,15 +143,16 @@ def get_interface_class(algorithm_name: str, task: BaseTask) -> Type[BaseMethodI
 
     # Determine task type suffix
     if isinstance(task, PythonTask):
-        task_suffix = 'Python'
-        module_path = 'evotool.task.python_task'
+        task_suffix = "Python"
+        module_path = "evotool.task.python_task"
     else:
         # Check if it's a CUDA task
         try:
             from evotoolkit.task.cuda_engineering import CudaTaskConfig
+
             if isinstance(task, CudaTaskConfig):
-                task_suffix = 'Cuda'
-                module_path = 'evotool.task.cuda_engineering'
+                task_suffix = "Cuda"
+                module_path = "evotool.task.cuda_engineering"
             else:
                 raise ValueError(f"Unknown task type: {type(task)}")
         except ImportError:
@@ -169,6 +171,7 @@ def get_interface_class(algorithm_name: str, task: BaseTask) -> Type[BaseMethodI
     # Dynamically import the interface class
     try:
         import importlib
+
         module = importlib.import_module(module_path)
         interface_class = getattr(module, interface_class_name)
         return interface_class

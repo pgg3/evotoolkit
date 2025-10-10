@@ -29,7 +29,7 @@ SCIENTIFIC_REGRESSION_DATASETS = {
     "stressstrain": {
         "description": "Stress prediction in Aluminium rod",
         "required_files": ["train.csv", "test_id.csv", "test_ood.csv"],
-    }
+    },
 }
 
 # Dataset category configuration
@@ -37,7 +37,7 @@ DATASET_CATEGORIES = {
     "scientific_regression": {
         "datasets": SCIENTIFIC_REGRESSION_DATASETS,
         "release_filename": "scientific_regression.zip",
-        "release_url": f"https://github.com/{GITHUB_REPO}/releases/download/data-{DATA_VERSION}/scientific_regression.zip"
+        "release_url": f"https://github.com/{GITHUB_REPO}/releases/download/data-{DATA_VERSION}/scientific_regression.zip",
     }
 }
 

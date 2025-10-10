@@ -14,4 +14,4 @@ real scientific datasets including:
 
 from .scientific_regression_task import ScientificRegressionTask
 
-__all__ = ['ScientificRegressionTask']
+__all__ = ["ScientificRegressionTask"]

@@ -11,4 +11,4 @@ LLM performance on downstream tasks.
 
 from .prompt_optimization_task import PromptOptimizationTask
 
-__all__ = ['PromptOptimizationTask']
+__all__ = ["PromptOptimizationTask"]

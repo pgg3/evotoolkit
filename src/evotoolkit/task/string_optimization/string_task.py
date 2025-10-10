@@ -36,7 +36,7 @@ class StringTask(BaseTask):
 
     def get_task_type(self) -> str:
         """Get task type as 'String'."""
-        return 'String'
+        return "String"
 
     def evaluate_code(self, candidate_string: str) -> EvaluationResult:
         """
@@ -56,11 +56,11 @@ class StringTask(BaseTask):
         except Exception as e:
             return EvaluationResult(
                 valid=False,
-                score=float('-inf'),
+                score=float("-inf"),
                 additional_info={
-                    'error': f'Evaluation error: {str(e)}',
-                    'traceback': traceback.format_exc()
-                }
+                    "error": f"Evaluation error: {str(e)}",
+                    "traceback": traceback.format_exc(),
+                },
             )
 
     @abstractmethod

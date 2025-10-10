@@ -63,5 +63,3 @@ profile_info of this code:
 {{profile_string}}
 
 """)
-
-

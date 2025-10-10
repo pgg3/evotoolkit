@@ -15,13 +15,10 @@ from .downloader import ensure_dataset_downloaded, DownloadError
 from .constants import DATASET_CATEGORIES
 
 
-__all__ = ['get_dataset_path', 'DownloadError', 'list_available_datasets']
+__all__ = ["get_dataset_path", "DownloadError", "list_available_datasets"]
 
 
-def get_dataset_path(
-    category: str,
-    data_dir: Optional[Path | str] = None
-) -> Path:
+def get_dataset_path(category: str, data_dir: Optional[Path | str] = None) -> Path:
     """
     Get path to dataset category, downloading if necessary.
 
@@ -51,8 +48,7 @@ def get_dataset_path(
     if category not in DATASET_CATEGORIES:
         available = list(DATASET_CATEGORIES.keys())
         raise ValueError(
-            f"Unknown dataset category: {category}. "
-            f"Available categories: {available}"
+            f"Unknown dataset category: {category}. Available categories: {available}"
         )
 
     # Convert string to Path if needed
@@ -75,7 +71,7 @@ def get_dataset_path(
     # Need to download - we'll download by requesting the first dataset
     # The downloader will fetch the entire category
     category_config = DATASET_CATEGORIES[category]
-    first_dataset = list(category_config['datasets'].keys())[0]
+    first_dataset = list(category_config["datasets"].keys())[0]
 
     # This will trigger download of entire category if needed
     ensure_dataset_downloaded(category, first_dataset, base_dir)
@@ -105,8 +101,7 @@ def list_available_datasets(category: str) -> dict:
     if category not in DATASET_CATEGORIES:
         available = list(DATASET_CATEGORIES.keys())
         raise ValueError(
-            f"Unknown dataset category: {category}. "
-            f"Available categories: {available}"
+            f"Unknown dataset category: {category}. Available categories: {available}"
         )
 
-    return DATASET_CATEGORIES[category]['datasets'].copy()
+    return DATASET_CATEGORIES[category]["datasets"].copy()

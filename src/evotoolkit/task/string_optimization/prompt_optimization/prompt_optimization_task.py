@@ -46,7 +46,7 @@ class PromptOptimizationTask(StringTask):
         test_cases: List[Dict[str, str]],
         llm_api: Optional[Any] = None,
         timeout_seconds: float = 30.0,
-        use_mock: bool = False
+        use_mock: bool = False,
     ):
         """
         Initialize the prompt optimization task.
@@ -64,10 +64,7 @@ class PromptOptimizationTask(StringTask):
         if not use_mock and llm_api is None:
             raise ValueError("llm_api must be provided when use_mock=False")
 
-        data = {
-            'test_cases': test_cases,
-            'num_cases': len(test_cases)
-        }
+        data = {"test_cases": test_cases, "num_cases": len(test_cases)}
 
         super().__init__(data, timeout_seconds)
 
@@ -75,8 +72,8 @@ class PromptOptimizationTask(StringTask):
         """Process task data and set up task_info."""
         super()._process_data(data)
         self.task_info = {
-            'num_test_cases': data['num_cases'],
-            'task_type': 'prompt_optimization'
+            "num_test_cases": data["num_cases"],
+            "task_type": "prompt_optimization",
         }
 
     def _evaluate_string_impl(self, prompt_template: str) -> EvaluationResult:
@@ -92,11 +89,13 @@ class PromptOptimizationTask(StringTask):
             EvaluationResult with score based on correctness rate
         """
         # Validate template has {question} placeholder
-        if '{question}' not in prompt_template:
+        if "{question}" not in prompt_template:
             return EvaluationResult(
                 valid=False,
-                score=float('-inf'),
-                additional_info={'error': 'Prompt template must contain {question} placeholder'}
+                score=float("-inf"),
+                additional_info={
+                    "error": "Prompt template must contain {question} placeholder"
+                },
             )
 
         # Test the prompt on all test cases
@@ -105,8 +104,8 @@ class PromptOptimizationTask(StringTask):
         results = []
 
         for case in self.test_cases:
-            question = case['question']
-            expected = case['expected']
+            question = case["question"]
+            expected = case["expected"]
 
             try:
                 # Generate prompt from template
@@ -126,20 +125,20 @@ class PromptOptimizationTask(StringTask):
                 if is_correct:
                     correct += 1
 
-                results.append({
-                    'question': question,
-                    'prompt': prompt,
-                    'response': response,
-                    'expected': expected,
-                    'correct': is_correct
-                })
+                results.append(
+                    {
+                        "question": question,
+                        "prompt": prompt,
+                        "response": response,
+                        "expected": expected,
+                        "correct": is_correct,
+                    }
+                )
 
             except Exception as e:
-                results.append({
-                    'question': question,
-                    'error': str(e),
-                    'correct': False
-                })
+                results.append(
+                    {"question": question, "error": str(e), "correct": False}
+                )
 
         # Calculate score as correctness rate
         score = correct / total if total > 0 else 0.0
@@ -148,11 +147,11 @@ class PromptOptimizationTask(StringTask):
             valid=True,
             score=score,
             additional_info={
-                'correct': correct,
-                'total': total,
-                'accuracy': score,
-                'results': results
-            }
+                "correct": correct,
+                "total": total,
+                "accuracy": score,
+                "results": results,
+            },
         )
 
     def _mock_llm_response(self, question: str, prompt: str) -> str:
@@ -163,12 +162,17 @@ class PromptOptimizationTask(StringTask):
         """
         # Simple pattern matching for testing
         # Extract numbers and operators from question
-        match = re.search(r'(\d+)\s*([+\-*/])\s*(\d+)', question)
+        match = re.search(r"(\d+)\s*([+\-*/])\s*(\d+)", question)
         if match:
             num1, op, num2 = match.groups()
             num1, num2 = int(num1), int(num2)
 
-            ops = {'+': num1 + num2, '-': num1 - num2, '*': num1 * num2, '/': num1 // num2}
+            ops = {
+                "+": num1 + num2,
+                "-": num1 - num2,
+                "*": num1 * num2,
+                "/": num1 // num2,
+            }
             result = ops.get(op, 0)
 
             # Return in a format that simulates LLM output
@@ -194,15 +198,17 @@ class PromptOptimizationTask(StringTask):
             True if answer is correct, False otherwise
         """
         # Extract numbers from response
-        numbers = re.findall(r'\d+', response)
+        numbers = re.findall(r"\d+", response)
         return expected in numbers or expected in response
 
     def get_base_task_description(self) -> str:
         """Get task description for prompt generation."""
-        case_desc = "\n".join([
-            f"  - Question: {case['question']} | Expected: {case['expected']}"
-            for case in self.test_cases[:3]  # Show first 3 examples
-        ])
+        case_desc = "\n".join(
+            [
+                f"  - Question: {case['question']} | Expected: {case['expected']}"
+                for case in self.test_cases[:3]  # Show first 3 examples
+            ]
+        )
 
         return f"""# Prompt Optimization Task
 
@@ -238,7 +244,5 @@ Score = (number of correct answers) / (total questions)
         eval_res = self.evaluate_code(init_template)
 
         return Solution(
-            sol_string=init_template,
-            evaluation_res=eval_res,
-            other_info={}
+            sol_string=init_template, evaluation_res=eval_res, other_info={}
         )

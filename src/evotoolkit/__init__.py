@@ -13,7 +13,7 @@ from evotoolkit.registry import (
     get_algorithm_info,
     infer_algorithm_from_interface,
     list_tasks,
-    list_algorithms
+    list_algorithms,
 )
 from evotoolkit.core import BaseMethodInterface
 
@@ -27,6 +27,7 @@ __author__ = "Ping Guo"
 # Read version from package metadata (set in pyproject.toml)
 try:
     from importlib.metadata import version
+
     __version__ = version("evotoolkit")
 except Exception:
     # Fallback for development/editable install
@@ -34,9 +35,7 @@ except Exception:
 
 
 def solve(
-    interface: BaseMethodInterface,
-    output_path: str = "./results",
-    **kwargs
+    interface: BaseMethodInterface, output_path: str = "./results", **kwargs
 ) -> Any:
     """
     Factory method to create and run an evolutionary optimization workflow.
@@ -78,16 +77,12 @@ def solve(
 
     # Step 2: Get algorithm info from registry
     algo_info = get_algorithm_info(algorithm_name)
-    algorithm_class = algo_info['class']
-    config_class = algo_info['config']
+    algorithm_class = algo_info["class"]
+    config_class = algo_info["config"]
 
     # Step 3: Create config with all parameters
     # Note: task is accessed via interface.task
-    config = config_class(
-        interface=interface,
-        output_path=output_path,
-        **kwargs
-    )
+    config = config_class(interface=interface, output_path=output_path, **kwargs)
 
     # Step 4: Create and run algorithm
     algorithm_instance = algorithm_class(config)
@@ -95,16 +90,11 @@ def solve(
 
     # Step 5: Get the best solution from the run
     best_solution = algorithm_instance._get_best_sol(
-        algorithm_instance.run_state_dict.sol_history)
+        algorithm_instance.run_state_dict.sol_history
+    )
 
     return best_solution
 
 
 # Export public API
-__all__ = [
-    'solve',
-    'list_tasks',
-    'list_algorithms',
-    '__version__',
-    '__author__'
-]
+__all__ = ["solve", "list_tasks", "list_algorithms", "__version__", "__author__"]

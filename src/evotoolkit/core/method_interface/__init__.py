@@ -15,8 +15,8 @@ from .funsearch_interface import FunSearchInterface
 from .evoengineer_interface import EvoEngineerInterface
 
 __all__ = [
-    'BaseMethodInterface',
-    'EoHInterface',
-    'FunSearchInterface',
-    'EvoEngineerInterface',
+    "BaseMethodInterface",
+    "EoHInterface",
+    "FunSearchInterface",
+    "EvoEngineerInterface",
 ]

@@ -14,11 +14,11 @@ from .method_interface import (
 )
 
 __all__ = [
-    'CudaTask',
-    'CudaTaskInfoMaker',
-    'EoHCudaInterface',
-    'FunSearchCudaInterface',
-    'EvoEngineerFullCudaInterface',
-    'EvoEngineerInsightCudaInterface',
-    'EvoEngineerFreeCudaInterface',
+    "CudaTask",
+    "CudaTaskInfoMaker",
+    "EoHCudaInterface",
+    "FunSearchCudaInterface",
+    "EvoEngineerFullCudaInterface",
+    "EvoEngineerInsightCudaInterface",
+    "EvoEngineerFreeCudaInterface",
 ]

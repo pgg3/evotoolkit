@@ -35,8 +35,7 @@ Here is the code you need to convert:
 {{code_to_convert}}
 ```
 
-"""
-)
+""")
 
 conversion_error_template = Template("""
 The above functional code does not work as expected. Error message:
@@ -47,4 +46,3 @@ Please provide the correct functional code.
 Your returned functional version of the code should be a valid python file, and it will be checked against the original code. Their outputs should be identical.
 Return only python code, no other text.
 """)
-

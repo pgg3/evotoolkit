@@ -94,7 +94,7 @@ class BaseTask(ABC):
         Returns:
             str: Task type identifier
         """
-        return 'Python'
+        return "Python"
 
     def get_task_info(self) -> dict:
         """

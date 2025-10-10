@@ -5,7 +5,6 @@
 """AI CUDA Engineer - standalone implementation with no inheritance."""
 
 import os
-import time
 
 import numpy as np
 from concurrent import futures
@@ -61,20 +60,25 @@ class AiCudaEngineer:
         # Save history first
         self.run_state_dict.save_current_history()
         # Then save current state
-        self.run_state_dict.to_json_file(os.path.join(self.config.output_path, "run_state.json"))
+        self.run_state_dict.to_json_file(
+            os.path.join(self.config.output_path, "run_state.json")
+        )
 
     def _load_run_state_dict(self) -> AiCudaEngineerRunStateDict:
         """Load run state from file"""
         if os.path.exists(os.path.join(self.config.output_path, "run_state.json")):
-            self.verbose_info(f"Loading run state from file {os.path.join(self.config.output_path, 'run_state.json')}")
-            return AiCudaEngineerRunStateDict.from_json_file(os.path.join(self.config.output_path, "run_state.json"))
+            self.verbose_info(
+                f"Loading run state from file {os.path.join(self.config.output_path, 'run_state.json')}"
+            )
+            return AiCudaEngineerRunStateDict.from_json_file(
+                os.path.join(self.config.output_path, "run_state.json")
+            )
         else:
             run_state_dict = AiCudaEngineerRunStateDict(self.config.task_info)
-            self.verbose_info(f"Initialized run state dict.")
+            self.verbose_info("Initialized run state dict.")
             return run_state_dict
 
     # ===== Main run method =====
-
 
     def run(self, hist_best_kernel_list):
         self.verbose_title("AI CUDA ENGINEER STARTED")
@@ -103,13 +107,27 @@ class AiCudaEngineer:
             self.run_state_dict.usage_history["0"] = []
             self.verbose_info("Converting the function into functional code...")
             while not convert_success:
-                convert_prompt = PromptMaker.make_convert_prompt(self.run_state_dict.task_info["org_py_code"], parsed_convert_response, error_msg)
-                convert_response, convert_usage = self.config.conversion_llm.get_response(convert_prompt)
-                parsed_convert_response = ResponseParser.parse_convert_response(convert_response)
+                convert_prompt = PromptMaker.make_convert_prompt(
+                    self.run_state_dict.task_info["org_py_code"],
+                    parsed_convert_response,
+                    error_msg,
+                )
+                convert_response, convert_usage = (
+                    self.config.conversion_llm.get_response(convert_prompt)
+                )
+                parsed_convert_response = ResponseParser.parse_convert_response(
+                    convert_response
+                )
                 self.run_state_dict.usage_history["0"].append(convert_usage)
                 self.run_state_dict.current_stage_usage.append(convert_usage)
-                convert_result_dict = self.config.evaluator.compare_py_code_sandbox(self.run_state_dict.task_info["org_py_code"], parsed_convert_response)
-                convert_success, error_msg = convert_result_dict["correctness"], convert_result_dict["error_msg"]
+                convert_result_dict = self.config.evaluator.compare_py_code_sandbox(
+                    self.run_state_dict.task_info["org_py_code"],
+                    parsed_convert_response,
+                )
+                convert_success, error_msg = (
+                    convert_result_dict["correctness"],
+                    convert_result_dict["error_msg"],
+                )
 
                 if not convert_success:
                     error_restart += 1
@@ -147,27 +165,40 @@ class AiCudaEngineer:
             self.run_state_dict.usage_history["1"] = []
             while not translate_success:
                 if error_msg is not None:
-                    error_summary_prompt = PromptMaker.make_translate_error_summary_prompt(
-                        self.run_state_dict.task_info["func_py_code"],
-                        parsed_translate_response,
-                        error_msg
+                    error_summary_prompt = (
+                        PromptMaker.make_translate_error_summary_prompt(
+                            self.run_state_dict.task_info["func_py_code"],
+                            parsed_translate_response,
+                            error_msg,
+                        )
                     )
-                    error_summary, error_summary_usage = self.config.translation_llm.get_response(error_summary_prompt)
+                    error_summary, error_summary_usage = (
+                        self.config.translation_llm.get_response(error_summary_prompt)
+                    )
                     self.run_state_dict.usage_history["1"].append(error_summary_usage)
                     self.run_state_dict.current_stage_usage.append(error_summary_usage)
                 cuda_code_prompt = PromptMaker.make_translate_prompt(
                     self.run_state_dict.task_info["func_py_code"],
                     parsed_translate_response,
                     error_msg,
-                    error_summary)
-                translate_response, translate_usage = self.config.translation_llm.get_response(cuda_code_prompt)
+                    error_summary,
+                )
+                translate_response, translate_usage = (
+                    self.config.translation_llm.get_response(cuda_code_prompt)
+                )
                 self.run_state_dict.usage_history["1"].append(translate_usage)
                 self.run_state_dict.current_stage_usage.append(translate_usage)
-                parsed_translate_response = ResponseParser.parse_translate_response(translate_response)
-                evaluate_cuda_dict = self.config.evaluator.compare_func_cuda_sandbox(
-                    self.run_state_dict.task_info["func_py_code"], parsed_translate_response
+                parsed_translate_response = ResponseParser.parse_translate_response(
+                    translate_response
                 )
-                translate_success, error_msg = evaluate_cuda_dict["correctness"], evaluate_cuda_dict["error_msg"]
+                evaluate_cuda_dict = self.config.evaluator.compare_func_cuda_sandbox(
+                    self.run_state_dict.task_info["func_py_code"],
+                    parsed_translate_response,
+                )
+                translate_success, error_msg = (
+                    evaluate_cuda_dict["correctness"],
+                    evaluate_cuda_dict["error_msg"],
+                )
 
                 if not translate_success:
                     error_restart += 1
@@ -196,8 +227,13 @@ class AiCudaEngineer:
 
         self.verbose_stage("Stage 2: Evolving the cuda code")
         # make necessary task info, assuming that func and cuda code is right
-        self.run_state_dict.task_info["func_runtime"] = self.run_state_dict.task_info.get(
-            "func_runtime", self.config.evaluator.get_py_runtime_sandbox(self.run_state_dict.task_info["func_py_code"])["runtime"]
+        self.run_state_dict.task_info["func_runtime"] = (
+            self.run_state_dict.task_info.get(
+                "func_runtime",
+                self.config.evaluator.get_py_runtime_sandbox(
+                    self.run_state_dict.task_info["func_py_code"]
+                )["runtime"],
+            )
         )
 
         self._save_run_state_dict()
@@ -214,22 +250,33 @@ class AiCudaEngineer:
 
         for gen_i in range(self.run_state_dict.evo_gen_i, 10):
             self.verbose_gen(f"Gen {gen_i + 1}")
-            top_5_kernel = self._get_valid_top_5_from_slow_to_fast(self.run_state_dict.optimization_history)
+            top_5_kernel = self._get_valid_top_5_from_slow_to_fast(
+                self.run_state_dict.optimization_history
+            )
             best_kernel = self.run_state_dict.get_best_kernel()
 
             # Use best kernel or baseline for optimization
-            cuda_individual = best_kernel if best_kernel else self.run_state_dict.task_info["cuda_info"]
+            cuda_individual = (
+                best_kernel
+                if best_kernel
+                else self.run_state_dict.task_info["cuda_info"]
+            )
 
             # Parallel processing with evo_llm_list
             llm_list_len = len(self.config.evo_llm_list)
-            
+
             with futures.ThreadPoolExecutor(max_workers=llm_list_len) as executor:
                 # Submit tasks to each LLM - each thread handles both propose AND evaluate
                 future_to_index = {}
                 for i in range(llm_list_len):
-                    future = executor.submit(self._process_llm_proposal_and_evaluate, i, top_5_kernel, cuda_individual)
+                    future = executor.submit(
+                        self._process_llm_proposal_and_evaluate,
+                        i,
+                        top_5_kernel,
+                        cuda_individual,
+                    )
                     future_to_index[future] = i
-                
+
                 # Collect completed proposal+evaluation results
                 for future in futures.as_completed(future_to_index):
                     i = future_to_index[future]
@@ -238,19 +285,31 @@ class AiCudaEngineer:
                         self.run_state_dict.add_usage_result("2", usage)
                         if new_entry is not None:
                             self.run_state_dict.add_optimization_result(new_entry)
-                            runtime_str = f"{new_entry['runtime']:.4f} ms" if new_entry['runtime'] is not None else "Failed"
-                            self.verbose_info(f"LLM {i}: {new_entry['name']}, runtime: {runtime_str}, temp_str: {new_entry['temp_str']}")
+                            runtime_str = (
+                                f"{new_entry['runtime']:.4f} ms"
+                                if new_entry["runtime"] is not None
+                                else "Failed"
+                            )
+                            self.verbose_info(
+                                f"LLM {i}: {new_entry['name']}, runtime: {runtime_str}, temp_str: {new_entry['temp_str']}"
+                            )
                         else:
-                            self.verbose_info(f"LLM {i}: Failed to generate valid proposal")
+                            self.verbose_info(
+                                f"LLM {i}: Failed to generate valid proposal"
+                            )
 
                     except Exception as e:
-                        self.verbose_info(f"LLM {i}: Error processing proposal - {str(e)}")
+                        self.verbose_info(
+                            f"LLM {i}: Error processing proposal - {str(e)}"
+                        )
 
             # Update generation info
             self.run_state_dict.evo_gen_i = gen_i + 1
-            
-            self.verbose_info(f"Generation {gen_i + 1} completed. Total entries: {len(self.run_state_dict.optimization_history)}")
-            
+
+            self.verbose_info(
+                f"Generation {gen_i + 1} completed. Total entries: {len(self.run_state_dict.optimization_history)}"
+            )
+
             self._save_run_state_dict()
 
         self.run_state_dict.run_stage = "3"
@@ -262,8 +321,10 @@ class AiCudaEngineer:
         self.verbose_stage("Stage 3: RAG Evolving the cuda code")
         embedding_llm = self.config.embedding_llm
         if hist_best_kernel_list:
-            embedding_database_list = [embedding_llm.get_embedding(term["task_info"]["func_py_code"]) for term in
-                                       hist_best_kernel_list]
+            embedding_database_list = [
+                embedding_llm.get_embedding(term["task_info"]["func_py_code"])
+                for term in hist_best_kernel_list
+            ]
             current_embedding = embedding_llm.get_embedding(
                 self.run_state_dict.task_info["func_py_code"]
             )
@@ -273,27 +334,38 @@ class AiCudaEngineer:
 
             # Calculate cosine similarity and get top-k similar codes
             similarities = [
-                np.dot(current_embedding, db_emb.T) / (np.linalg.norm(current_embedding) * np.linalg.norm(db_emb))
-                for db_emb in embedding_database_list]
-            top_k_indices = np.argsort(similarities)[-5:][::-1].reshape(-1)  # Get top 5 similar codes
+                np.dot(current_embedding, db_emb.T)
+                / (np.linalg.norm(current_embedding) * np.linalg.norm(db_emb))
+                for db_emb in embedding_database_list
+            ]
+            top_k_indices = np.argsort(similarities)[-5:][::-1].reshape(
+                -1
+            )  # Get top 5 similar codes
             similar_codes = [hist_best_kernel_list[i] for i in top_k_indices]
         else:
             similar_codes = []
 
         # Use similar pattern as evolution method but with RAG prompt
         best_kernel = self.run_state_dict.get_best_kernel()
-        cuda_individual = best_kernel if best_kernel else self.run_state_dict.task_info["cuda_info"]
+        cuda_individual = (
+            best_kernel if best_kernel else self.run_state_dict.task_info["cuda_info"]
+        )
 
         RAG_TIMES = 5
         # Parallel processing with rag_llm for RAG evolution
-        
+
         with futures.ThreadPoolExecutor(max_workers=RAG_TIMES) as executor:
             # Submit RAG_TIMES tasks - each thread handles both RAG propose AND evaluate
             future_to_index = {}
             for i in range(RAG_TIMES):
-                future = executor.submit(self._process_rag_proposal_and_evaluate, i, similar_codes, cuda_individual)
+                future = executor.submit(
+                    self._process_rag_proposal_and_evaluate,
+                    i,
+                    similar_codes,
+                    cuda_individual,
+                )
                 future_to_index[future] = i
-            
+
             # Collect completed RAG proposal+evaluation results
             for future in futures.as_completed(future_to_index):
                 i = future_to_index[future]
@@ -302,8 +374,14 @@ class AiCudaEngineer:
                     self.run_state_dict.add_usage_result("3", usage)
                     if new_entry is not None:
                         self.run_state_dict.add_optimization_result(new_entry)
-                        runtime_str = f"{new_entry['runtime']:.4f} ms" if new_entry['runtime'] is not None else "Failed"
-                        self.verbose_info(f"RAG {i}: {new_entry['name']}, runtime: {runtime_str}, temp_str: {new_entry['temp_str']}")
+                        runtime_str = (
+                            f"{new_entry['runtime']:.4f} ms"
+                            if new_entry["runtime"] is not None
+                            else "Failed"
+                        )
+                        self.verbose_info(
+                            f"RAG {i}: {new_entry['name']}, runtime: {runtime_str}, temp_str: {new_entry['temp_str']}"
+                        )
                     else:
                         self.verbose_info(f"RAG {i}: Failed to generate valid proposal")
                 except Exception as e:
@@ -312,20 +390,26 @@ class AiCudaEngineer:
         self.run_state_dict.run_stage = "4"
         self.run_state_dict.is_done = True
         self._save_run_state_dict()
-    
-    def _process_rag_proposal_and_evaluate(self, task_index, similar_codes, cuda_individual):
+
+    def _process_rag_proposal_and_evaluate(
+        self, task_index, similar_codes, cuda_individual
+    ):
         """Process a single RAG LLM proposal AND evaluate it completely in one thread."""
         # Use RAG prompt with similar codes as optimization history
         prompt = PromptMaker.make_rag_prompt(
-            gpu_type=self.run_state_dict.task_info['gpu_type'],
-            cuda_version=self.run_state_dict.task_info['cuda_version'],
+            gpu_type=self.run_state_dict.task_info["gpu_type"],
+            cuda_version=self.run_state_dict.task_info["cuda_version"],
             optimization_history=similar_codes,
             func_runtime=self.run_state_dict.task_info["func_runtime"],
-            cuda_indiv=cuda_individual
+            cuda_indiv=cuda_individual,
         )
-        return self._process_proposal_and_evaluate_common(task_index, prompt, "RAG", use_rag_llm=True)
-    
-    def _process_proposal_and_evaluate_common(self, llm_index, prompt, prompt_type, use_rag_llm=False):
+        return self._process_proposal_and_evaluate_common(
+            task_index, prompt, "RAG", use_rag_llm=True
+        )
+
+    def _process_proposal_and_evaluate_common(
+        self, llm_index, prompt, prompt_type, use_rag_llm=False
+    ):
         assert isinstance(self.config, AiCudaEngineerConfig)
 
         """Common function for processing LLM proposals and evaluating them."""
@@ -334,11 +418,13 @@ class AiCudaEngineer:
             if use_rag_llm:
                 response, usage = self.config.rag_llm.get_response(prompt)
             else:
-                response, usage = self.config.evo_llm_list[llm_index].get_response(prompt)
-            
+                response, usage = self.config.evo_llm_list[llm_index].get_response(
+                    prompt
+                )
+
             # Step 2: Parse the response
             parsed_response = ResponseParser.parse_evo_response(response)
-            
+
             # Step 3: Create new entry structure
             new_entry = {
                 "name": parsed_response["name"],
@@ -349,13 +435,12 @@ class AiCudaEngineer:
                 "prof_string": None,
                 "compilation_error": False,
                 "comparison_error": False,
-                "error_msg": None
+                "error_msg": None,
             }
-            
+
             # Step 4: Evaluate CUDA code correctness
             cuda_comparison_result = self.config.evaluator.compare_func_cuda_sandbox(
-                self.run_state_dict.task_info["func_py_code"],
-                parsed_response["code"]
+                self.run_state_dict.task_info["func_py_code"], parsed_response["code"]
             )
             new_entry["temp_str"] = cuda_comparison_result.get("temp_str")
             new_entry["error_msg"] = cuda_comparison_result.get("error_msg")
@@ -365,19 +450,23 @@ class AiCudaEngineer:
                 cuda_runtime_result = self.config.evaluator.get_cuda_runtime_sandbox(
                     self.run_state_dict.task_info["func_py_code"],
                     parsed_response["code"],
-                    cuda_comparison_result.get("temp_str")
+                    cuda_comparison_result.get("temp_str"),
                 )
                 new_entry["runtime"] = cuda_runtime_result["runtime"]
                 new_entry["prof_string"] = cuda_runtime_result["prof_string"]
                 new_entry["error_msg"] = cuda_runtime_result.get("error_msg")
             else:
                 new_entry["comparison_error"] = True
-                new_entry["compilation_error"] = cuda_comparison_result["compilation_error"]
-            
+                new_entry["compilation_error"] = cuda_comparison_result[
+                    "compilation_error"
+                ]
+
             return new_entry, usage
-            
+
         except Exception as e:
-            self.verbose_info(f"{prompt_type} LLM {llm_index}: Exception in proposal generation and evaluation - {str(e)}")
+            self.verbose_info(
+                f"{prompt_type} LLM {llm_index}: Exception in proposal generation and evaluation - {str(e)}"
+            )
             return {
                 "name": "failed_proposal",
                 "thought": f"Failed due to exception: {str(e)}",
@@ -387,32 +476,36 @@ class AiCudaEngineer:
                 "prof_string": None,
                 "compilation_error": True,
                 "comparison_error": True,
-                "error_msg": "Unknown"
+                "error_msg": "Unknown",
             }, {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
 
     def _get_valid_top_5_from_slow_to_fast(self, optimization_history):
         valid_individuals = []
         for individual in optimization_history:
-            if individual.get("runtime") is not None and individual["runtime"] != float('inf'):
+            if individual.get("runtime") is not None and individual["runtime"] != float(
+                "inf"
+            ):
                 valid_individuals.append(individual)
-        
+
         # Step 2: Sort from quickest to slowest and take top 5
         valid_individuals.sort(key=lambda x: x["runtime"])
         top_5_fastest = valid_individuals[:5]
-        
+
         # Step 3: Reverse to get from slow to fast (slowest of the top 5 first)
         top_5_slow_to_fast = top_5_fastest[::-1]
-        
+
         return top_5_slow_to_fast
 
-    def _process_llm_proposal_and_evaluate(self, llm_index, top_5_kernel, cuda_individual):
+    def _process_llm_proposal_and_evaluate(
+        self, llm_index, top_5_kernel, cuda_individual
+    ):
         """Process a single LLM proposal AND evaluate it completely in one thread."""
         # Use evolution prompt with top 5 kernels as optimization history
         prompt = PromptMaker.make_evo_prompt(
-            self.run_state_dict.task_info['gpu_type'],
-            self.run_state_dict.task_info['cuda_version'],
+            self.run_state_dict.task_info["gpu_type"],
+            self.run_state_dict.task_info["cuda_version"],
             top_5_kernel,
             self.run_state_dict.task_info["func_runtime"],
-            cuda_individual
+            cuda_individual,
         )
         return self._process_proposal_and_evaluate_common(llm_index, prompt, "EVO")

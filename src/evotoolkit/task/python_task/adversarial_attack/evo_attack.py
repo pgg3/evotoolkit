@@ -133,13 +133,17 @@ class EvoAttack(MinimizationAttack if FOOLBOX_AVAILABLE else object):
             failed = is_adv.logical_not().float32().sum()
             if starting_points is None:
                 # If init_attack failed, use noisy version of originals as starting point
-                print(f"Warning: init_attack failed for {failed} of {len(is_adv)} inputs. Using noisy originals.")
+                print(
+                    f"Warning: init_attack failed for {failed} of {len(is_adv)} inputs. Using noisy originals."
+                )
                 noise_scale = 0.1
                 noise = ep.normal(originals, shape=originals.shape) * noise_scale
                 best_advs = ep.clip(originals + noise, min_, max_)
             else:
                 # If user-provided starting points are not adversarial, warn but continue
-                print(f"Warning: {failed} of {len(is_adv)} starting_points are not adversarial. Continuing anyway.")
+                print(
+                    f"Warning: {failed} of {len(is_adv)} starting_points are not adversarial. Continuing anyway."
+                )
 
         # Attack parameters
         self.hyperparams = 0.05 * np.ones(originals.shape[0])
@@ -165,10 +169,10 @@ class EvoAttack(MinimizationAttack if FOOLBOX_AVAILABLE else object):
                         orginals_np[i],
                         best_advs_np[i],
                         standard_noise_np[i],
-                        self.hyperparams[i:i + 1],
+                        self.hyperparams[i : i + 1],
                     )
                     candidates_np[i] = candidate_i
-                except Exception as e:
+                except Exception:
                     # If proposal generation fails, keep best_advs
                     candidates_np[i] = best_advs_np[i]
 
@@ -180,7 +184,9 @@ class EvoAttack(MinimizationAttack if FOOLBOX_AVAILABLE else object):
                 return restore_type(best_advs)
 
             # Convert to tensors
-            candidates = torch.from_numpy(candidates_np).float().to(originals_raw.device)
+            candidates = (
+                torch.from_numpy(candidates_np).float().to(originals_raw.device)
+            )
 
             # Check adversarial status
             is_adv = is_adversarial(candidates)
@@ -238,6 +244,8 @@ class EvoAttack(MinimizationAttack if FOOLBOX_AVAILABLE else object):
         p_greater_idx = p >= p_threshold
 
         f_p[p_less_idx] = l + (1 - l) * p[p_less_idx] / p_threshold
-        f_p[p_greater_idx] = 1 + (h - 1) * (p[p_greater_idx] - p_threshold) / (1 - p_threshold)
+        f_p[p_greater_idx] = 1 + (h - 1) * (p[p_greater_idx] - p_threshold) / (
+            1 - p_threshold
+        )
 
         return f_p

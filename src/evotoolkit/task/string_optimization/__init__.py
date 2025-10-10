@@ -18,9 +18,9 @@ from .method_interface import (
 )
 
 __all__ = [
-    'StringTask',
-    'PromptOptimizationTask',
-    'EvoEngineerStringInterface',
-    'EoHStringInterface',
-    'FunSearchStringInterface',
+    "StringTask",
+    "PromptOptimizationTask",
+    "EvoEngineerStringInterface",
+    "EoHStringInterface",
+    "FunSearchStringInterface",
 ]

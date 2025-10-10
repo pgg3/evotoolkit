@@ -17,7 +17,7 @@ class EoHPythonInterface(EoHInterface):
 
     def __init__(self, task: PythonTask):
         super().__init__(task)
-    
+
     def get_prompt_i1(self) -> List[dict]:
         """Generate initialization prompt (I1 operator)."""
         task_description = self.task.get_base_task_description()
@@ -33,7 +33,7 @@ class EoHPythonInterface(EoHInterface):
 
 Do not give additional explanations.
 """
-        return [{'role': 'user', 'content': prompt}]
+        return [{"role": "user", "content": prompt}]
 
     def get_prompt_e1(self, selected_individuals: List[Solution]) -> List[dict]:
         task_description = self.task.get_base_task_description()
@@ -41,11 +41,11 @@ Do not give additional explanations.
         # Create prompt content for all individuals
         indivs_prompt = ""
         for i, indi in enumerate(selected_individuals):
-            if 'algorithm' in indi.other_info and indi.other_info['algorithm']:
-                algorithm_desc = indi.other_info['algorithm']
+            if "algorithm" in indi.other_info and indi.other_info["algorithm"]:
+                algorithm_desc = indi.other_info["algorithm"]
             else:
-                algorithm_desc = f"Python Code {i+1}"
-            indivs_prompt += f'No. {i + 1} algorithm and the corresponding code are:\n{algorithm_desc}\n{indi.sol_string}\n'
+                algorithm_desc = f"Python Code {i + 1}"
+            indivs_prompt += f"No. {i + 1} algorithm and the corresponding code are:\n{algorithm_desc}\n{indi.sol_string}\n"
 
         prompt = f"""
 {task_description}
@@ -61,8 +61,8 @@ Please help me create a new algorithm that has a totally different form from the
 ```
 Do not give additional explanations.
 """
-        return [{'role': 'user', 'content': prompt}]
-    
+        return [{"role": "user", "content": prompt}]
+
     def get_prompt_e2(self, selected_individuals: List[Solution]) -> List[dict]:
         """Generate E2 (guided crossover) prompt."""
         task_description = self.task.get_base_task_description()
@@ -70,11 +70,11 @@ Do not give additional explanations.
         # Create prompt content for all individuals
         indivs_prompt = ""
         for i, indi in enumerate(selected_individuals):
-            if 'algorithm' in indi.other_info and indi.other_info['algorithm']:
-                algorithm_desc = indi.other_info['algorithm']
+            if "algorithm" in indi.other_info and indi.other_info["algorithm"]:
+                algorithm_desc = indi.other_info["algorithm"]
             else:
                 algorithm_desc = f"Python code {i + 1}"
-            indivs_prompt += f'No. {i + 1} algorithm and the corresponding code are:\n{algorithm_desc}\n{indi.sol_string}\n'
+            indivs_prompt += f"No. {i + 1} algorithm and the corresponding code are:\n{algorithm_desc}\n{indi.sol_string}\n"
 
         prompt = f"""
 {task_description}
@@ -91,13 +91,13 @@ Please help me create a new algorithm that has a totally different form from the
 ```
 Do not give additional explanations.
 """
-        return [{'role': 'user', 'content': prompt}]
-    
+        return [{"role": "user", "content": prompt}]
+
     def get_prompt_m1(self, individual: Solution) -> List[dict]:
         task_description = self.task.get_base_task_description()
 
-        if 'algorithm' in individual.other_info and individual.other_info['algorithm']:
-            algorithm_desc = individual.other_info['algorithm']
+        if "algorithm" in individual.other_info and individual.other_info["algorithm"]:
+            algorithm_desc = individual.other_info["algorithm"]
         else:
             algorithm_desc = "Current algorithm"
 
@@ -117,13 +117,13 @@ Please assist me in creating a new algorithm that has a different form but can b
 ```
 Do not give additional explanations.
 """
-        return [{'role': 'user', 'content': prompt}]
-    
+        return [{"role": "user", "content": prompt}]
+
     def get_prompt_m2(self, individual: Solution) -> List[dict]:
         task_description = self.task.get_base_task_description()
 
-        if 'algorithm' in individual.other_info and individual.other_info['algorithm']:
-            algorithm_desc = individual.other_info['algorithm']
+        if "algorithm" in individual.other_info and individual.other_info["algorithm"]:
+            algorithm_desc = individual.other_info["algorithm"]
         else:
             algorithm_desc = "Current algorithm"
 
@@ -143,13 +143,13 @@ Please identify the main algorithm parameters and assist me in creating a new al
 ```
 Do not give additional explanations.
 """
-        return [{'role': 'user', 'content': prompt}]
-    
+        return [{"role": "user", "content": prompt}]
+
     def parse_response(self, response_str: str) -> Solution:
         """Parse LLM response to extract solution string and algorithm description"""
         # Extract algorithm/thought from response using pattern matching
         try:
-            pattern = r'\{.*?\}'
+            pattern = r"\{.*?\}"
             bracketed_texts = re.findall(pattern, response_str, re.DOTALL)
             algorithm = bracketed_texts[0] if bracketed_texts else None
         except:
@@ -159,19 +159,21 @@ Do not give additional explanations.
         response_without_algorithm = response_str
         if algorithm:
             # Remove only the specific algorithm part from the response
-            response_without_algorithm = response_str.replace(algorithm, '', 1)
+            response_without_algorithm = response_str.replace(algorithm, "", 1)
 
         # Extract Python code block
         patterns = [
-            r'```python\s*\n(.*?)\n```',
-            r'```Python\s*\n(.*?)\n```',
-            r'```\s*\n(.*?)\n```'
+            r"```python\s*\n(.*?)\n```",
+            r"```Python\s*\n(.*?)\n```",
+            r"```\s*\n(.*?)\n```",
         ]
 
         # Find all matches using case insensitive search
         code = ""
         for pattern in patterns:
-            matches = re.findall(pattern, response_without_algorithm, re.DOTALL | re.IGNORECASE)
+            matches = re.findall(
+                pattern, response_without_algorithm, re.DOTALL | re.IGNORECASE
+            )
             if matches:
                 # Return the longest match (likely the most complete implementation)
                 code = max(matches, key=len).strip()
@@ -183,7 +185,5 @@ Do not give additional explanations.
 
         # Store algorithm description in the solution (this would need to be handled elsewhere)
         # For now, we just return the code
-        other_info = {
-            "algorithm": algorithm
-        }
+        other_info = {"algorithm": algorithm}
         return Solution(code, other_info=other_info)

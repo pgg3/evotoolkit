@@ -2,7 +2,6 @@
 # Licensed under the MIT License
 
 
-
 # 文件名：shared_lock.py
 import os
 import time
@@ -18,6 +17,7 @@ import portalocker
 LOCK_FILE = os.path.join(tempfile.gettempdir(), "evotool_cross_process.lock")
 LOCK_INFO_FILE = os.path.join(tempfile.gettempdir(), "evotool_lock_info.json")
 
+
 def _is_process_alive(pid: int) -> bool:
     """检查进程是否还活着"""
     try:
@@ -32,11 +32,11 @@ def _cleanup_stale_lock():
         return
 
     try:
-        with open(LOCK_INFO_FILE, 'r') as f:
+        with open(LOCK_INFO_FILE, "r") as f:
             lock_info = json.load(f)
 
-        pid = lock_info.get('pid')
-        timestamp = lock_info.get('timestamp', 0)
+        pid = lock_info.get("pid")
+        timestamp = lock_info.get("timestamp", 0)
         current_time = time.time()
 
         should_cleanup = False
@@ -74,30 +74,27 @@ def _cleanup_stale_lock():
 @contextmanager
 def global_file_lock(timeout: Optional[float] = None):
     """全局文件锁，支持超时和死锁检测
-    
+
     Args:
         timeout: 超时时间（秒），None表示无限等待
     """
     # 清理可能的死锁
     _cleanup_stale_lock()
-    
+
     start_time = time.time()
     current_pid = os.getpid()
-    
+
     while True:
         try:
             # 尝试获取锁
             with open(LOCK_FILE, "w") as f:
                 portalocker.lock(f, portalocker.LOCK_EX | portalocker.LOCK_NB)
-                
+
                 # 记录锁信息
-                lock_info = {
-                    'pid': current_pid,
-                    'timestamp': time.time()
-                }
-                with open(LOCK_INFO_FILE, 'w') as info_f:
+                lock_info = {"pid": current_pid, "timestamp": time.time()}
+                with open(LOCK_INFO_FILE, "w") as info_f:
                     json.dump(lock_info, info_f)
-                
+
                 try:
                     yield
                 finally:
@@ -108,15 +105,15 @@ def global_file_lock(timeout: Optional[float] = None):
                     except OSError:
                         pass
                 break
-                
+
         except portalocker.LockException:
             # 锁被占用，检查超时
             if timeout is not None and (time.time() - start_time) >= timeout:
                 raise TimeoutError(f"Failed to acquire lock within {timeout} seconds")
-            
+
             # 等待一会儿再试
             time.sleep(0.1)
-            
+
             # 检查是否需要清理死锁
             if (time.time() - start_time) % 10 < 0.1:  # 每10秒检查一次
                 _cleanup_stale_lock()

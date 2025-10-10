@@ -10,7 +10,7 @@ from .python_task import (
     PythonTask,
     EoHPythonInterface,
     FunSearchPythonInterface,
-    EvoEngineerPythonInterface
+    EvoEngineerPythonInterface,
 )
 
 from .string_optimization import (
@@ -22,13 +22,13 @@ from .string_optimization import (
 )
 
 __all__ = [
-    'PythonTask',
-    'EoHPythonInterface',
-    'FunSearchPythonInterface',
-    'EvoEngineerPythonInterface',
-    'StringTask',
-    'PromptOptimizationTask',
-    'EvoEngineerStringInterface',
-    'EoHStringInterface',
-    'FunSearchStringInterface',
+    "PythonTask",
+    "EoHPythonInterface",
+    "FunSearchPythonInterface",
+    "EvoEngineerPythonInterface",
+    "StringTask",
+    "PromptOptimizationTask",
+    "EvoEngineerStringInterface",
+    "EoHStringInterface",
+    "FunSearchStringInterface",
 ]

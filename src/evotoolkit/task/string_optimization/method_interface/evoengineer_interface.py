@@ -21,18 +21,20 @@ class EvoEngineerStringInterface(EvoEngineerInterface):
 
     def get_init_operators(self) -> List[Operator]:
         """Get initialization operators for string optimization"""
-        return [
-            Operator("init", 0)
-        ]
+        return [Operator("init", 0)]
 
     def get_offspring_operators(self) -> List[Operator]:
         """Get offspring operators for string optimization"""
-        return [
-            Operator("crossover", 2),
-            Operator("mutation", 1)
-        ]
+        return [Operator("crossover", 2), Operator("mutation", 1)]
 
-    def get_operator_prompt(self, operator_name: str, selected_individuals: List[Solution], current_best_sol: Solution, random_thoughts: List[str], **kwargs) -> List[dict]:
+    def get_operator_prompt(
+        self,
+        operator_name: str,
+        selected_individuals: List[Solution],
+        current_best_sol: Solution,
+        random_thoughts: List[str],
+        **kwargs,
+    ) -> List[dict]:
         """Generate prompt for any operator"""
         task_description = self.task.get_base_task_description()
 
@@ -43,7 +45,9 @@ class EvoEngineerStringInterface(EvoEngineerInterface):
             # Build the thoughts section if available
             thoughts_section = ""
             if random_thoughts and len(random_thoughts) > 0:
-                thoughts_list = "\n".join([f"- {thought}" for thought in random_thoughts])
+                thoughts_list = "\n".join(
+                    [f"- {thought}" for thought in random_thoughts]
+                )
                 thoughts_section = f"""
 
 Reference insights (consider if relevant):
@@ -61,7 +65,7 @@ Here is the current best solution:
 <score>{current_best_sol.evaluation_res.score:.5f}</score>
 </current_solution>{thoughts_section}
 
-Think deeply about how to improve this solution. {'Reference insights are provided above - use them as inspiration if they seem relevant to your optimization approach.' if random_thoughts and len(random_thoughts) > 0 else ''} Propose a new solution that:
+Think deeply about how to improve this solution. {"Reference insights are provided above - use them as inspiration if they seem relevant to your optimization approach." if random_thoughts and len(random_thoughts) > 0 else ""} Propose a new solution that:
 1. Analyzes the current solution to identify improvement opportunities
 2. Applies proven techniques and principles
 3. Explains your rationale clearly
@@ -82,7 +86,9 @@ thought: The rationale for the improvement idea.
             # Build the thoughts section if available
             thoughts_section = ""
             if random_thoughts and len(random_thoughts) > 0:
-                thoughts_list = "\n".join([f"- {thought}" for thought in random_thoughts])
+                thoughts_list = "\n".join(
+                    [f"- {thought}" for thought in random_thoughts]
+                )
                 thoughts_section = f"""
 
 Mutation insights (consider if relevant):
@@ -101,7 +107,7 @@ Current best solution (Score: {current_best_sol.evaluation_res.score:.5f}):
 Solution to mutate (Score: {individual.evaluation_res.score:.5f}):
 {individual.sol_string}{thoughts_section}
 
-Create a substantially modified version of the solution to mutate. {'Use the mutation insights above if they seem relevant.' if random_thoughts and len(random_thoughts) > 0 else ''} Your mutation should:
+Create a substantially modified version of the solution to mutate. {"Use the mutation insights above if they seem relevant." if random_thoughts and len(random_thoughts) > 0 else ""} Your mutation should:
 1. Preserve good aspects of the current solution
 2. Introduce meaningful variations
 3. Aim to improve the score
@@ -122,7 +128,9 @@ thought: The rationale for this mutation.
             # Build the thoughts section if available
             thoughts_section = ""
             if random_thoughts and len(random_thoughts) > 0:
-                thoughts_list = "\n".join([f"- {thought}" for thought in random_thoughts])
+                thoughts_list = "\n".join(
+                    [f"- {thought}" for thought in random_thoughts]
+                )
                 thoughts_section = f"""
 
 Crossover insights (consider if relevant):
@@ -145,7 +153,7 @@ Parent 1 (Score: {parent1.evaluation_res.score:.5f}):
 Parent 2 (Score: {parent2.evaluation_res.score:.5f}):
 {parent2.sol_string}{thoughts_section}
 
-Create a new solution by combining elements from both parents. {'Use the crossover insights above if they seem relevant.' if random_thoughts and len(random_thoughts) > 0 else ''} Your crossover should:
+Create a new solution by combining elements from both parents. {"Use the crossover insights above if they seem relevant." if random_thoughts and len(random_thoughts) > 0 else ""} Your crossover should:
 1. Identify and combine the best features from both parents
 2. Create a coherent solution that is better than either parent
 3. Explain which elements you took from each parent and why
@@ -182,38 +190,46 @@ thought: The rationale for this crossover, explaining which elements came from w
         result = self._parse_json_format(content)
         if result and result[1]:
             cleaned_solution = self._clean_solution_string(result[1])
-            return Solution(cleaned_solution, other_info={"name": result[0], "thought": result[2]})
+            return Solution(
+                cleaned_solution, other_info={"name": result[0], "thought": result[2]}
+            )
 
         # Strategy 2: Standard format parsing (expected format)
         result = self._parse_standard_format(content)
         if result and result[1]:  # Ensure we have solution
             # Clean up the solution string
             cleaned_solution = self._clean_solution_string(result[1])
-            return Solution(cleaned_solution, other_info={"name": result[0], "thought": result[2]})
+            return Solution(
+                cleaned_solution, other_info={"name": result[0], "thought": result[2]}
+            )
 
         # Strategy 3: Flexible format parsing (lenient fallback)
         result = self._parse_flexible_format(content)
         if result and result[1]:
             cleaned_solution = self._clean_solution_string(result[1])
-            return Solution(cleaned_solution, other_info={"name": result[0], "thought": result[2]})
+            return Solution(
+                cleaned_solution, other_info={"name": result[0], "thought": result[2]}
+            )
 
         # Strategy 4: Raw content (last resort)
-        return Solution(content, other_info={"name": "raw", "thought": "Failed to parse"})
+        return Solution(
+            content, other_info={"name": "raw", "thought": "Failed to parse"}
+        )
 
     def _parse_standard_format(self, content: str) -> tuple:
         """Parse standard format: name -> solution -> thought order"""
         # Extract name (independent pattern)
-        name_pattern = r'^name:\s*([^\n\r]+?)(?:\n|\r|$)'
+        name_pattern = r"^name:\s*([^\n\r]+?)(?:\n|\r|$)"
         name_match = re.search(name_pattern, content, re.MULTILINE | re.IGNORECASE)
         name = name_match.group(1).strip() if name_match else ""
 
         # Extract solution (capture until 'thought:' or end)
-        solution_pattern = r'solution:\s*(.*?)(?=\nthought:|\Z)'
+        solution_pattern = r"solution:\s*(.*?)(?=\nthought:|\Z)"
         solution_match = re.search(solution_pattern, content, re.DOTALL | re.IGNORECASE)
         solution = solution_match.group(1).strip() if solution_match else ""
 
         # Extract thought (independent pattern)
-        thought_pattern = r'thought:\s*(.*?)$'
+        thought_pattern = r"thought:\s*(.*?)$"
         thought_match = re.search(thought_pattern, content, re.DOTALL | re.IGNORECASE)
         thought = thought_match.group(1).strip() if thought_match else ""
 
@@ -222,17 +238,17 @@ thought: The rationale for this crossover, explaining which elements came from w
     def _parse_flexible_format(self, content: str) -> tuple:
         """More flexible parsing for variations in format"""
         # Try to extract name anywhere in the text
-        name_pattern = r'(?:name|Name|NAME)\s*:?\s*([^\n\r]+)'
+        name_pattern = r"(?:name|Name|NAME)\s*:?\s*([^\n\r]+)"
         name_match = re.search(name_pattern, content, re.IGNORECASE)
         name = name_match.group(1).strip() if name_match else ""
 
         # Try to extract solution
-        solution_pattern = r'(?:solution|Solution|SOLUTION)\s*:?\s*(.*?)(?=\n(?:thought|Thought|THOUGHT)|$)'
+        solution_pattern = r"(?:solution|Solution|SOLUTION)\s*:?\s*(.*?)(?=\n(?:thought|Thought|THOUGHT)|$)"
         solution_match = re.search(solution_pattern, content, re.DOTALL | re.IGNORECASE)
         solution = solution_match.group(1).strip() if solution_match else ""
 
         # Try to extract thought
-        thought_pattern = r'(?:thought|Thought|THOUGHT)\s*:?\s*(.*?)$'
+        thought_pattern = r"(?:thought|Thought|THOUGHT)\s*:?\s*(.*?)$"
         thought_match = re.search(thought_pattern, content, re.DOTALL | re.IGNORECASE)
         thought = thought_match.group(1).strip() if thought_match else ""
 
@@ -255,16 +271,18 @@ thought: The rationale for this crossover, explaining which elements came from w
         try:
             data = json.loads(content)
             if isinstance(data, dict):
-                name = str(data.get('name', ''))
+                name = str(data.get("name", ""))
                 # Try different key names for solution
-                solution = str(data.get('solution', data.get('code', data.get('sol_string', ''))))
-                thought = str(data.get('thought', data.get('reasoning', '')))
+                solution = str(
+                    data.get("solution", data.get("code", data.get("sol_string", "")))
+                )
+                thought = str(data.get("thought", data.get("reasoning", "")))
                 return (name, solution, thought)
         except json.JSONDecodeError:
             pass
 
         # Try to find JSON object within the content
-        json_pattern = r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'
+        json_pattern = r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}"
         json_matches = re.finditer(json_pattern, content, re.DOTALL)
 
         for match in json_matches:
@@ -272,9 +290,13 @@ thought: The rationale for this crossover, explaining which elements came from w
                 json_str = match.group(0)
                 data = json.loads(json_str)
                 if isinstance(data, dict):
-                    name = str(data.get('name', ''))
-                    solution = str(data.get('solution', data.get('code', data.get('sol_string', ''))))
-                    thought = str(data.get('thought', data.get('reasoning', '')))
+                    name = str(data.get("name", ""))
+                    solution = str(
+                        data.get(
+                            "solution", data.get("code", data.get("sol_string", ""))
+                        )
+                    )
+                    thought = str(data.get("thought", data.get("reasoning", "")))
 
                     # If we found valid solution, return it
                     if solution:
@@ -283,17 +305,23 @@ thought: The rationale for this crossover, explaining which elements came from w
                 continue
 
         # Try to extract from markdown code blocks containing JSON
-        code_block_pattern = r'```(?:json)?\s*\n(.*?)\n```'
-        code_matches = re.finditer(code_block_pattern, content, re.DOTALL | re.IGNORECASE)
+        code_block_pattern = r"```(?:json)?\s*\n(.*?)\n```"
+        code_matches = re.finditer(
+            code_block_pattern, content, re.DOTALL | re.IGNORECASE
+        )
 
         for match in code_matches:
             try:
                 json_str = match.group(1).strip()
                 data = json.loads(json_str)
                 if isinstance(data, dict):
-                    name = str(data.get('name', ''))
-                    solution = str(data.get('solution', data.get('code', data.get('sol_string', ''))))
-                    thought = str(data.get('thought', data.get('reasoning', '')))
+                    name = str(data.get("name", ""))
+                    solution = str(
+                        data.get(
+                            "solution", data.get("code", data.get("sol_string", ""))
+                        )
+                    )
+                    thought = str(data.get("thought", data.get("reasoning", "")))
 
                     if solution:
                         return (name, solution, thought)
@@ -320,15 +348,19 @@ thought: The rationale for this crossover, explaining which elements came from w
         # Handle cases like: "\"text\"" -> "text" or '"text"' -> 'text'
         if len(cleaned) >= 2:
             # Check for outer quotes
-            if (cleaned[0] == '"' and cleaned[-1] == '"') or \
-               (cleaned[0] == "'" and cleaned[-1] == "'"):
+            if (cleaned[0] == '"' and cleaned[-1] == '"') or (
+                cleaned[0] == "'" and cleaned[-1] == "'"
+            ):
                 cleaned = cleaned[1:-1]
 
             # After removing outer quotes, check for escaped quotes
             # "\"text\"" -> "text"
             if len(cleaned) >= 2:
-                if (cleaned[0] == '"' and cleaned[-1] == '"' and
-                    not (len(cleaned) > 2 and cleaned[1] == '"')):
+                if (
+                    cleaned[0] == '"'
+                    and cleaned[-1] == '"'
+                    and not (len(cleaned) > 2 and cleaned[1] == '"')
+                ):
                     # Not already unescaped
                     pass
                 elif cleaned.startswith('\\"') and cleaned.endswith('\\"'):
@@ -337,10 +369,10 @@ thought: The rationale for this crossover, explaining which elements came from w
                     cleaned = cleaned[1:-1]
 
         # Unescape common escape sequences
-        cleaned = cleaned.replace('\\n', '\n')
-        cleaned = cleaned.replace('\\t', '\t')
+        cleaned = cleaned.replace("\\n", "\n")
+        cleaned = cleaned.replace("\\t", "\t")
         cleaned = cleaned.replace('\\"', '"')
         cleaned = cleaned.replace("\\'", "'")
-        cleaned = cleaned.replace('\\\\', '\\')
+        cleaned = cleaned.replace("\\\\", "\\")
 
         return cleaned.strip()

@@ -6,4 +6,4 @@
 
 from .adversarial_attack_task import AdversarialAttackTask
 
-__all__ = ['AdversarialAttackTask']
+__all__ = ["AdversarialAttackTask"]

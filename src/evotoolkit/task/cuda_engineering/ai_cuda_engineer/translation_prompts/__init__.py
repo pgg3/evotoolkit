@@ -43,9 +43,8 @@ Translate the PyTorch code (in <pytorch> tags) into CUDA kernel code.
 Now, translate the PyTorch code into CUDA kernel code.
 Return only CUDA kernel code, no other text
 
-"""
-)
-translation_error_summary_template= Template("""
+""")
+translation_error_summary_template = Template("""
 The above CUDA kernel code does not work as expected. Error message:
 
 {{error_msg}}
@@ -53,7 +52,7 @@ The above CUDA kernel code does not work as expected. Error message:
 Please provide a summary of this error. Return only the summary text and no other information.
 """)
 
-translation_error_template= Template("""
+translation_error_template = Template("""
 The above CUDA kernel code does not work as expected. Error message:
 
 {{error_summary}}

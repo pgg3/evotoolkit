@@ -3,7 +3,7 @@
 
 
 import re
-from evotoolkit.core import Solution, EvaluationResult, FunSearchInterface
+from evotoolkit.core import Solution, FunSearchInterface
 from typing import List
 from ..cuda_task import CudaTask
 
@@ -83,27 +83,27 @@ The pybind11 cuda module name has to be the same as in the example.
 MAKE SURE THE PROPOSAL CODE IS VALID CUDA CODE.
 FOLLOW EXACTLY THIS FORMAT. DO NOT ADD ANYTHING ELSE.
 """
-        
-        prompt_content = [{'role': 'user', 'content': prompt}]
+
+        prompt_content = [{"role": "user", "content": prompt}]
         return prompt_content
-    
+
     def parse_response(self, response_str: str) -> Solution:
         """Parse LLM response to extract CUDA code"""
         # Try different code block patterns in order of preference
         patterns = [
-            r'```cpp\s*\n(.*?)\n```',      # cpp
-            r'```c\+\+\s*\n(.*?)\n```',    # c++
-            r'```cuda\s*\n(.*?)\n```',     # cuda
-            r'```c\s*\n(.*?)\n```',        # c
-            r'```\s*\n(.*?)\n```'          # generic code block
+            r"```cpp\s*\n(.*?)\n```",  # cpp
+            r"```c\+\+\s*\n(.*?)\n```",  # c++
+            r"```cuda\s*\n(.*?)\n```",  # cuda
+            r"```c\s*\n(.*?)\n```",  # c
+            r"```\s*\n(.*?)\n```",  # generic code block
         ]
-        
+
         # Find all matches using case insensitive search
         for pattern in patterns:
             matches = re.findall(pattern, response_str, re.DOTALL | re.IGNORECASE)
             if matches:
                 # Return the longest match (likely the most complete implementation)
                 return Solution(max(matches, key=len).strip())
-        
+
         # Last resort: return stripped response
         return Solution(response_str.strip())

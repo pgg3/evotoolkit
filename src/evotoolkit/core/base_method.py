@@ -11,7 +11,7 @@ from .base_run_state_dict import BaseRunStateDict
 
 
 class Method(ABC):
-    def __init__(self, config:BaseConfig):
+    def __init__(self, config: BaseConfig):
         self.config = config
         self.run_state_dict = self._load_run_state_dict()
         # 初始化历史管理器
@@ -25,37 +25,49 @@ class Method(ABC):
             try:
                 candidate_sol = self.config.interface.make_init_sol()
                 if candidate_sol.evaluation_res is None:
-                    candidate_sol.evaluation_res = self.config.task.evaluate_code(candidate_sol.sol_string)
+                    candidate_sol.evaluation_res = self.config.task.evaluate_code(
+                        candidate_sol.sol_string
+                    )
 
-                if candidate_sol.evaluation_res is not None and candidate_sol.evaluation_res.valid:
+                if (
+                    candidate_sol.evaluation_res is not None
+                    and candidate_sol.evaluation_res.valid
+                ):
                     if (not np.isinf(candidate_sol.evaluation_res.score)) and (
-                            candidate_sol.evaluation_res.score > -np.inf):
+                        candidate_sol.evaluation_res.score > -np.inf
+                    ):
                         initial_sol = candidate_sol
                         break
                 else:
-                    self.verbose_info(f"Initial solution attempt {attempt + 1} failed: invalid evaluation result")
+                    self.verbose_info(
+                        f"Initial solution attempt {attempt + 1} failed: invalid evaluation result"
+                    )
             except Exception as e:
-                self.verbose_info(f"Initial solution attempt {attempt + 1} failed with exception: {e}")
+                self.verbose_info(
+                    f"Initial solution attempt {attempt + 1} failed with exception: {e}"
+                )
 
         if initial_sol is None:
-            print("Warning: Failed to create valid initial solution after 3 attempts. Exiting.")
+            print(
+                "Warning: Failed to create valid initial solution after 3 attempts. Exiting."
+            )
         return initial_sol
 
     @abstractmethod
     def run(self, *args):
         raise NotImplementedError()
 
-    def verbose_info(self, message:str):
+    def verbose_info(self, message: str):
         if self.config.verbose:
             print(message)
-    
+
     def verbose_title(self, text: str, total_width: int = 60):
         """Display a centered title with equal signs above and below"""
         if self.config.verbose:
             print("=" * total_width)
             print(text.center(total_width))
             print("=" * total_width)
-    
+
     def verbose_stage(self, text: str, total_width: int = 60):
         """Display a stage separator with dashes"""
         if self.config.verbose:
@@ -76,17 +88,23 @@ class Method(ABC):
         # 先保存历史
         self.run_state_dict.save_current_history()
         # 再保存当前状态
-        self.run_state_dict.to_json_file(os.path.join(self.config.output_path, "run_state.json"))
+        self.run_state_dict.to_json_file(
+            os.path.join(self.config.output_path, "run_state.json")
+        )
 
-    def _load_run_state_dict(self) -> BaseRunStateDict|None:
+    def _load_run_state_dict(self) -> BaseRunStateDict | None:
         """Load run state from file"""
         run_state_class = self._get_run_state_class()
         if os.path.exists(os.path.join(self.config.output_path, "run_state.json")):
-            self.verbose_info(f"Loading run state from file {os.path.join(self.config.output_path, 'run_state.json')}")
-            return run_state_class.from_json_file(os.path.join(self.config.output_path, "run_state.json"))
+            self.verbose_info(
+                f"Loading run state from file {os.path.join(self.config.output_path, 'run_state.json')}"
+            )
+            return run_state_class.from_json_file(
+                os.path.join(self.config.output_path, "run_state.json")
+            )
         else:
             run_state_dict = run_state_class(self.config.task.task_info)
-            self.verbose_info(f"Initialized run state dict.")
+            self.verbose_info("Initialized run state dict.")
             return run_state_dict
 
     @staticmethod

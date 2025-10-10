@@ -9,7 +9,7 @@ from .funsearch_interface import FunSearchPythonInterface
 from .evoengineer_interface import EvoEngineerPythonInterface
 
 __all__ = [
-    'EoHPythonInterface',
-    'FunSearchPythonInterface',
-    'EvoEngineerPythonInterface',
+    "EoHPythonInterface",
+    "FunSearchPythonInterface",
+    "EvoEngineerPythonInterface",
 ]

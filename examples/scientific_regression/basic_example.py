@@ -21,16 +21,16 @@ from evotoolkit.tools.llm import HttpsApi
 
 
 def main():
-    print("="*60)
+    print("=" * 60)
     print("Scientific Symbolic Regression Example")
-    print("="*60)
+    print("=" * 60)
 
     # Step 1: Create a task
     print("\n[1/4] Creating scientific regression task...")
     task = ScientificRegressionTask(
         dataset_name="bactgrow",  # Bacterial growth dataset
-        max_params=10,            # Number of optimizable parameters
-        timeout_seconds=60.0      # Timeout per evaluation
+        max_params=10,  # Number of optimizable parameters
+        timeout_seconds=60.0,  # Timeout per evaluation
     )
 
     print(f"Dataset: {task.dataset_name}")
@@ -52,30 +52,32 @@ def main():
     print("\n[4/4] Configuring LLM API...")
     llm_api = HttpsApi(
         api_url="https://api.openai.com/v1/chat/completions",
-        key=os.getenv("OPENAI_API_KEY", "your-api-key-here"),  # Or set directly: key="sk-..."
-        model="gpt-4o"
+        key=os.getenv(
+            "OPENAI_API_KEY", "your-api-key-here"
+        ),  # Or set directly: key="sk-..."
+        model="gpt-4o",
     )
 
     # Run evolution
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Starting evolution...")
     print("This may take a few minutes...")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
     result = evotoolkit.solve(
         interface=interface,
-        output_path='./scientific_regression_results',
+        output_path="./scientific_regression_results",
         running_llm=llm_api,
         max_generations=3,  # Reduced for faster testing
-        pop_size=5
+        pop_size=5,
     )
 
     # Display results
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("Evolution completed!")
-    print("="*60)
+    print("=" * 60)
     print(f"\nBest solution score: {result.evaluation_res.score:.6f}")
-    print(f"Results saved to: ./scientific_regression_results/")
+    print("Results saved to: ./scientific_regression_results/")
     print(f"\nBest equation:\n{result.sol_string}")
 
 

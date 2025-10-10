@@ -13,12 +13,7 @@ Requirements:
 - Configure API credentials directly in code (or use mock mode)
 """
 
-import evotoolkit
-from evotoolkit.task import (
-    PromptOptimizationTask,
-    EvoEngineerStringInterface
-)
-from evotoolkit.tools.llm import HttpsApi
+from evotoolkit.task import PromptOptimizationTask
 
 
 def main():
@@ -45,7 +40,7 @@ def main():
     # Option 1: Use mock mode (no LLM needed, good for testing)
     task = PromptOptimizationTask(
         test_cases=test_cases,
-        use_mock=True  # Set to False to use real LLM
+        use_mock=True,  # Set to False to use real LLM
     )
 
     # Option 2: Use real LLM (uncomment and configure)
@@ -66,10 +61,12 @@ def main():
     print("\n[3/4] Testing initial solution...")
 
     init_sol = task.make_init_sol_wo_other_info()
-    print(f"Initial prompt template:")
+    print("Initial prompt template:")
     print(f'  "{init_sol.sol_string}"')
     print(f"Initial score: {init_sol.evaluation_res.score:.2%}")
-    print(f"Correct: {init_sol.evaluation_res.additional_info['correct']}/{init_sol.evaluation_res.additional_info['total']}")
+    print(
+        f"Correct: {init_sol.evaluation_res.additional_info['correct']}/{init_sol.evaluation_res.additional_info['total']}"
+    )
 
     # Step 4: Test a custom prompt template
     print("\n[4/4] Testing custom prompt template...")
@@ -78,7 +75,9 @@ def main():
     result = task.evaluate_code(custom_template)
     print(f'Custom template: "{custom_template}"')
     print(f"Score: {result.score:.2%}")
-    print(f"Correct: {result.additional_info['correct']}/{result.additional_info['total']}")
+    print(
+        f"Correct: {result.additional_info['correct']}/{result.additional_info['total']}"
+    )
 
     print("\n" + "=" * 60)
     print("Example completed!")

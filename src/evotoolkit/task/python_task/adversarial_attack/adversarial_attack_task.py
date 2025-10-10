@@ -38,7 +38,7 @@ class AdversarialAttackTask(PythonTask):
         attack_steps: int = 1000,
         n_test_samples: int = 10,
         timeout_seconds: float = 300.0,
-        use_mock: bool = False
+        use_mock: bool = False,
     ):
         """
         Initialize adversarial attack task.
@@ -62,9 +62,9 @@ class AdversarialAttackTask(PythonTask):
 
         # Initialize data
         data = {
-            'attack_steps': attack_steps,
-            'n_test_samples': n_test_samples,
-            'use_mock': use_mock
+            "attack_steps": attack_steps,
+            "n_test_samples": n_test_samples,
+            "use_mock": use_mock,
         }
 
         super().__init__(data=data, timeout_seconds=timeout_seconds)
@@ -73,9 +73,9 @@ class AdversarialAttackTask(PythonTask):
         """Process input data and create task_info."""
         self.data = data
         self.task_info = {
-            'attack_steps': data['attack_steps'],
-            'n_test_samples': data['n_test_samples'],
-            'use_mock': data['use_mock']
+            "attack_steps": data["attack_steps"],
+            "n_test_samples": data["n_test_samples"],
+            "use_mock": data["use_mock"],
         }
 
     def _evaluate_code_impl(self, candidate_code: str) -> EvaluationResult:
@@ -90,9 +90,9 @@ class AdversarialAttackTask(PythonTask):
                 valid=True,
                 score=float(np.random.uniform(1.0, 5.0)),  # Random L2 distance
                 additional_info={
-                    'avg_distance': float(np.random.uniform(1.0, 5.0)),
-                    'mock': True
-                }
+                    "avg_distance": float(np.random.uniform(1.0, 5.0)),
+                    "mock": True,
+                },
             )
 
         # Check dependencies
@@ -102,21 +102,36 @@ class AdversarialAttackTask(PythonTask):
         except ImportError as e:
             return EvaluationResult(
                 valid=False,
-                score=float('-inf'),
-                additional_info={'error': f'Missing dependency: {str(e)}. Install with: pip install torch foolbox'}
+                score=float("-inf"),
+                additional_info={
+                    "error": f"Missing dependency: {str(e)}. Install with: pip install torch foolbox"
+                },
             )
 
         # Create namespace with required modules
         namespace = {
-            '__builtins__': {
-                'len': len, 'range': range, 'enumerate': enumerate,
-                'zip': zip, 'map': map, 'filter': filter,
-                'sum': sum, 'min': min, 'max': max, 'abs': abs,
-                'print': print, 'str': str, 'int': int, 'float': float,
-                'list': list, 'dict': dict, 'tuple': tuple, 'set': set,
-                '__import__': __import__,
+            "__builtins__": {
+                "len": len,
+                "range": range,
+                "enumerate": enumerate,
+                "zip": zip,
+                "map": map,
+                "filter": filter,
+                "sum": sum,
+                "min": min,
+                "max": max,
+                "abs": abs,
+                "print": print,
+                "str": str,
+                "int": int,
+                "float": float,
+                "list": list,
+                "dict": dict,
+                "tuple": tuple,
+                "set": set,
+                "__import__": __import__,
             },
-            'np': np,
+            "np": np,
         }
 
         # Execute the code
@@ -125,19 +140,21 @@ class AdversarialAttackTask(PythonTask):
         except Exception as e:
             return EvaluationResult(
                 valid=False,
-                score=float('-inf'),
-                additional_info={'error': f'Code execution error: {str(e)}'}
+                score=float("-inf"),
+                additional_info={"error": f"Code execution error: {str(e)}"},
             )
 
         # Check if draw_proposals function exists
-        if 'draw_proposals' not in namespace:
+        if "draw_proposals" not in namespace:
             return EvaluationResult(
                 valid=False,
-                score=float('-inf'),
-                additional_info={'error': 'Function "draw_proposals" not found in code'}
+                score=float("-inf"),
+                additional_info={
+                    "error": 'Function "draw_proposals" not found in code'
+                },
             )
 
-        draw_proposals_func = namespace['draw_proposals']
+        draw_proposals_func = namespace["draw_proposals"]
 
         # Evaluate the attack
         try:
@@ -146,8 +163,10 @@ class AdversarialAttackTask(PythonTask):
             if avg_distance is None or np.isnan(avg_distance) or np.isinf(avg_distance):
                 return EvaluationResult(
                     valid=False,
-                    score=float('-inf'),
-                    additional_info={'error': 'Attack evaluation returned None/NaN/Inf'}
+                    score=float("-inf"),
+                    additional_info={
+                        "error": "Attack evaluation returned None/NaN/Inf"
+                    },
                 )
 
             # Lower distance is better - negate for maximization
@@ -157,16 +176,16 @@ class AdversarialAttackTask(PythonTask):
                 valid=True,
                 score=score,
                 additional_info={
-                    'avg_distance': float(avg_distance),
-                    'attack_steps': self.attack_steps
-                }
+                    "avg_distance": float(avg_distance),
+                    "attack_steps": self.attack_steps,
+                },
             )
 
         except Exception as e:
             return EvaluationResult(
                 valid=False,
-                score=float('-inf'),
-                additional_info={'error': f'Attack evaluation error: {str(e)}'}
+                score=float("-inf"),
+                additional_info={"error": f"Attack evaluation error: {str(e)}"},
             )
 
     def _evaluate_attack(self, draw_proposals_func: Callable) -> Optional[float]:
@@ -227,13 +246,17 @@ class AdversarialAttackTask(PythonTask):
                     img_adv = attack.run(fmodel, x, fb.criteria.Misclassification(y))
 
                     # Calculate L2 distance
-                    distance = torch.linalg.norm((x - img_adv).flatten(start_dim=1), axis=1)
+                    distance = torch.linalg.norm(
+                        (x - img_adv).flatten(start_dim=1), axis=1
+                    )
                     distance = distance.mean()
 
                     # Check if distance is valid
                     dist_value = float(distance.cpu().numpy())
                     if np.isnan(dist_value) or np.isinf(dist_value):
-                        print(f"Warning: Invalid distance for sample {sample_count}, using penalty value")
+                        print(
+                            f"Warning: Invalid distance for sample {sample_count}, using penalty value"
+                        )
                         distances.append(10.0)  # Penalty for invalid result
                     else:
                         distances.append(dist_value)
@@ -375,8 +398,4 @@ def draw_proposals(org_img, best_adv_img, std_normal_noise, hyperparams):
         # Evaluate the initial solution
         eval_res = self.evaluate_code(initial_code)
 
-        return Solution(
-            sol_string=initial_code,
-            evaluation_res=eval_res,
-            other_info={}
-        )
+        return Solution(sol_string=initial_code, evaluation_res=eval_res, other_info={})

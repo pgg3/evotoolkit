@@ -33,20 +33,20 @@ from .method_interface import (
     BaseMethodInterface,
     EoHInterface,
     FunSearchInterface,
-    EvoEngineerInterface
+    EvoEngineerInterface,
 )
 
 __all__ = [
-    'Solution',
-    'EvaluationResult',
-    'Operator',
-    'BaseTask',
-    'BaseConfig',
-    'Method',
-    'BaseRunStateDict',
-    'HistoryManager',
-    'BaseMethodInterface',
-    'EoHInterface',
-    'FunSearchInterface',
-    'EvoEngineerInterface',
+    "Solution",
+    "EvaluationResult",
+    "Operator",
+    "BaseTask",
+    "BaseConfig",
+    "Method",
+    "BaseRunStateDict",
+    "HistoryManager",
+    "BaseMethodInterface",
+    "EoHInterface",
+    "FunSearchInterface",
+    "EvoEngineerInterface",
 ]

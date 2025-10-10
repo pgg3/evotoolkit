@@ -14,12 +14,9 @@ Requirements:
   (or: pip install torch torchvision foolbox)
 """
 
-import evotoolkit
 from evotoolkit.task.python_task import (
     AdversarialAttackTask,
-    EvoEngineerPythonInterface
 )
-from evotoolkit.tools.llm import HttpsApi
 
 
 def main():
@@ -34,7 +31,7 @@ def main():
     task = AdversarialAttackTask(
         use_mock=True,  # Set to False to use real model
         attack_steps=1000,
-        n_test_samples=10
+        n_test_samples=10,
     )
 
     # Option 2: Use real model (uncomment and configure)
@@ -91,17 +88,21 @@ def main():
     #     use_mock=False
     # )
 
-    print(f"Task created: attack_steps={task.task_info['attack_steps']}, "
-          f"n_samples={task.task_info['n_test_samples']}, "
-          f"mock={task.task_info['use_mock']}")
+    print(
+        f"Task created: attack_steps={task.task_info['attack_steps']}, "
+        f"n_samples={task.task_info['n_test_samples']}, "
+        f"mock={task.task_info['use_mock']}"
+    )
 
     # Step 2: Test initial solution
     print("\n[2/4] Testing initial solution...")
 
     init_sol = task.make_init_sol_wo_other_info()
-    print(f"Initial draw_proposals function created")
-    print(f"Initial score: {init_sol.evaluation_res.score:.2f} "
-          f"(avg L2 distance: {init_sol.evaluation_res.additional_info['avg_distance']:.2f})")
+    print("Initial draw_proposals function created")
+    print(
+        f"Initial score: {init_sol.evaluation_res.score:.2f} "
+        f"(avg L2 distance: {init_sol.evaluation_res.additional_info['avg_distance']:.2f})"
+    )
 
     # Step 3: Test a custom algorithm
     print("\n[3/4] Testing custom algorithm...")
@@ -126,9 +127,11 @@ def draw_proposals(org_img, best_adv_img, std_normal_noise, hyperparams):
 '''
 
     result = task.evaluate_code(custom_code)
-    print(f"Custom algorithm tested")
-    print(f"Score: {result.score:.2f} "
-          f"(avg L2 distance: {result.additional_info['avg_distance']:.2f})")
+    print("Custom algorithm tested")
+    print(
+        f"Score: {result.score:.2f} "
+        f"(avg L2 distance: {result.additional_info['avg_distance']:.2f})"
+    )
 
     # Step 4: Show function structure
     print("\n[4/4] Understanding the draw_proposals function...")

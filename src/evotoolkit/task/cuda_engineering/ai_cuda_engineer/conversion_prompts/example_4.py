@@ -2,7 +2,7 @@
 # Licensed under the MIT License
 
 
-EG_4 = f'''
+EG_4 = '''
 --- Original code ---
 ```Python
 import torch

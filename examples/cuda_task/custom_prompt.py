@@ -22,7 +22,7 @@ import evotoolkit
 from evotoolkit.task.cuda_engineering import (
     CudaTask,
     CudaTaskInfoMaker,
-    EvoEngineerFullCudaInterface
+    EvoEngineerFullCudaInterface,
 )
 from evotoolkit.task.cuda_engineering.evaluator import Evaluator
 from evotoolkit.tools.llm import HttpsApi
@@ -41,8 +41,14 @@ class MemoryOptimizedCudaInterface(EvoEngineerFullCudaInterface):
     memory access patterns and optimization strategies.
     """
 
-    def get_operator_prompt(self, operator_name, selected_individuals,
-                           current_best_sol, random_thoughts, **kwargs):
+    def get_operator_prompt(
+        self,
+        operator_name,
+        selected_individuals,
+        current_best_sol,
+        random_thoughts,
+        **kwargs,
+    ):
         """Customize prompt for mutation operator to emphasize memory optimization."""
 
         if operator_name == "mutation":
@@ -52,7 +58,9 @@ class MemoryOptimizedCudaInterface(EvoEngineerFullCudaInterface):
             # Build thoughts section if available
             thoughts_section = ""
             if random_thoughts and len(random_thoughts) > 0:
-                thoughts_list = "\n".join([f"- {thought}" for thought in random_thoughts])
+                thoughts_list = "\n".join(
+                    [f"- {thought}" for thought in random_thoughts]
+                )
                 thoughts_section = f"""
 {thoughts_list}
 """
@@ -61,16 +69,16 @@ class MemoryOptimizedCudaInterface(EvoEngineerFullCudaInterface):
 {task_description}
 
 ## CURRENT BEST KERNEL
-**Name:** {current_best_sol.other_info['name']}
+**Name:** {current_best_sol.other_info["name"]}
 **Runtime:** {-current_best_sol.evaluation_res.score:.5f} milliseconds
-**Approach:** {current_best_sol.other_info['thought']}
+**Approach:** {current_best_sol.other_info["thought"]}
 **Performance Profile:**
-{current_best_sol.evaluation_res.additional_info['prof_string']}
+{current_best_sol.evaluation_res.additional_info["prof_string"]}
 
 ## KERNEL TO MUTATE
-**Name:** {individual.other_info['name']}
+**Name:** {individual.other_info["name"]}
 **Runtime:** {-individual.evaluation_res.score:.5f} milliseconds
-**Approach:** {individual.other_info['thought']}
+**Approach:** {individual.other_info["thought"]}
 **Kernel Code:**
 ```cpp
 {individual.sol_string}
@@ -90,7 +98,7 @@ Focus on optimizing memory access patterns:
 - **Prefetching**: Implement data prefetching to hide memory latency
 - **Tiling**: Use tiling strategies to improve cache locality
 
-{'Use the insights above if relevant as mutation guidance.' if random_thoughts and len(random_thoughts) > 0 else ''}
+{"Use the insights above if relevant as mutation guidance." if random_thoughts and len(random_thoughts) > 0 else ""}
 Create a substantially modified version that reduces memory bottlenecks.
 
 ## RESPONSE FORMAT:
@@ -110,8 +118,13 @@ thought: [Memory optimization rationale and expected improvements]
             return [{"role": "user", "content": prompt}]
 
         # Use default prompts for init and crossover operators
-        return super().get_operator_prompt(operator_name, selected_individuals,
-                                          current_best_sol, random_thoughts, **kwargs)
+        return super().get_operator_prompt(
+            operator_name,
+            selected_individuals,
+            current_best_sol,
+            random_thoughts,
+            **kwargs,
+        )
 
 
 def main():
@@ -159,7 +172,7 @@ def get_init_inputs():
 '''
 
     # Define initial CUDA kernel
-    cuda_code = '''
+    cuda_code = """
 #include <torch/extension.h>
 #include <cuda_runtime.h>
 
@@ -200,7 +213,7 @@ torch::Tensor matmul_cuda(torch::Tensor A, torch::Tensor B) {
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("forward", &matmul_cuda, "Matrix multiplication (CUDA)");
 }
-'''
+"""
 
     # Create CUDA task
     print("\n[2/4] Creating CUDA optimization task...")
@@ -215,7 +228,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
         org_py_code=org_py_code,
         func_py_code=func_py_code,
         cuda_code=cuda_code,
-        fake_mode=False
+        fake_mode=False,
     )
 
     task = CudaTask(data=task_info, temp_path=temp_path, fake_mode=False)
@@ -230,9 +243,11 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     print("\n[4/4] Configuring LLM API...")
     # Set LLM_API_URL and LLM_API_KEY environment variables before running
     llm_api = HttpsApi(
-        api_url=os.environ.get("LLM_API_URL", "https://api.openai.com/v1/chat/completions"),
+        api_url=os.environ.get(
+            "LLM_API_URL", "https://api.openai.com/v1/chat/completions"
+        ),
         key=os.environ.get("LLM_API_KEY", "your-api-key-here"),
-        model="gpt-4o"
+        model="gpt-4o",
     )
 
     # Run evolution
@@ -242,11 +257,11 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
 
     result = evotoolkit.solve(
         interface=interface,
-        output_path='./custom_prompt_results',
+        output_path="./custom_prompt_results",
         running_llm=llm_api,
         max_generations=10,
         pop_size=5,
-        max_sample_nums=20
+        max_sample_nums=20,
     )
 
     # Display results
@@ -254,7 +269,7 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     print("Evolution completed!")
     print("=" * 60)
     print(f"\nOptimized runtime: {-result.evaluation_res.score:.4f} ms")
-    print(f"Results saved to: ./custom_prompt_results/")
+    print("Results saved to: ./custom_prompt_results/")
     print(f"\nBest kernel:\n{result.sol_string[:500]}...")
 
 

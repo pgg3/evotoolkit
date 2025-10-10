@@ -24,16 +24,13 @@ class BaseConfig:
     """
 
     def __init__(
-        self,
-        interface: 'BaseMethodInterface',
-        output_path: str,
-        verbose: bool = True
+        self, interface: "BaseMethodInterface", output_path: str, verbose: bool = True
     ):
         self.interface = interface
         self.output_path = output_path
         self.verbose = verbose
 
     @property
-    def task(self) -> 'BaseTask':
+    def task(self) -> "BaseTask":
         """Access task through interface to avoid redundancy."""
         return self.interface.task
