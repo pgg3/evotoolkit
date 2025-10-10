@@ -2,10 +2,11 @@
 # Licensed under the MIT License
 
 
-import re
 import json
+import re
 from typing import List
-from evotoolkit.core import Solution, Operator, EvoEngineerInterface
+
+from evotoolkit.core import EvoEngineerInterface, Operator, Solution
 from evotoolkit.task.string_optimization.string_task import StringTask
 
 

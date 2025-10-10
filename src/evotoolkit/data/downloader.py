@@ -8,11 +8,11 @@ Dataset downloader from GitHub releases.
 
 import shutil
 import tempfile
+import urllib.error
+import urllib.request
 import zipfile
 from pathlib import Path
 from typing import Optional
-import urllib.request
-import urllib.error
 
 from .constants import get_release_url, get_required_files
 

@@ -2,8 +2,9 @@
 # Licensed under the MIT License
 
 
-from evotoolkit.core import BaseRunStateDict, Solution
 from typing import List
+
+from evotoolkit.core import BaseRunStateDict, Solution
 
 
 class EoHRunStateDict(BaseRunStateDict):
@@ -81,7 +82,7 @@ class EoHRunStateDict(BaseRunStateDict):
     @classmethod
     def from_json(cls, data: dict) -> "EoHRunStateDict":
         """Create instance from JSON data (loads current state only, history loaded separately)"""
-        from evotoolkit.core import Solution, EvaluationResult
+        from evotoolkit.core import EvaluationResult, Solution
 
         # Convert population from dictionaries back to Solution objects
         population = []

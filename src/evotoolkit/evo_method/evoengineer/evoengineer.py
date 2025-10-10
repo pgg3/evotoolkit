@@ -5,10 +5,11 @@
 import concurrent.futures
 from typing import List, Type
 
+from evotoolkit.core import BaseRunStateDict, Method, Solution
+from evotoolkit.registry import register_algorithm
+
 from .run_config import EvoEngineerConfig
 from .run_state_dict import EvoEngineerRunStateDict
-from evotoolkit.core import Method, Solution, BaseRunStateDict
-from evotoolkit.registry import register_algorithm
 
 
 @register_algorithm("evoengineer", config=EvoEngineerConfig)
@@ -290,8 +291,9 @@ class EvoEngineer(Method):
 
     def _select_individuals_for_operator(self, operator) -> List[Solution]:
         """Select individuals for an operator using rank-based probability selection"""
-        import numpy as np
         import math
+
+        import numpy as np
 
         if operator.selection_size <= 0:
             return []  # Init operators or invalid selection size

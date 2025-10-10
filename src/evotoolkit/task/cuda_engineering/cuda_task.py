@@ -10,8 +10,10 @@ the functionality of CudaEvaluator and CudaTaskConfig.
 """
 
 import tempfile
-from typing import Optional, Dict, Any
-from evotoolkit.core import BaseTask, Solution, EvaluationResult
+from typing import Any, Dict, Optional
+
+from evotoolkit.core import BaseTask, EvaluationResult, Solution
+
 from .evaluator import Evaluator
 
 

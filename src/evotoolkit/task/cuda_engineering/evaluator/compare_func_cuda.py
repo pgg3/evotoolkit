@@ -3,11 +3,12 @@
 
 
 import os
-import torch
 import tempfile
-import torch.utils.cpp_extension as cpp_extension
-from .shared_lock import global_file_lock
 
+import torch
+import torch.utils.cpp_extension as cpp_extension
+
+from .shared_lock import global_file_lock
 from .utils import set_seed
 
 

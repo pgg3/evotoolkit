@@ -3,8 +3,10 @@
 
 
 import re
-from evotoolkit.core import Solution, Operator
 from typing import List
+
+from evotoolkit.core import Operator, Solution
+
 from ..cuda_task import CudaTask
 from .evoengineer_full_interface import EvoEngineerFullCudaInterface
 

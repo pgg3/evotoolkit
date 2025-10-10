@@ -2,7 +2,7 @@
 # Licensed under the MIT License
 
 
-from . import conversion_prompts, translation_prompts, evo_prompts, rag_prompts
+from . import conversion_prompts, evo_prompts, rag_prompts, translation_prompts
 
 
 class PromptMaker:

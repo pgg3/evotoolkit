@@ -3,11 +3,12 @@
 
 
 from jinja2 import Template
-from .sys_prompt import SYS_PROMPT
+
 from .example_1 import EG_1
 from .example_2 import EG_2
 from .example_3 import EG_3
 from .example_4 import EG_4
+from .sys_prompt import SYS_PROMPT
 
 conversion_template = Template("""
 {{sytem_prompt}}

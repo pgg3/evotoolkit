@@ -2,9 +2,10 @@
 # Licensed under the MIT License
 
 
-import os
 import json
-from typing import List, Optional, Dict
+import os
+from typing import Dict, List, Optional
+
 from evotoolkit.core import Solution
 
 

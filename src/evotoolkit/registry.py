@@ -9,9 +9,9 @@ This module provides decorators and factory functions to simplify
 the creation of evolutionary optimization workflows.
 """
 
-from typing import Dict, Type, Any, Callable
-from evotoolkit.core import BaseTask, BaseMethodInterface
+from typing import Any, Callable, Dict, Type
 
+from evotoolkit.core import BaseMethodInterface, BaseTask
 
 # Global registries
 _TASK_REGISTRY: Dict[str, Type[BaseTask]] = {}

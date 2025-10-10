@@ -9,15 +9,16 @@ This task discovers mathematical functions from real scientific datasets.
 Adapted from LLM-SR (CoEvo project).
 """
 
-import numpy as np
-import pandas as pd
 import warnings
 from pathlib import Path
 from typing import Literal
-from evotoolkit.core import Solution, EvaluationResult
-from evotoolkit.task.python_task.python_task import PythonTask
-from evotoolkit.registry import register_task
 
+import numpy as np
+import pandas as pd
+
+from evotoolkit.core import EvaluationResult, Solution
+from evotoolkit.registry import register_task
+from evotoolkit.task.python_task.python_task import PythonTask
 
 # Dataset metadata
 DATASET_INFO = {
@@ -114,7 +115,7 @@ class ScientificRegressionTask(PythonTask):
         Returns:
             tuple: (train_data, test_data) dictionaries with 'inputs' and 'outputs'
         """
-        from evotoolkit.data import get_dataset_path, DownloadError
+        from evotoolkit.data import DownloadError, get_dataset_path
 
         try:
             # Get dataset path, will auto-download if needed

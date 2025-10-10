@@ -2,9 +2,10 @@
 # Licensed under the MIT License
 
 
-import torch
 import random
+
 import numpy as np
+import torch
 
 
 def set_seed(seed):

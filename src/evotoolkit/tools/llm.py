@@ -2,9 +2,9 @@
 # Licensed under the MIT License
 
 
+import http.client
 import json
 import traceback
-import http.client
 from typing import Any, Tuple
 from urllib.parse import urlparse
 

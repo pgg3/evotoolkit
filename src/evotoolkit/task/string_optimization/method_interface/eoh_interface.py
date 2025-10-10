@@ -3,7 +3,8 @@
 
 
 from typing import List
-from evotoolkit.core import Solution, EoHInterface
+
+from evotoolkit.core import EoHInterface, Solution
 from evotoolkit.task.string_optimization.string_task import StringTask
 
 

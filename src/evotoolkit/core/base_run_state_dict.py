@@ -2,10 +2,12 @@
 # Licensed under the MIT License
 
 
-from abc import ABC, abstractmethod
 import json
-import numpy as np
+from abc import ABC, abstractmethod
 from typing import Optional
+
+import numpy as np
+
 from .history_manager import HistoryManager
 
 

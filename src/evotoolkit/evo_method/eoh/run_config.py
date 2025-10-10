@@ -2,8 +2,8 @@
 # Licensed under the MIT License
 
 
-from evotoolkit.tools.llm import HttpsApi
 from evotoolkit.core import BaseConfig, EoHInterface
+from evotoolkit.tools.llm import HttpsApi
 
 
 class EoHConfig(BaseConfig):

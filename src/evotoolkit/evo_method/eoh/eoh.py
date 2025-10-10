@@ -5,10 +5,11 @@
 import concurrent.futures
 from typing import List, Type
 
+from evotoolkit.core import BaseRunStateDict, Method, Solution
+from evotoolkit.registry import register_algorithm
+
 from .run_config import EoHConfig
 from .run_state_dict import EoHRunStateDict
-from evotoolkit.core import Method, BaseRunStateDict, Solution
-from evotoolkit.registry import register_algorithm
 
 
 @register_algorithm("eoh", config=EoHConfig)
@@ -438,8 +439,9 @@ class EoH(Method):
 
     def _select_individuals(self, num_select: int) -> List[Solution]:
         """Select individuals from population using rank-based probability selection"""
-        import numpy as np
         import math
+
+        import numpy as np
 
         # Handle edge cases
         if num_select <= 0:

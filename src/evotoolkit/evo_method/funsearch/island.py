@@ -2,9 +2,11 @@
 # Licensed under the MIT License
 
 
+from typing import List
+
 import numpy as np
 import scipy
-from typing import List
+
 from evotoolkit.core import Solution
 
 

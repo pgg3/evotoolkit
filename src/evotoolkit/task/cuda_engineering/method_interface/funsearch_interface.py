@@ -3,8 +3,10 @@
 
 
 import re
-from evotoolkit.core import Solution, FunSearchInterface
 from typing import List
+
+from evotoolkit.core import FunSearchInterface, Solution
+
 from ..cuda_task import CudaTask
 
 

@@ -9,18 +9,19 @@ A Python library for LLM-driven code evolutionary optimization.
 """
 
 from typing import Any
-from evotoolkit.registry import (
-    get_algorithm_info,
-    infer_algorithm_from_interface,
-    list_tasks,
-    list_algorithms,
-)
+
 from evotoolkit.core import BaseMethodInterface
 
 # Import tasks and algorithms to trigger registration decorators
 from evotoolkit.evo_method.eoh import EoH
 from evotoolkit.evo_method.evoengineer import EvoEngineer
 from evotoolkit.evo_method.funsearch import FunSearch
+from evotoolkit.registry import (
+    get_algorithm_info,
+    infer_algorithm_from_interface,
+    list_algorithms,
+    list_tasks,
+)
 
 __author__ = "Ping Guo"
 

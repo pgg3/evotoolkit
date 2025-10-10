@@ -11,9 +11,8 @@ Provides automatic dataset downloading from GitHub releases.
 from pathlib import Path
 from typing import Optional
 
-from .downloader import ensure_dataset_downloaded, DownloadError
 from .constants import DATASET_CATEGORIES
-
+from .downloader import DownloadError, ensure_dataset_downloaded
 
 __all__ = ["get_dataset_path", "DownloadError", "list_available_datasets"]
 

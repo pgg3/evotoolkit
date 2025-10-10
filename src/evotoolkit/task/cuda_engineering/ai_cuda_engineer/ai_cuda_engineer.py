@@ -5,14 +5,14 @@
 """AI CUDA Engineer - standalone implementation with no inheritance."""
 
 import os
+from concurrent import futures
 
 import numpy as np
-from concurrent import futures
 
 from .prompt_maker import PromptMaker
 from .response_parser import ResponseParser
-from .run_state_dict import AiCudaEngineerRunStateDict
 from .run_config import AiCudaEngineerConfig
+from .run_state_dict import AiCudaEngineerRunStateDict
 
 
 class AiCudaEngineer:

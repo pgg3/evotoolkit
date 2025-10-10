@@ -2,8 +2,10 @@
 # Licensed under the MIT License
 
 
-from evotoolkit.core import Operator
 from typing import List
+
+from evotoolkit.core import Operator
+
 from ..cuda_task import CudaTask
 from .evoengineer_full_interface import EvoEngineerFullCudaInterface
 

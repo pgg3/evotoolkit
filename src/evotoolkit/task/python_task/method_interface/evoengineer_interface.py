@@ -4,7 +4,8 @@
 
 import re
 from typing import List
-from evotoolkit.core import Solution, Operator, EvoEngineerInterface
+
+from evotoolkit.core import EvoEngineerInterface, Operator, Solution
 from evotoolkit.task.python_task.python_task import PythonTask
 
 

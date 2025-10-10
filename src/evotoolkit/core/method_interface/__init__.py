@@ -11,8 +11,8 @@ algorithms interact with tasks.
 
 from .base_method_interface import BaseMethodInterface
 from .eoh_interface import EoHInterface
-from .funsearch_interface import FunSearchInterface
 from .evoengineer_interface import EvoEngineerInterface
+from .funsearch_interface import FunSearchInterface
 
 __all__ = [
     "BaseMethodInterface",

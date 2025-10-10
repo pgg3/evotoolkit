@@ -9,14 +9,16 @@ This task evolves the `draw_proposals` function to generate effective
 adversarial examples for black-box attacks.
 """
 
-import numpy as np
-import types
 import sys
+import types
 import warnings
 from typing import Callable, Optional
-from evotoolkit.core import Solution, EvaluationResult
-from evotoolkit.task.python_task.python_task import PythonTask
+
+import numpy as np
+
+from evotoolkit.core import EvaluationResult, Solution
 from evotoolkit.registry import register_task
+from evotoolkit.task.python_task.python_task import PythonTask
 
 
 @register_task("AdversarialAttack")
@@ -182,9 +184,9 @@ class AdversarialAttackTask(PythonTask):
         Returns:
             float: Average L2 distance, or None if failed
         """
-        import torch
-        import foolbox as fb
         import eagerpy as ep
+        import foolbox as fb
+        import torch
 
         # Create module with draw_proposals
         heuristic_module = types.ModuleType("heuristic_module")

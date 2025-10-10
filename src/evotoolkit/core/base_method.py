@@ -3,10 +3,13 @@
 
 
 import os
-import numpy as np
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 from typing import List, Type
-from evotoolkit.core import Solution, BaseConfig
+
+import numpy as np
+
+from evotoolkit.core import BaseConfig, Solution
+
 from .base_run_state_dict import BaseRunStateDict
 
 

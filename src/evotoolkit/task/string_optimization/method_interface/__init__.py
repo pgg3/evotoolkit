@@ -8,8 +8,8 @@ Method interfaces for string optimization tasks.
 This module provides adapters between evolution algorithms and string-based tasks.
 """
 
-from .evoengineer_interface import EvoEngineerStringInterface
 from .eoh_interface import EoHStringInterface
+from .evoengineer_interface import EvoEngineerStringInterface
 from .funsearch_interface import FunSearchStringInterface
 
 __all__ = [

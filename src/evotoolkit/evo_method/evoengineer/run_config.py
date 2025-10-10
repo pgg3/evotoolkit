@@ -2,9 +2,10 @@
 # Licensed under the MIT License
 
 
-from evotoolkit.tools.llm import HttpsApi
-from evotoolkit.core import Operator, EvoEngineerInterface, BaseConfig
 from typing import List
+
+from evotoolkit.core import BaseConfig, EvoEngineerInterface, Operator
+from evotoolkit.tools.llm import HttpsApi
 
 
 class EvoEngineerConfig(BaseConfig):

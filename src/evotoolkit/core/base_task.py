@@ -11,7 +11,8 @@ maintaining all existing abstractions.
 """
 
 from abc import ABC, abstractmethod
-from evotoolkit.core import Solution, EvaluationResult
+
+from evotoolkit.core import EvaluationResult, Solution
 
 
 class BaseTask(ABC):

@@ -92,14 +92,18 @@ packages = ["src/evotoolkit"]
 [tool.hatch.build.targets.sdist]
 include = ["src/evotoolkit"]
 
-[tool.black]
-line-length = 88
-target-version = ['py311']
+[tool.ruff]
+line-length = 160
+target-version = "py311"
 
-[tool.isort]
-profile = "black"
-multi_line_output = 3
+[tool.ruff.lint]
+select = ["E", "F", "I"]  # E: pycodestyle errors, F: pyflakes, I: isort
+ignore = ["E501"]  # Ignore line length for long prompt templates
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]  # Allow unused imports for registration side-effects
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
 

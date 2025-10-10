@@ -5,8 +5,10 @@
 """Run state dictionary for AI CUDA Engineer - standalone implementation."""
 
 import json
+from typing import List, Literal, Optional
+
 import numpy as np
-from typing import Literal, Optional, List
+
 from evotoolkit.core import HistoryManager
 
 
@@ -69,8 +71,8 @@ class AiCudaEngineerRunStateDict:
         if not self.current_stage_optimizations:
             return
 
-        import os
         import json
+        import os
 
         # Calculate statistics
         valid_kernels = [

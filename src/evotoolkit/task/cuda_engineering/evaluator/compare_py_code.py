@@ -3,8 +3,9 @@
 
 
 import torch
-from .utils import set_seed
+
 from .shared_lock import global_file_lock
+from .utils import set_seed
 
 
 def compare_py_code(org_code: str, func_code: str, timing_dict: dict) -> dict:

@@ -4,9 +4,11 @@
 
 """Configuration for AI CUDA Engineer - standalone implementation."""
 
-from evotoolkit.tools.llm import HttpsApi
-from ..evaluator import Evaluator
 from typing import List
+
+from evotoolkit.tools.llm import HttpsApi
+
+from ..evaluator import Evaluator
 
 
 class AiCudaEngineerConfig:

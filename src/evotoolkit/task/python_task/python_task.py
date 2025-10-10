@@ -11,6 +11,7 @@ the functionality of PythonEvaluator and PythonTaskConfig.
 
 import traceback
 from abc import abstractmethod
+
 from evotoolkit.core import BaseTask, EvaluationResult
 
 

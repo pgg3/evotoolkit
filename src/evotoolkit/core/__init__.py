@@ -20,21 +20,21 @@ Core Components:
 - method_interface: Interfaces for different evolutionary algorithms
 """
 
-from .solution import Solution, EvaluationResult
-from .operator import Operator
-from .base_task import BaseTask
 from .base_config import BaseConfig
 from .base_method import Method
 from .base_run_state_dict import BaseRunStateDict
+from .base_task import BaseTask
 from .history_manager import HistoryManager
 
 # Import method interfaces
 from .method_interface import (
     BaseMethodInterface,
     EoHInterface,
-    FunSearchInterface,
     EvoEngineerInterface,
+    FunSearchInterface,
 )
+from .operator import Operator
+from .solution import EvaluationResult, Solution
 
 __all__ = [
     "Solution",

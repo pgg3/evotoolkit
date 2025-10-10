@@ -14,13 +14,14 @@
 - LLM_API_KEY: LLM API 密钥
 """
 
-import numpy as np
 import os
-import evotoolkit
-from evotoolkit.task.python_task import PythonTask, EvoEngineerPythonInterface
-from evotoolkit.core import Solution, EvaluationResult
-from evotoolkit.tools.llm import HttpsApi
 
+import numpy as np
+
+import evotoolkit
+from evotoolkit.core import EvaluationResult, Solution
+from evotoolkit.task.python_task import EvoEngineerPythonInterface, PythonTask
+from evotoolkit.tools.llm import HttpsApi
 
 # ============================================================================
 # 示例 1: 函数近似任务

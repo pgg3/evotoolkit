@@ -15,9 +15,10 @@ Requirements:
 - Set LLM_API_URL and LLM_API_KEY environment variables
 """
 
-import os
 import json
+import os
 import tempfile
+
 import evotoolkit
 from evotoolkit.task.cuda_engineering import (
     CudaTask,

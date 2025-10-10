@@ -8,24 +8,20 @@ EvoAttack implementation for adversarial attacks with evolved proposal functions
 Based on L-AutoDA (https://arxiv.org/abs/2401.15335).
 """
 
-from typing import Union, Optional, Any
-import numpy as np
 import time
+from typing import Any, Optional, Union
+
+import numpy as np
 
 try:
-    import torch
     import eagerpy as ep
-    from foolbox.devutils import flatten, atleast_kd
-    from foolbox.models import Model
-    from foolbox.criteria import Criterion
-    from foolbox.distances import l2
+    import torch
+    from foolbox.attacks.base import MinimizationAttack, T, get_criterion, get_is_adversarial, raise_if_kwargs, verify_input_bounds
     from foolbox.attacks.blended_noise import LinearSearchBlendedUniformNoiseAttack
-    from foolbox.attacks.base import MinimizationAttack
-    from foolbox.attacks.base import T
-    from foolbox.attacks.base import get_criterion
-    from foolbox.attacks.base import get_is_adversarial
-    from foolbox.attacks.base import raise_if_kwargs
-    from foolbox.attacks.base import verify_input_bounds
+    from foolbox.criteria import Criterion
+    from foolbox.devutils import atleast_kd, flatten
+    from foolbox.distances import l2
+    from foolbox.models import Model
 
     FOOLBOX_AVAILABLE = True
 except ImportError:

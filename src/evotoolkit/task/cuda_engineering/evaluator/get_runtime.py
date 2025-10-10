@@ -3,10 +3,12 @@
 
 
 import os
-import torch
 import tempfile
+
+import torch
 import torch.utils.cpp_extension as cpp_extension
-from torch.profiler import profile, record_function, ProfilerActivity
+from torch.profiler import ProfilerActivity, profile, record_function
+
 from .shared_lock import global_file_lock
 from .utils import set_seed
 

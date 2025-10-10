@@ -5,11 +5,12 @@
 import concurrent.futures
 from typing import Type
 
+from evotoolkit.core import BaseRunStateDict, Method, Solution
+from evotoolkit.registry import register_algorithm
+
+from .programs_database import ProgramsDatabase
 from .run_config import FunSearchConfig
 from .run_state_dict import FunSearchRunStateDict
-from .programs_database import ProgramsDatabase
-from evotoolkit.core import Method, Solution, BaseRunStateDict
-from evotoolkit.registry import register_algorithm
 
 
 @register_algorithm("funsearch", config=FunSearchConfig)

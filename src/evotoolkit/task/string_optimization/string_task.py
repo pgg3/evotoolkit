@@ -12,6 +12,7 @@ are represented as strings (e.g., prompts, templates, configurations).
 import traceback
 from abc import abstractmethod
 from typing import Any
+
 from evotoolkit.core import BaseTask, EvaluationResult
 
 

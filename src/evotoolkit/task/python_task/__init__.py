@@ -2,12 +2,10 @@
 # Licensed under the MIT License
 
 
-from .python_task import PythonTask
-
+from .adversarial_attack import AdversarialAttackTask
 from .method_interface import (
-    FunSearchPythonInterface,
     EoHPythonInterface,
     EvoEngineerPythonInterface,
+    FunSearchPythonInterface,
 )
-
-from .adversarial_attack import AdversarialAttackTask
+from .python_task import PythonTask

@@ -2,14 +2,14 @@
 # Licensed under the MIT License
 
 
+import multiprocessing as mp
+import time
+
+from .compare_func_cuda import compare_func_cuda
 from .compare_py_code import compare_py_code
 from .compile_cuda_code import compile_cuda_code
-from .compare_func_cuda import compare_func_cuda
-from .get_runtime import get_py_runtime, get_cuda_runtime
-
-import multiprocessing as mp
+from .get_runtime import get_cuda_runtime, get_py_runtime
 from .shared_lock import global_file_lock
-import time
 
 
 # Worker functions at module level to make them picklable

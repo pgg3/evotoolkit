@@ -16,13 +16,14 @@ Requirements:
 """
 
 import os
+
 import evotoolkit
-from evotoolkit.task.python_task.scientific_regression import ScientificRegressionTask
 from evotoolkit.task.python_task import (
-    EvoEngineerPythonInterface,
     EoHPythonInterface,
+    EvoEngineerPythonInterface,
     FunSearchPythonInterface,
 )
+from evotoolkit.task.python_task.scientific_regression import ScientificRegressionTask
 from evotoolkit.tools.llm import HttpsApi
 
 

@@ -3,8 +3,10 @@
 
 
 import re
-from evotoolkit.core import EoHInterface, Solution
 from typing import List
+
+from evotoolkit.core import EoHInterface, Solution
+
 from ..cuda_task import CudaTask
 
 

@@ -2,10 +2,11 @@
 # Licensed under the MIT License
 
 
-import os
 import json
-from evotoolkit.core import BaseRunStateDict, Solution
+import os
 from typing import List
+
+from evotoolkit.core import BaseRunStateDict, Solution
 
 
 class FunSearchRunStateDict(BaseRunStateDict):

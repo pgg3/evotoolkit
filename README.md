@@ -10,10 +10,6 @@ EvoToolkit is a Python library that leverages Large Language Models (LLMs) to ev
 pip install evotoolkit
 ```
 
-```python
-import evotoolkit  
-```
-
 ## Quick Start
 
 ```python

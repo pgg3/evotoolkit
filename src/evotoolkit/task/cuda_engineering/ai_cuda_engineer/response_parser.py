@@ -2,8 +2,8 @@
 # Licensed under the MIT License
 
 
-import re
 import json
+import re
 
 
 class ResponseParser:

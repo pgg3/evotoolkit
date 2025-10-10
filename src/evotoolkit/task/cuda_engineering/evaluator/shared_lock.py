@@ -3,16 +3,16 @@
 
 
 # 文件名：shared_lock.py
-import os
-import time
-import tempfile
-import psutil
 import json
+import os
+import tempfile
+import time
 from contextlib import contextmanager
 from typing import Optional
 
 # 使用 portalocker 库（跨平台）
 import portalocker
+import psutil
 
 LOCK_FILE = os.path.join(tempfile.gettempdir(), "evotool_cross_process.lock")
 LOCK_INFO_FILE = os.path.join(tempfile.gettempdir(), "evotool_lock_info.json")

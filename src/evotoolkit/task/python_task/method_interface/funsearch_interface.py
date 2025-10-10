@@ -4,7 +4,8 @@
 
 import re
 from typing import List
-from evotoolkit.core import Solution, FunSearchInterface
+
+from evotoolkit.core import FunSearchInterface, Solution
 from evotoolkit.task.python_task.python_task import PythonTask
 
 

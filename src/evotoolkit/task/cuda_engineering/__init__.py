@@ -7,10 +7,10 @@ from .cuda_task import CudaTask, CudaTaskInfoMaker
 # Import method interfaces from subdirectory
 from .method_interface import (
     EoHCudaInterface,
-    FunSearchCudaInterface,
+    EvoEngineerFreeCudaInterface,
     EvoEngineerFullCudaInterface,
     EvoEngineerInsightCudaInterface,
-    EvoEngineerFreeCudaInterface,
+    FunSearchCudaInterface,
 )
 
 __all__ = [

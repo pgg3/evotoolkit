@@ -20,14 +20,15 @@ Requirements:
 
 import os
 import tempfile
+
 import evotoolkit
 from evotoolkit.task.cuda_engineering import (
     CudaTask,
     CudaTaskInfoMaker,
-    EvoEngineerFullCudaInterface,
-    EvoEngineerFreeCudaInterface,
-    EvoEngineerInsightCudaInterface,
     EoHCudaInterface,
+    EvoEngineerFreeCudaInterface,
+    EvoEngineerFullCudaInterface,
+    EvoEngineerInsightCudaInterface,
     FunSearchCudaInterface,
 )
 from evotoolkit.task.cuda_engineering.evaluator import Evaluator

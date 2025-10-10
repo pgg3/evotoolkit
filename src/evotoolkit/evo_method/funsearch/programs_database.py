@@ -3,9 +3,12 @@
 
 
 import time
-import numpy as np
 from typing import List, Optional
+
+import numpy as np
+
 from evotoolkit.core import Solution
+
 from .island import Island
 
 
@@ -194,8 +197,9 @@ class ProgramsDatabase:
     @classmethod
     def from_dict(cls, data: dict) -> "ProgramsDatabase":
         """Deserialize the database from a dictionary."""
-        from evotoolkit.core import Solution, EvaluationResult
-        from .island import Island, Cluster
+        from evotoolkit.core import EvaluationResult, Solution
+
+        from .island import Cluster, Island
 
         # Create database with config
         database = cls(

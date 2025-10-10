@@ -5,8 +5,8 @@
 """Method interfaces for Python task optimization."""
 
 from .eoh_interface import EoHPythonInterface
-from .funsearch_interface import FunSearchPythonInterface
 from .evoengineer_interface import EvoEngineerPythonInterface
+from .funsearch_interface import FunSearchPythonInterface
 
 __all__ = [
     "EoHPythonInterface",

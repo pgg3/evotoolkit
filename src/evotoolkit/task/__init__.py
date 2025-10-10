@@ -7,18 +7,17 @@ Task module for evolutionary optimization.
 """
 
 from .python_task import (
-    PythonTask,
     EoHPythonInterface,
-    FunSearchPythonInterface,
     EvoEngineerPythonInterface,
+    FunSearchPythonInterface,
+    PythonTask,
 )
-
 from .string_optimization import (
-    StringTask,
-    PromptOptimizationTask,
-    EvoEngineerStringInterface,
     EoHStringInterface,
+    EvoEngineerStringInterface,
     FunSearchStringInterface,
+    PromptOptimizationTask,
+    StringTask,
 )
 
 __all__ = [

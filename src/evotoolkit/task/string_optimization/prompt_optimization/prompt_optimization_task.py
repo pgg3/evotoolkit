@@ -9,9 +9,10 @@ This task optimizes prompt templates to improve LLM performance on a given task.
 """
 
 import re
-from typing import List, Dict, Optional, Any
+from typing import Any, Dict, List, Optional
+
+from evotoolkit.core import EvaluationResult, Solution
 from evotoolkit.task.string_optimization.string_task import StringTask
-from evotoolkit.core import Solution, EvaluationResult
 
 
 class PromptOptimizationTask(StringTask):
