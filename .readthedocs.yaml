@@ -1,0 +1,38 @@
+# Read the Docs configuration file
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+
+version: 2
+
+# Set the OS, Python version and other tools you might need
+build:
+  os: ubuntu-22.04
+  tools:
+    python: "3.11"
+  jobs:
+    post_checkout:
+      # Cancel building pull requests when a new commit is pushed
+      - |
+        if [ "$READTHEDOCS_VERSION_TYPE" = "external" ] && git diff --quiet origin/$READTHEDOCS_GIT_IDENTIFIER..HEAD -- docs/ mkdocs.yml .readthedocs.yaml;
+        then
+          echo "No changes to docs, cancelling build"
+          exit 183  # Read the Docs cancellation code
+        fi
+
+# Build documentation with MkDocs
+mkdocs:
+  configuration: mkdocs.yml
+  fail_on_warning: false
+
+# Install dependencies required for building the documentation
+python:
+  install:
+    # Install the project itself (so mkdocstrings can find the code)
+    - method: pip
+      path: .
+    # Install documentation build dependencies
+    - requirements: docs/requirements.txt
+
+# Optional: Enable PDF/EPUB builds
+# formats:
+#   - pdf
+#   - epub

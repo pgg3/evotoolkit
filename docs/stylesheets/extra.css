@@ -1,0 +1,62 @@
+/* Custom styles for EvoToolkit documentation */
+
+:root {
+  --evotool-primary: #3f51b5;
+  --evotool-accent: #ff4081;
+}
+
+/* Custom admonition colors */
+.md-typeset .admonition.tip,
+.md-typeset details.tip {
+  border-color: var(--evotool-primary);
+}
+
+/* Code block enhancements */
+.md-typeset code {
+  font-size: 0.85em;
+}
+
+/* Table styling */
+.md-typeset table:not([class]) {
+  font-size: 0.9em;
+}
+
+/* Improve link visibility */
+.md-typeset a {
+  text-decoration: underline;
+}
+
+/* Enhanced navigation active state */
+.md-nav__link--active {
+  font-weight: 700 !important;
+  background-color: rgba(63, 81, 181, 0.15) !important;
+  border-left: 4px solid var(--evotool-primary) !important;
+  padding-left: calc(1.2rem - 4px) !important;
+  border-radius: 0 4px 4px 0 !important;
+}
+
+/* Dark mode adjustments */
+[data-md-color-scheme="slate"] .md-nav__link--active {
+  background-color: rgba(63, 81, 181, 0.25) !important;
+}
+
+/* Enlarge left sidebar section titles */
+.md-nav__item--section>.md-nav__link {
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  color: var(--evotool-primary) !important;
+  margin-top: 0.8rem !important;
+}
+
+/* Ensure consistent styling for all top-level nav items */
+.md-nav--primary>.md-nav__list>.md-nav__item>.md-nav__link {
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  margin-top: 0.8rem !important;
+}
+
+/* Enlarge right sidebar TOC title to match top navigation */
+.md-sidebar--secondary .md-nav__title {
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+}

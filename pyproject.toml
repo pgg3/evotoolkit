@@ -1,0 +1,102 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "evotoolkit"
+version = "0.3.0b2"
+description = "LLM-driven code evolution method library."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "Ping Guo", email = "pguo6680@gmail.com"},
+]
+keywords = ["evolutionary", "optimization", "LLM", "toolkit"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "numpy",
+    "scipy"
+]
+[dependency-groups]
+dev = [
+    "build>=1.3.0",
+    "hatchling>=1.27.0",
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.6.21",
+    "mkdocs-static-i18n>=1.3.0",
+    "mkdocstrings[python]>=0.30.1",
+    "ruff>=0.8.4",
+    "twine>=6.2.0",
+]
+
+[project.optional-dependencies]
+# CUDA kernel optimization task
+# Note: Install PyTorch separately to match your CUDA version
+# See: https://pytorch.org/get-started/locally/
+cuda_engineering = [
+    "ninja",
+    "portalocker",
+    # "torch",  # Removed - users install their own version
+    "psutil"
+]
+
+# Prompt engineering task (requires LLM evaluation)
+prompt_engineering = [
+    # No specific dependencies beyond base requirements
+    # Uses LLM API for evaluation
+]
+
+# Scientific symbolic regression task (requires scipy for optimization)
+scientific_regression = [
+    "scipy",  # For parameter optimization in evaluator
+    "pandas",  # For loading CSV datasets
+]
+
+# Adversarial attack evolution task
+# Note: Install PyTorch with GPU support first (CUDA 12.6 recommended)
+# See installation guide in docs/tutorials/adversarial-attack.md
+adversarial_attack = [
+    # "torch",  # Removed - users install GPU version first
+    # "torchvision",  # Removed - users install GPU version first
+    "timm",  # PyTorch Image Models (for CIFAR-10 pretrained models)
+    "foolbox",  # For adversarial attack framework
+]
+
+# All experimental tasks
+all_tasks = [
+    "ninja",
+    "portalocker",
+    "torch",
+    "torchvision",
+    "psutil",
+    "scipy",
+    "pandas",
+    "foolbox",
+]
+
+[project.urls]
+Homepage = "https://github.com/pgg3/evotoolkit"
+Repository = "https://github.com/pgg3/evotoolkit"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/evotoolkit"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/evotoolkit"]
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+

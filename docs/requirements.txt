@@ -1,0 +1,19 @@
+# Documentation build requirements for Read the Docs
+# These are the dependencies needed to build the MkDocs documentation
+
+# MkDocs core
+mkdocs>=1.6.1
+mkdocs-material>=9.6.21
+
+# Plugins
+mkdocs-static-i18n>=1.3.0  # For bilingual documentation (English/Chinese)
+mkdocstrings[python]>=0.30.1  # For auto-generating API documentation from docstrings
+mkdocs-autorefs>=1.2.0  # For cross-references in mkdocstrings
+
+# Code syntax highlighting (included in material theme, but explicit for clarity)
+pygments>=2.18.0
+
+# Project dependencies needed for API documentation generation
+# (mkdocstrings needs to import the code)
+numpy>=1.26.0
+scipy>=1.11.0

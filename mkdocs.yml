@@ -1,0 +1,287 @@
+# Project information
+site_name: EvoToolkit
+site_description: LLM-driven code evolutionary optimization toolkit
+site_author: Ping Guo
+site_url: !ENV [READTHEDOCS_CANONICAL_URL, "https://evotoolkit.readthedocs.io/"]
+
+# Repository
+repo_name: pgg3/evotoolkit
+repo_url: https://github.com/pgg3/evotoolkit
+edit_uri: edit/master/docs/
+
+# Copyright
+copyright: Copyright &copy; 2025 Ping Guo
+
+# Configuration
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.tracking
+    - search.suggest
+    - search.highlight
+    - search.share
+    - toc.follow
+    - content.code.copy
+    - content.code.annotate
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+  icon:
+    repo: fontawesome/brands/github
+
+# Plugins
+plugins:
+  - search:
+      lang:
+        - en
+        - zh
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      reconfigure_material: true
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: zh
+          name: 中文
+          build: true
+          nav_translations:
+            Home: 首页
+            Installation: 安装指南
+            Requirements: 系统要求
+            Install from PyPI: 从 PyPI 安装
+            Install from Source: 从源码安装
+            Environments & Package Managers: 环境与包管理器
+            LLM Setup & Verify: LLM 设置与验证
+            Troubleshooting: 常见问题
+            Getting Started: 快速开始
+            Overview: 概览
+            First Optimization: 第一个优化任务
+            Understand the Code: 理解代码
+            Explore Results: 查看结果
+            Try Other Algorithms: 尝试不同算法
+            Next Steps & Help: 下一步与帮助
+            Tutorials: 教程
+            Built-in Tasks: 内置任务
+            Customization: 自定义与扩展
+            Advanced: 高级主题
+            Scientific Regression: 科学符号回归
+            Prompt Engineering: 提示词工程
+            Adversarial Attack: 对抗攻击
+            Custom Tasks: 自定义任务
+            Customizing Evolution: 自定义进化方法
+            CUDA Tasks: CUDA 内核优化
+            Advanced Usage: 高级用法
+            Low-Level API: 低级 API
+            Configuration: 算法配置
+            Algorithm Internals: 算法内部
+            Debugging & Profiling: 调试与性能分析
+            API Reference: API 参考
+            Core API: 核心 API
+            Functions: 函数
+            Classes: 类
+            Tasks: 任务
+            Python: Python 任务
+            String: String 任务
+            CUDA: CUDA 任务
+            PythonTask: PythonTask
+            ScientificRegressionTask: ScientificRegressionTask
+            AdversarialAttackTask: AdversarialAttackTask
+            StringTask: StringTask
+            PromptOptimizationTask: PromptOptimizationTask
+            CudaTask: CudaTask
+            Methods: 方法
+            Interfaces: 接口
+            Tools: 工具
+            Development: 开发文档
+            Contributing: 贡献指南
+            Architecture: 架构设计
+  - autorefs:
+      resolve_closest: true
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            members_order: source
+            separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+
+# Extensions
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+# Page tree
+nav:
+  - Home: index.md
+  - Installation:
+      - Overview: installation.md
+      - Requirements: installation/requirements.md
+      - Install from PyPI: installation/pypi.md
+      - Install from Source: installation/from-source.md
+      - Environments & Package Managers: installation/env-managers.md
+      - LLM Setup & Verify: installation/llm-and-verify.md
+      - Troubleshooting: installation/troubleshooting.md
+  - Getting Started:
+      - Overview: getting-started.md
+      - First Optimization: getting-started/first-optimization.md
+      - Understand the Code: getting-started/understanding-code.md
+      - Explore Results: getting-started/exploring-results.md
+      - Try Other Algorithms: getting-started/try-algorithms.md
+      - Next Steps & Help: getting-started/next-steps.md
+  - Tutorials:
+      - tutorials/index.md
+      - Built-in Tasks:
+          - Overview: tutorials/built-in-overview.md
+          - Scientific Regression: tutorials/built-in/scientific-regression.md
+          - Prompt Engineering: tutorials/built-in/prompt-engineering.md
+          - Adversarial Attack: tutorials/built-in/adversarial-attack.md
+          - CUDA Tasks: tutorials/built-in/cuda-task.md
+      - Customization:
+          - Overview: tutorials/customization-overview.md
+          - Custom Tasks: tutorials/customization/custom-task.md
+          - Customizing Evolution: tutorials/customization/customizing-evolution.md
+      - Advanced:
+          - Overview: tutorials/advanced-overview.md
+          - Low-Level API: tutorials/advanced/low-level-api.md
+          - Configuration: tutorials/advanced/configuration.md
+          - Algorithm Internals: tutorials/advanced/internals.md
+          - Debugging & Profiling: tutorials/advanced/debugging.md
+  - API Reference:
+      - api/index.md
+      - Core API:
+          - Overview: api/core.md
+          - Functions:
+              - solve(): api/core/solve.md
+              - list_algorithms(): api/core/list-algorithms.md
+              - list_tasks(): api/core/list-tasks.md
+          - Classes:
+              - Solution: api/core/solution.md
+              - BaseTask: api/core/base-task.md
+              - Method: api/core/method.md
+              - BaseConfig: api/core/base-config.md
+              - HistoryManager: api/core/history-manager.md
+              - Operator: api/core/operators.md
+              - BaseRunStateDict: api/core/base-run-state-dict.md
+      - Tasks:
+          - Overview: api/tasks.md
+          - Python:
+              - PythonTask: api/tasks/python/python-task.md
+              - ScientificRegressionTask: api/tasks/python/scientific-regression.md
+              - AdversarialAttackTask: api/tasks/python/adversarial-attack.md
+          - String:
+              - StringTask: api/tasks/string/string-task.md
+              - PromptOptimizationTask: api/tasks/string/prompt-optimization.md
+          - CUDA:
+              - CudaTask: api/tasks/cuda/cuda-task.md
+      - Methods:
+          - Overview: api/methods.md
+          - EvoEngineer: api/methods/evoengineer.md
+          - FunSearch: api/methods/funsearch.md
+          - EoH: api/methods/eoh.md
+      - Interfaces:
+          - Overview: api/interfaces.md
+          - Base Interface: api/interfaces/base-method-interface.md
+          - Python:
+              - Overview: api/interfaces/python/index.md
+              - EvoEngineerPythonInterface: api/interfaces/python/evoengineer-python-interface.md
+              - FunSearchPythonInterface: api/interfaces/python/funsearch-python-interface.md
+              - EoHPythonInterface: api/interfaces/python/eoh-python-interface.md
+          - CUDA:
+              - Overview: api/interfaces/cuda/index.md
+              - EvoEngineerFullCudaInterface: api/interfaces/cuda/evoengineer-full-cuda-interface.md
+              - EvoEngineerFreeCudaInterface: api/interfaces/cuda/evoengineer-free-cuda-interface.md
+              - EvoEngineerInsightCudaInterface: api/interfaces/cuda/evoengineer-insight-cuda-interface.md
+              - FunSearchCudaInterface: api/interfaces/cuda/funsearch-cuda-interface.md
+              - EoHCudaInterface: api/interfaces/cuda/eoh-cuda-interface.md
+      - Tools:
+          - Overview: api/tools.md
+          - HttpsApi: api/tools/https-api.md
+  - Development:
+      - Contributing: development/contributing.md
+      - Architecture: development/architecture.md
+
+# Extra
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/pgg3/evotoolkit
+  analytics:
+    provider: google
+    property: !ENV [GOOGLE_ANALYTICS_KEY, ""]
+  version:
+    provider: mike
+
+# Additional CSS
+extra_css:
+  - stylesheets/extra.css
+
+# Additional JavaScript (for MathJax and ReadTheDocs i18n fix)
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
