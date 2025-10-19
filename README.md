@@ -1,6 +1,11 @@
 # EvoToolkit
 
-**LLM-driven solution evolutionary optimization toolkit**
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/pgg3/evotoolkit)
+
+
+
+
+**LLM-driven solution evolutionary optimization toolkit** 
 
 EvoToolkit is a Python library that leverages Large Language Models (LLMs) to evolve solutions for optimization problems. It combines the power of evolutionary algorithms with LLM-based solution generation and refinement.
 
