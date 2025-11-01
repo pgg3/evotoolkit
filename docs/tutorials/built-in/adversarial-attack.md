@@ -95,13 +95,13 @@ This installs:
 
 An adversarial attack task evolves **proposal generation algorithms** to create adversarial examples that fool neural networks with minimal distortion.
 
-| Aspect | Scientific Regression | Adversarial Attack |
-|--------|----------------------|---------------------|
-| **Solution type** | Mathematical equation | Proposal algorithm |
-| **Function name** | `equation` | `draw_proposals` |
-| **Inputs** | Data + params | Images + noise + hyperparams |
-| **Evaluation** | MSE on predictions | L2 distance of adversarials |
-| **Goal** | Minimize prediction error | Minimize distortion |
+| Aspect            | Scientific Regression     | Adversarial Attack           |
+| ----------------- | ------------------------- | ---------------------------- |
+| **Solution type** | Mathematical equation     | Proposal algorithm           |
+| **Function name** | `equation`                | `draw_proposals`             |
+| **Inputs**        | Data + params             | Images + noise + hyperparams |
+| **Evaluation**    | MSE on predictions        | L2 distance of adversarials  |
+| **Goal**          | Minimize prediction error | Minimize distortion          |
 
 ### Task Components
 
@@ -445,7 +445,7 @@ The quality of evolved attacks is controlled by the **evolution method** and its
 ```python
 from evotoolkit.task.python_task import EvoEngineerPythonInterface
 
-class CustomAttackInterface(EvoEngineerPythonInterface):
+class EvoEngineerCustomAttackInterface(EvoEngineerPythonInterface):
     """Interface optimized for adversarial attack evolution."""
 
     def get_operator_prompt(self, operator_name, selected_individuals,
@@ -490,7 +490,7 @@ thought: [reasoning for changes]
                                           current_best_sol, random_thoughts, **kwargs)
 
 # Use custom interface
-interface = CustomAttackInterface(task)
+interface = EvoEngineerCustomAttackInterface(task)
 result = evotoolkit.solve(
     interface=interface,
     output_path='./custom_results',

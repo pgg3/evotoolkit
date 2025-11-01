@@ -445,7 +445,7 @@ def draw_proposals(org_img, best_adv_img, std_normal_noise, hyperparams):
 ```python
 from evotoolkit.task.python_task import EvoEngineerPythonInterface
 
-class CustomAttackInterface(EvoEngineerPythonInterface):
+class EvoEngineerCustomAttackInterface(EvoEngineerPythonInterface):
     """针对对抗攻击进化优化的接口。"""
 
     def get_operator_prompt(self, operator_name, selected_individuals,
@@ -490,7 +490,7 @@ thought: [更改的推理]
                                           current_best_sol, random_thoughts, **kwargs)
 
 # 使用自定义接口
-interface = CustomAttackInterface(task)
+interface = EvoEngineerCustomAttackInterface(task)
 result = evotoolkit.solve(
     interface=interface,
     output_path='./custom_results',
