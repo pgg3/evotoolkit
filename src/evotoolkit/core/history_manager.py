@@ -6,7 +6,7 @@ import json
 import os
 from typing import Dict, List, Optional
 
-from evotoolkit.core import Solution
+from .solution import Solution
 
 
 class HistoryManager:

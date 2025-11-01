@@ -5,8 +5,8 @@
 from abc import abstractmethod
 from typing import List
 
-from evotoolkit.core import BaseTask, Solution
-
+from ..base_task import BaseTask
+from ..solution import Solution
 from .base_method_interface import BaseMethodInterface
 
 

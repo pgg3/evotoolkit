@@ -5,7 +5,8 @@
 import abc
 from abc import abstractmethod
 
-from evotoolkit.core import BaseTask, Solution
+from ..base_task import BaseTask
+from ..solution import Solution
 
 
 class BaseMethodInterface(abc.ABC):

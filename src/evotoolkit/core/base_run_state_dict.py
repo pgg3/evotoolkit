@@ -42,13 +42,9 @@ class BaseRunStateDict(ABC):
         """Convert serialized numpy arrays back to original format"""
         if isinstance(value, dict):
             if value.get("__numpy_array__"):
-                return np.array(value["data"], dtype=value["dtype"]).reshape(
-                    value["shape"]
-                )
+                return np.array(value["data"], dtype=value["dtype"]).reshape(value["shape"])
             else:
-                return {
-                    k: BaseRunStateDict._deserialize_value(v) for k, v in value.items()
-                }
+                return {k: BaseRunStateDict._deserialize_value(v) for k, v in value.items()}
         elif isinstance(value, list):
             return [BaseRunStateDict._deserialize_value(item) for item in value]
         else:

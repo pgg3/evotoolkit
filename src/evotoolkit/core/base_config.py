@@ -23,9 +23,7 @@ class BaseConfig:
     Note: task is accessed via interface.task to avoid data redundancy.
     """
 
-    def __init__(
-        self, interface: "BaseMethodInterface", output_path: str, verbose: bool = True
-    ):
+    def __init__(self, interface: "BaseMethodInterface", output_path: str, verbose: bool = True):
         self.interface = interface
         self.output_path = output_path
         self.verbose = verbose
