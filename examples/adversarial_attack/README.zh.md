@@ -86,25 +86,42 @@ from torchvision import datasets, transforms
 
 # 加载 CIFAR-10 预训练的 ResNet18（来自 Hugging Face Hub）
 # CIFAR-10 的 ResNet18 使用修改过的架构（3x3 conv1, 移除 maxpool）
-model = timm.create_model("resnet18", num_classes=10, pretrained=False)
-model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
-model.maxpool = nn.Identity()
+base_model = timm.create_model("resnet18", num_classes=10, pretrained=False)
+base_model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+base_model.maxpool = nn.Identity()
 
 # 加载预训练权重
-model.load_state_dict(
+base_model.load_state_dict(
     torch.hub.load_state_dict_from_url(
         "https://huggingface.co/edadaltocg/resnet18_cifar10/resolve/main/pytorch_model.bin",
         map_location="cpu",
         file_name="resnet18_cifar10.pth"
     )
 )
+base_model.eval()
+
+# 创建带 Normalization 的模型包装器
+# 重要：Foolbox 需要输入在 [0, 1] 范围，所以 normalization 必须在模型内部
+class NormalizedModel(nn.Module):
+    def __init__(self, model, mean, std):
+        super().__init__()
+        self.model = model
+        self.register_buffer('mean', torch.tensor(mean).view(1, 3, 1, 1))
+        self.register_buffer('std', torch.tensor(std).view(1, 3, 1, 1))
+
+    def forward(self, x):
+        # x 在 [0, 1] 范围，进行标准化
+        x_normalized = (x - self.mean) / self.std
+        return self.model(x_normalized)
+
+model = NormalizedModel(base_model,
+                        mean=[0.4914, 0.4822, 0.4465],
+                        std=[0.2471, 0.2435, 0.2616])
 model.eval()
 
-# 加载数据
+# 加载数据（只做 ToTensor，不做 Normalize）
 transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.4914, 0.4822, 0.4465],
-                        std=[0.2471, 0.2435, 0.2616])
+    transforms.ToTensor(),  # 转换到 [0, 1] 范围
 ])
 test_set = datasets.CIFAR10(root='./data', train=False,
                             download=True, transform=transform)

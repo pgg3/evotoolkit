@@ -43,29 +43,45 @@ def main():
     # # Load CIFAR-10 pretrained ResNet18 model (from Hugging Face Hub)
     # # This model achieves 94.98% accuracy on CIFAR-10
     # # CIFAR-10 ResNet18 uses modified architecture (3x3 conv1, removed maxpool)
-    # model = timm.create_model("resnet18", num_classes=10, pretrained=False)
-    # model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
-    # model.maxpool = nn.Identity()
+    # base_model = timm.create_model("resnet18", num_classes=10, pretrained=False)
+    # base_model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+    # base_model.maxpool = nn.Identity()
     #
     # # Load pretrained weights
-    # model.load_state_dict(
+    # base_model.load_state_dict(
     #     torch.hub.load_state_dict_from_url(
     #         "https://huggingface.co/edadaltocg/resnet18_cifar10/resolve/main/pytorch_model.bin",
     #         map_location="cpu",
     #         file_name="resnet18_cifar10.pth"
     #     )
     # )
+    # base_model.eval()
+    #
+    # # Create model wrapper with normalization
+    # # Important: Foolbox expects inputs in [0, 1], so normalization must be inside the model
+    # class NormalizedModel(nn.Module):
+    #     def __init__(self, model, mean, std):
+    #         super().__init__()
+    #         self.model = model
+    #         self.register_buffer('mean', torch.tensor(mean).view(1, 3, 1, 1))
+    #         self.register_buffer('std', torch.tensor(std).view(1, 3, 1, 1))
+    #
+    #     def forward(self, x):
+    #         # x is in [0, 1], normalize it
+    #         x_normalized = (x - self.mean) / self.std
+    #         return self.model(x_normalized)
+    #
+    # model = NormalizedModel(base_model,
+    #                         mean=[0.4914, 0.4822, 0.4465],
+    #                         std=[0.2471, 0.2435, 0.2616])
     # model.eval()
     #
     # if torch.cuda.is_available():
     #     model.cuda()
     #
-    # # Load CIFAR-10 test set
-    # # Use CIFAR-10 standard normalization parameters
+    # # Load CIFAR-10 test set (only ToTensor, no Normalize in transform)
     # transform = transforms.Compose([
-    #     transforms.ToTensor(),
-    #     transforms.Normalize(mean=[0.4914, 0.4822, 0.4465],
-    #                          std=[0.2471, 0.2435, 0.2616])
+    #     transforms.ToTensor(),  # Converts to [0, 1] range
     # ])
     # test_set = datasets.CIFAR10(
     #     root='./data',
