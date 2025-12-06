@@ -13,6 +13,10 @@ Components:
 - AscendCTemplateGenerator: Generates boilerplate code from templates
 - OperatorSignatureParser: Parses Python code to extract operator signature
 
+Data Structures:
+- CompileResult: Compilation output that can be saved/loaded
+- CANNSolutionConfig: Typed wrapper for Solution.other_info
+
 Backend utilities (adapted from MultiKernelBench):
 - ascend_compile: Compilation pipeline
 - execute_correctness_check: Correctness verification
@@ -23,6 +27,7 @@ from .cann_init_task import CANNInitTask
 from .evaluator import AscendCEvaluator
 from .templates import AscendCTemplateGenerator
 from .signature_parser import OperatorSignatureParser
+from .data_structures import CompileResult, CANNSolutionConfig
 
 # Backend utilities
 from .backend import (
@@ -37,6 +42,9 @@ __all__ = [
     "AscendCEvaluator",
     "AscendCTemplateGenerator",
     "OperatorSignatureParser",
+    # Data structures
+    "CompileResult",
+    "CANNSolutionConfig",
     # Backend utilities
     "ascend_compile",
     "execute_correctness_check",

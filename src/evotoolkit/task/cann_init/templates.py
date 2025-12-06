@@ -55,29 +55,44 @@ class AscendCTemplateGenerator:
         block_dim: int = 8,
         tiling_fields: Optional[List[Dict[str, str]]] = None,
         tiling_func_body: Optional[str] = None,
+        host_tiling_src: Optional[str] = None,
+        host_operator_src: Optional[str] = None,
     ) -> Dict[str, str]:
         """
         Generate all 6 code components.
 
+        Tiling Modes:
+        1. Direct mode: If host_tiling_src or host_operator_src provided, use directly
+        2. Template mode: Use tiling_fields and tiling_func_body to generate
+        3. Default mode: Use built-in defaults (for element-wise operators)
+
         Args:
             kernel_src: Kernel code (from LLM)
             block_dim: Number of parallel cores
-            tiling_fields: Custom tiling fields, or use default
-            tiling_func_body: Custom TilingFunc body, or use default
+            tiling_fields: Custom tiling fields (template mode)
+            tiling_func_body: Custom TilingFunc body (template mode)
+            host_tiling_src: Complete tiling header (direct mode)
+            host_operator_src: Complete host operator (direct mode)
 
         Returns:
             Dictionary with all 6 code components
         """
-        # Use defaults if not provided
-        if tiling_fields is None:
-            tiling_fields = self._default_tiling_fields()
-        if tiling_func_body is None:
-            tiling_func_body = self._default_tiling_func_body()
+        # Generate host_tiling_src
+        if host_tiling_src is None:
+            # Template mode or default mode
+            fields = tiling_fields if tiling_fields is not None else self._default_tiling_fields()
+            host_tiling_src = self._gen_host_tiling(fields)
+
+        # Generate host_operator_src
+        if host_operator_src is None:
+            # Template mode or default mode
+            func_body = tiling_func_body if tiling_func_body is not None else self._default_tiling_func_body()
+            host_operator_src = self._gen_host_operator(block_dim, func_body)
 
         return {
             "project_json_src": self._gen_project_json(),
-            "host_tiling_src": self._gen_host_tiling(tiling_fields),
-            "host_operator_src": self._gen_host_operator(block_dim, tiling_func_body),
+            "host_tiling_src": host_tiling_src,
+            "host_operator_src": host_operator_src,
             "kernel_src": kernel_src,
             "python_bind_src": self._gen_python_bind(),
             "model_src": self._gen_model_src(),
