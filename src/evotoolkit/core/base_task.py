@@ -53,6 +53,9 @@ class BaseTask(ABC):
         """
         Evaluate a candidate code solution and return evaluation result.
 
+        This is the simple interface for tasks that only need a code string.
+        For tasks requiring additional information, override evaluate_solution().
+
         Args:
             candidate_code: The code to evaluate
 
@@ -60,6 +63,27 @@ class BaseTask(ABC):
             EvaluationResult: Result of the evaluation
         """
         pass
+
+    def evaluate_solution(self, solution: Solution) -> EvaluationResult:
+        """
+        Evaluate a Solution object and return evaluation result.
+
+        This method provides a richer interface for complex tasks that need
+        additional information beyond just code. The Solution object can carry:
+        - sol_string: The main code (e.g., kernel source)
+        - other_info: Additional metadata (e.g., tiling config, block_dim)
+
+        Default implementation simply calls evaluate_code(solution.sol_string).
+        Complex tasks (e.g., CANN) should override this method to extract
+        additional information from solution.other_info.
+
+        Args:
+            solution: Solution object containing code and optional metadata
+
+        Returns:
+            EvaluationResult: Result of the evaluation
+        """
+        return self.evaluate_code(solution.sol_string)
 
     # === Abstract methods from BaseTaskConfig ===
 
