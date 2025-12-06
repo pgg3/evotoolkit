@@ -108,28 +108,6 @@ class OperatorSignatureParser:
 
         return None
 
-    def _find_main_function(self, tree: ast.AST) -> Optional[Dict[str, Any]]:
-        """
-        Find the main function in AST (legacy, for backward compatibility).
-
-        Priority:
-        1. Model.forward method
-        2. First function definition
-        """
-        # Look for Model class with forward method
-        for node in ast.walk(tree):
-            if isinstance(node, ast.ClassDef) and node.name == "Model":
-                for item in node.body:
-                    if isinstance(item, ast.FunctionDef) and item.name == "forward":
-                        return self._extract_func_info(item)
-
-        # Look for standalone function
-        for node in ast.iter_child_nodes(tree):
-            if isinstance(node, ast.FunctionDef):
-                return self._extract_func_info(node)
-
-        return None
-
     def _extract_init_params(self, init_method: ast.FunctionDef) -> List[Dict[str, Any]]:
         """
         Extract __init__ parameters (excluding self).
@@ -199,46 +177,6 @@ class OperatorSignatureParser:
             "inputs": inputs,
             "outputs": outputs,
             "dtypes": ["float16", "float32"],
-        }
-
-    def _extract_func_info(self, func: ast.FunctionDef) -> Dict[str, Any]:
-        """Extract function info from AST FunctionDef node."""
-        inputs = []
-        outputs = []
-
-        # Get default argument names to skip
-        num_defaults = len(func.args.defaults)
-        num_args = len(func.args.args)
-        default_arg_indices = set(range(num_args - num_defaults, num_args))
-
-        # Extract parameters (skip 'self' and arguments with defaults)
-        for i, arg in enumerate(func.args.args):
-            arg_name = arg.arg
-            if arg_name == "self":
-                continue
-            # Skip arguments with default values (like fn=module_fn)
-            if i in default_arg_indices:
-                continue
-
-            dtype = self._extract_type_hint(arg.annotation)
-            inputs.append({"name": arg_name, "dtype": dtype})
-
-        # Extract return type if available
-        if func.returns:
-            return_type = self._extract_type_hint(func.returns)
-            outputs.append({"name": "z", "dtype": return_type})
-        else:
-            # Default single output
-            outputs.append({"name": "z", "dtype": "float"})
-
-        # Try to infer dtypes from type hints
-        dtypes = self._infer_dtypes(inputs, outputs)
-
-        return {
-            "func_name": func.name,
-            "inputs": inputs,
-            "outputs": outputs,
-            "dtypes": dtypes,
         }
 
     def _extract_type_hint(self, annotation: Optional[ast.AST]) -> str:

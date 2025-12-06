@@ -123,8 +123,12 @@ class AscendCTemplateGenerator:
         inputs = self.signature.get("inputs", [])
         outputs = self.signature.get("outputs", [])
 
-        # Note: CANN uses "float" instead of "float32"
-        # Use single dtype to avoid opbuild issues
+        # NOTE: Hardcoded "float" to match MultiKernelBench behavior.
+        # MultiKernelBench requires hand-written JSON for each operator in prompt files.
+        # See: KernelOptWorkspace/MultiKernelBench/prompts/ascendc_new_model_add.py:1-42
+        #   project_json_src='''[{"type": ["float"], ...}]'''
+        # The JSON is then written to file by ascend_compile_pipeline.py:29-30.
+        # TODO: Support multiple dtypes if needed in the future.
         input_desc = []
         for inp in inputs:
             input_desc.append({
@@ -178,7 +182,11 @@ REGISTER_TILING_DATA_CLASS({self.op_custom_capital}, {self.op_custom_capital}Til
         inputs = self.signature.get("inputs", [])
         outputs = self.signature.get("outputs", [])
 
-        # Generate input/output definitions (use single dtype to match project.json)
+        # NOTE: Hardcoded ge::DT_FLOAT to match MultiKernelBench behavior.
+        # MultiKernelBench requires hand-written host_operator_src for each operator in prompt files.
+        # See: KernelOptWorkspace/MultiKernelBench/prompts/ascendc_new_model_add.py:57-131
+        #   host_operator_src="""... .DataType({ge::DT_FLOAT}) ..."""
+        # TODO: Support multiple dtypes if needed in the future.
         input_defs = ""
         for inp in inputs:
             input_defs += f'        this->Input("{inp["name"]}").ParamType(REQUIRED).DataType({{ge::DT_FLOAT}}).Format({{ge::FORMAT_ND}});\n'
