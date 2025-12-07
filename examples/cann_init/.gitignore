@@ -1,3 +1,4 @@
 output/
 fusion_result.json
 extra-info/
+.env
