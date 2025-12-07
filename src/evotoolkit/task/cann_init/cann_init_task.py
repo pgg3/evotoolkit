@@ -187,13 +187,6 @@ Requirements:
         Returns:
             EvaluationResult with valid, score, and additional_info
         """
-        if self.fake_mode:
-            return EvaluationResult(
-                valid=True,
-                score=1.0,
-                additional_info={"fake_mode": True, "kernel_src": solution.sol_string},
-            )
-
         # Parse configuration from other_info
         config = CANNSolutionConfig.from_dict(solution.other_info)
         kernel_src = solution.sol_string
@@ -203,6 +196,51 @@ Requirements:
             project_path = config.project_path or self.default_project_path
             if project_path is None:
                 project_path = tempfile.mkdtemp(prefix=f"cann_{self.op_name}_")
+
+            # Step 1: Generate full code from kernel + templates
+            full_code = self._template_gen.generate(
+                kernel_src=kernel_src,
+                block_dim=config.block_dim,
+                host_tiling_src=config.host_tiling_src,
+                host_operator_src=config.host_operator_src,
+                python_bind_src=config.python_bind_src,
+            )
+
+            # Fake mode: write files but skip compile/deploy/test
+            if self.fake_mode:
+                from .backend import write_project_files
+
+                write_result = write_project_files(
+                    full_code=full_code,
+                    op_name=self.op_name,
+                    project_path=project_path,
+                )
+
+                if not write_result["success"]:
+                    return EvaluationResult(
+                        valid=False,
+                        score=None,
+                        additional_info={
+                            "fake_mode": True,
+                            "stage": "write_files",
+                            "error": write_result["error"],
+                            "project_path": project_path,
+                            "kernel_src": kernel_src,
+                        },
+                    )
+
+                return EvaluationResult(
+                    valid=True,
+                    score=1.0,
+                    additional_info={
+                        "fake_mode": True,
+                        "stage": "files_written",
+                        "project_path": project_path,
+                        "kernel_src": kernel_src,
+                        "generated_components": list(full_code.keys()),
+                        "files_written": write_result.get("files_written", []),
+                    },
+                )
 
             # Create evaluator for this evaluation
             evaluator = AscendCEvaluator(

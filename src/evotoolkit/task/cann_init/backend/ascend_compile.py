@@ -10,7 +10,7 @@ Adapted from MultiKernelBench/utils/ascend_compile_pipeline.py
 import os
 import subprocess
 import shutil
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from ..pybind_templates import setup_pybind_directory
 
@@ -21,6 +21,91 @@ def underscore_to_pascalcase(underscore_str: str) -> str:
         return ""
     parts = underscore_str.split("_")
     return "".join(word.capitalize() for word in parts if word)
+
+
+def write_project_files(
+    full_code: Dict[str, str],
+    op_name: str,
+    project_path: str,
+) -> Dict[str, Any]:
+    """
+    Write all project files without compiling (for fake mode).
+
+    Creates the same directory structure as ascend_compile but skips:
+    - msopgen (no project skeleton)
+    - build.sh (no compilation)
+    - deploy (no installation)
+    - pybind build (no wheel)
+
+    Args:
+        full_code: Dictionary containing all code components
+        op_name: Operator name (e.g., "add")
+        project_path: Base directory for operator projects
+
+    Returns:
+        {"success": bool, "error": str or None, "files_written": list}
+    """
+    op = f"{op_name}_custom"
+    op_capital = underscore_to_pascalcase(op)
+    target_directory = os.path.join(project_path, op_capital)
+    files_written: List[str] = []
+
+    try:
+        # Create directory structure
+        os.makedirs(project_path, exist_ok=True)
+        os.makedirs(os.path.join(target_directory, "op_host"), exist_ok=True)
+        os.makedirs(os.path.join(target_directory, "op_kernel"), exist_ok=True)
+
+        # Write project JSON
+        json_path = os.path.join(project_path, f"{op}.json")
+        with open(json_path, "w") as f:
+            f.write(full_code.get("project_json_src", ""))
+        files_written.append(json_path)
+
+        # Write source files
+        tiling_path = os.path.join(target_directory, "op_host", f"{op}_tiling.h")
+        with open(tiling_path, "w") as f:
+            f.write(full_code.get("host_tiling_src", ""))
+        files_written.append(tiling_path)
+
+        host_path = os.path.join(target_directory, "op_host", f"{op}.cpp")
+        with open(host_path, "w") as f:
+            f.write(full_code.get("host_operator_src", ""))
+        files_written.append(host_path)
+
+        kernel_path = os.path.join(target_directory, "op_kernel", f"{op}.cpp")
+        with open(kernel_path, "w") as f:
+            f.write(full_code.get("kernel_src", ""))
+        files_written.append(kernel_path)
+
+        # Set up Python binding directory
+        cpp_ext_dir = setup_pybind_directory(project_path)
+        csrc_dir = os.path.join(cpp_ext_dir, "csrc")
+
+        pybind_path = os.path.join(csrc_dir, "op.cpp")
+        with open(pybind_path, "w") as f:
+            f.write(full_code.get("python_bind_src", ""))
+        files_written.append(pybind_path)
+
+        # Write model_src as reference
+        model_path = os.path.join(project_path, "model_src.py")
+        with open(model_path, "w") as f:
+            f.write(full_code.get("model_src", ""))
+        files_written.append(model_path)
+
+        return {
+            "success": True,
+            "error": None,
+            "files_written": files_written,
+            "project_directory": target_directory,
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Failed to write files: {str(e)}",
+            "files_written": files_written,
+        }
 
 
 def ascend_compile(
@@ -73,6 +158,9 @@ def ascend_compile(
 
     try:
         # Step 1: Create operator project directory
+        # Ensure project_path exists
+        os.makedirs(project_path, exist_ok=True)
+
         if os.path.exists(target_directory):
             print("[INFO] Operator project already exists, deleting...")
             shutil.rmtree(target_directory)
