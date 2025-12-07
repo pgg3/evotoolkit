@@ -13,18 +13,8 @@ This module provides template generation for the 6 components of an Ascend C ope
 6. model_src - Test model for verification
 
 Only kernel_src needs to be provided by LLM, others are auto-generated.
-
-Code has been refactored into the templates/ subpackage for better organization:
-- templates/base.py          - Base utilities and type conversion
-- templates/project_json.py  - Component 1: project JSON configuration
-- templates/host_tiling.py   - Component 2: tiling data structure
-- templates/host_operator.py - Component 3: host-side operator
-- templates/python_bind.py   - Component 5: Python binding
-- templates/model_src.py     - Component 6: test model
-- templates/generator.py     - Main orchestrator class
 """
 
-# Re-export the main class for backward compatibility
-from .templates import AscendCTemplateGenerator
+from .generator import AscendCTemplateGenerator
 
 __all__ = ["AscendCTemplateGenerator"]
