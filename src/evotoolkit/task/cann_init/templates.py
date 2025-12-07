@@ -20,7 +20,7 @@ Code has been refactored into the templates/ subpackage for better organization:
 - templates/host_tiling.py   - Component 2: tiling data structure
 - templates/host_operator.py - Component 3: host-side operator
 - templates/python_bind.py   - Component 5: Python binding
-- templates/model_src.py     - Component 6: test model
+- templates/moddel_src.py     - Component 6: test model
 - templates/generator.py     - Main orchestrator class
 """
 

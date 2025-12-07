@@ -172,8 +172,9 @@ Requirements:
         The solution can carry additional config in other_info:
         - project_path: Dynamic working directory (overrides default)
         - block_dim: Number of parallel cores (default: 8)
-        - tiling_fields: Custom tiling field definitions
-        - tiling_func_body: Custom TilingFunc body
+        - host_tiling_src: Complete tiling header (Full LLM mode)
+        - host_operator_src: Complete host operator (Full LLM mode)
+        - python_bind_src: Complete Python binding (Full LLM mode)
         - compile_only: Stop after compilation (for parallel compile)
         - load_from: Load pre-compiled result instead of compiling
         - skip_correctness: Skip correctness check
@@ -217,10 +218,9 @@ Requirements:
             full_code = self._template_gen.generate(
                 kernel_src=kernel_src,
                 block_dim=config.block_dim,
-                tiling_fields=config.tiling_fields,
-                tiling_func_body=config.tiling_func_body,
                 host_tiling_src=config.host_tiling_src,
                 host_operator_src=config.host_operator_src,
+                python_bind_src=config.python_bind_src,
             )
 
             # Step 2: Compile and deploy
@@ -466,8 +466,9 @@ Requirements:
         project_path: str,
         save_to: Optional[str] = None,
         block_dim: int = 8,
-        tiling_fields: Optional[list] = None,
-        tiling_func_body: Optional[str] = None,
+        host_tiling_src: Optional[str] = None,
+        host_operator_src: Optional[str] = None,
+        python_bind_src: Optional[str] = None,
     ) -> EvaluationResult:
         """
         Convenience method: compile only, no testing.
@@ -479,8 +480,9 @@ Requirements:
             project_path: Directory for compilation output
             save_to: Path to save CompileResult (default: same as project_path)
             block_dim: Number of parallel cores
-            tiling_fields: Custom tiling fields
-            tiling_func_body: Custom tiling function body
+            host_tiling_src: Complete tiling header (Full LLM mode)
+            host_operator_src: Complete host operator (Full LLM mode)
+            python_bind_src: Complete Python binding (Full LLM mode)
 
         Returns:
             EvaluationResult with compile status
@@ -488,8 +490,9 @@ Requirements:
         config = CANNSolutionConfig(
             project_path=project_path,
             block_dim=block_dim,
-            tiling_fields=tiling_fields,
-            tiling_func_body=tiling_func_body,
+            host_tiling_src=host_tiling_src,
+            host_operator_src=host_operator_src,
+            python_bind_src=python_bind_src,
             compile_only=True,
             save_compile_to=save_to or project_path,
         )

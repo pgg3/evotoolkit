@@ -22,6 +22,7 @@ _tiling_config = {}
 exec((SRC_DIR / "tiling_config.py").read_text(), _tiling_config)
 HOST_TILING_SRC = _tiling_config["HOST_TILING_SRC"]
 HOST_OPERATOR_SRC = _tiling_config["HOST_OPERATOR_SRC"]
+PYTHON_BIND_SRC = _tiling_config["PYTHON_BIND_SRC"]
 
 # Default mode configuration
 BLOCK_DIM = 8

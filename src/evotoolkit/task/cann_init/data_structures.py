@@ -13,7 +13,7 @@ import json
 import pickle
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 
 @dataclass
@@ -121,39 +121,39 @@ class CANNSolutionConfig:
     This provides a clean interface for passing dynamic configuration
     through Solution, making it portable across different task types.
 
-    Tiling Modes:
-        1. Default mode: No tiling params → use built-in default
-        2. Template mode: tiling_fields + tiling_func_body → template generates code
-        3. Direct mode: host_tiling_src + host_operator_src → use directly
+    Tiling Modes (2 modes):
+        1. Default mode: No host_tiling_src/host_operator_src → auto-generate defaults
+        2. Full LLM mode: host_tiling_src + host_operator_src → use LLM-generated code
+
+    Python Bind Modes (2 modes):
+        1. Default mode: No python_bind_src → auto-generate with at::empty_like
+        2. Full LLM mode: python_bind_src → use LLM-generated code
 
     Usage:
         # Create from other_info dict
         config = CANNSolutionConfig.from_dict(solution.other_info)
 
-        # Template mode
-        config = CANNSolutionConfig(
-            tiling_fields=[{"name": "M", "type": "uint32_t"}],
-            tiling_func_body="tiling.set_M(shape.GetDim(0));",
-        )
+        # Default mode (element-wise operators)
+        config = CANNSolutionConfig(block_dim=8)
 
-        # Direct mode (complex operators)
+        # Full LLM mode (complex operators)
         config = CANNSolutionConfig(
             host_tiling_src="...",      # Complete .h file
             host_operator_src="...",    # Complete .cpp file
+            python_bind_src="...",      # Complete Python binding
         )
 
     Attributes:
         # Dynamic path
         project_path: Working directory for this solution
 
-        # Template mode parameters
+        # Default mode parameter
         block_dim: Number of parallel cores
-        tiling_fields: Custom tiling field definitions
-        tiling_func_body: Custom TilingFunc implementation
 
-        # Direct mode parameters (LLM generates complete code)
+        # Full LLM mode parameters (LLM generates complete code)
         host_tiling_src: Complete tiling header file
         host_operator_src: Complete host operator implementation
+        python_bind_src: Complete Python binding code
 
         # Execution control
         compile_only: Stop after compilation (for parallel compile)
@@ -167,14 +167,13 @@ class CANNSolutionConfig:
     # Dynamic path
     project_path: Optional[str] = None
 
-    # Template mode parameters
+    # Default mode parameter
     block_dim: int = 8
-    tiling_fields: Optional[List[Dict[str, str]]] = None
-    tiling_func_body: Optional[str] = None
 
-    # Direct mode parameters
+    # Full LLM mode parameters
     host_tiling_src: Optional[str] = None
     host_operator_src: Optional[str] = None
+    python_bind_src: Optional[str] = None
 
     # Execution control
     compile_only: bool = False
@@ -194,10 +193,9 @@ class CANNSolutionConfig:
         return cls(
             project_path=d.get("project_path"),
             block_dim=d.get("block_dim", 8),
-            tiling_fields=d.get("tiling_fields"),
-            tiling_func_body=d.get("tiling_func_body"),
             host_tiling_src=d.get("host_tiling_src"),
             host_operator_src=d.get("host_operator_src"),
+            python_bind_src=d.get("python_bind_src"),
             compile_only=d.get("compile_only", False),
             load_from=d.get("load_from"),
             skip_correctness=d.get("skip_correctness", False),
@@ -213,14 +211,12 @@ class CANNSolutionConfig:
             result["project_path"] = self.project_path
         if self.block_dim != 8:
             result["block_dim"] = self.block_dim
-        if self.tiling_fields is not None:
-            result["tiling_fields"] = self.tiling_fields
-        if self.tiling_func_body is not None:
-            result["tiling_func_body"] = self.tiling_func_body
         if self.host_tiling_src is not None:
             result["host_tiling_src"] = self.host_tiling_src
         if self.host_operator_src is not None:
             result["host_operator_src"] = self.host_operator_src
+        if self.python_bind_src is not None:
+            result["python_bind_src"] = self.python_bind_src
         if self.compile_only:
             result["compile_only"] = True
         if self.load_from is not None:

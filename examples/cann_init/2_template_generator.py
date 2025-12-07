@@ -6,7 +6,7 @@ Test: Template Generator
 
 Demonstrates two tiling modes:
 1. Default mode - only kernel_src (for element-wise operators)
-2. Full LLM mode - kernel_src + host_tiling_src + host_operator_src (for complex operators)
+2. Full LLM mode - kernel_src + host_tiling_src + host_operator_src + python_bind_src (for complex operators)
 
 Usage:
     python 2_template_generator.py
@@ -22,6 +22,7 @@ from _config import (
     BLOCK_DIM,
     HOST_TILING_SRC,
     HOST_OPERATOR_SRC,
+    PYTHON_BIND_SRC,
 )
 
 
@@ -40,6 +41,9 @@ def test_default_mode(gen):
     print("\nhost_tiling_src (auto-generated):")
     print(full_code["host_tiling_src"])
 
+    print("\npython_bind_src (auto-generated):")
+    print(full_code["python_bind_src"])
+
 
 def test_full_llm_mode(gen):
     """Test full LLM mode with complete host code."""
@@ -51,6 +55,7 @@ def test_full_llm_mode(gen):
         kernel_src=KERNEL_SRC,
         host_tiling_src=HOST_TILING_SRC,
         host_operator_src=HOST_OPERATOR_SRC,
+        python_bind_src=PYTHON_BIND_SRC,
     )
 
     print("Generated components:")
@@ -59,6 +64,9 @@ def test_full_llm_mode(gen):
 
     print("\nhost_tiling_src (LLM provided):")
     print(full_code["host_tiling_src"][:300] + "...")
+
+    print("\npython_bind_src (LLM provided):")
+    print(full_code["python_bind_src"][:300] + "...")
 
 
 def main():
