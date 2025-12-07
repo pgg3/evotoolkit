@@ -8,8 +8,8 @@ Demonstrates parallel compilation of multiple kernel variants,
 then sequential testing on NPU.
 
 Usage:
-    python 4_parallel_compile.py          # fake mode
-    python 4_parallel_compile.py --real   # real NPU
+    python 4_parallel_compile.py
+    python 4_parallel_compile.py --npu Ascend910B
 """
 
 import argparse
@@ -22,22 +22,18 @@ from _config import KERNEL_SRC, get_task_data, ensure_output_dir
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--real", action="store_true")
     parser.add_argument("--npu", default="Ascend910B")
     args = parser.parse_args()
 
-    fake_mode = not args.real
-
     print("=" * 50)
     print("Parallel Compilation Test")
-    print(f"Mode: {'fake' if fake_mode else 'real'}")
     print("=" * 50)
 
-    output_dir = ensure_output_dir("parallel")
+    output_dir = ensure_output_dir("4_parallel")
 
     task = CANNInitTask(
         data=get_task_data(npu_type=args.npu),
-        fake_mode=fake_mode,
+        fake_mode=False,
     )
 
     # Create solutions with different block_dim
@@ -64,22 +60,28 @@ def main():
             idx, bd = futures[future]
             result = future.result()
             results.append((idx, bd, result))
-            print(f"  sol_{idx} (block_dim={bd}): valid={result.valid}")
+            status = "compiled" if result.valid else "failed"
+            print(f"  sol_{idx} (block_dim={bd}): {status}")
 
-    print(f"\nAll {len(results)} compilations done!")
+    compiled_count = sum(1 for _, _, r in results if r.valid)
+    print(f"\nCompilation: {compiled_count}/{len(results)} succeeded")
 
-    # Sequential testing (real mode only)
-    if not fake_mode:
-        print("\nSequential testing...")
-        for idx, bd, _ in sorted(results):
-            test_result = task.test_compiled(
-                load_from=str(output_dir / f"sol_{idx:03d}")
-            )
-            if test_result.valid:
-                rt = test_result.additional_info.get("runtime")
-                print(f"  sol_{idx} (block_dim={bd}): {rt:.4f} ms")
-            else:
-                print(f"  sol_{idx}: failed")
+    # Sequential testing
+    print("\nSequential testing...")
+    for idx, bd, compile_result in sorted(results):
+        if not compile_result.valid:
+            print(f"  sol_{idx} (block_dim={bd}): skipped (compile failed)")
+            continue
+
+        test_result = task.test_compiled(
+            load_from=str(output_dir / f"sol_{idx:03d}")
+        )
+        if test_result.valid:
+            rt = test_result.additional_info.get("runtime")
+            print(f"  sol_{idx} (block_dim={bd}): {rt:.4f} ms")
+        else:
+            err = test_result.additional_info.get("error", "unknown")
+            print(f"  sol_{idx} (block_dim={bd}): failed - {err[:50]}")
 
 
 if __name__ == "__main__":
