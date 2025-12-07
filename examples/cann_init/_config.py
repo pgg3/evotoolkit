@@ -17,12 +17,14 @@ OUTPUT_DIR = Path(__file__).parent / "output"
 PYTHON_REFERENCE = (SRC_DIR / "python_reference.py").read_text()
 KERNEL_SRC = (SRC_DIR / "kernel_src.cpp").read_text()
 
-# Load tiling configuration
+# Load tiling configuration (for Full LLM mode)
 _tiling_config = {}
 exec((SRC_DIR / "tiling_config.py").read_text(), _tiling_config)
-TILING_FIELDS = _tiling_config["TILING_FIELDS"]
-TILING_FUNC_BODY = _tiling_config["TILING_FUNC_BODY"]
-BLOCK_DIM = _tiling_config["BLOCK_DIM"]
+HOST_TILING_SRC = _tiling_config["HOST_TILING_SRC"]
+HOST_OPERATOR_SRC = _tiling_config["HOST_OPERATOR_SRC"]
+
+# Default mode configuration
+BLOCK_DIM = 8
 
 
 def ensure_output_dir(subdir: str = "") -> Path:
