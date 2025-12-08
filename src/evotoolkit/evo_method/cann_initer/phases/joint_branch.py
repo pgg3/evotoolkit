@@ -52,7 +52,8 @@ class JointBranch:
         context = {
             "signature": self.run_state_dict.signature,
             "compute_pattern": self.run_state_dict.compute_pattern,
-            "python_ref": python_ref
+            "python_ref": python_ref,
+            "npu_type": self.config.task.npu_type,
         }
         conversation = []
 

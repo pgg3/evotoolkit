@@ -48,7 +48,7 @@ def get_llm():
     return HttpsApi(api_url=api_url, key=api_key, model=model)
 
 
-def get_task(op_name: str, python_reference: str, npu_type: str = "Ascend910B"):
+def get_task(op_name: str, python_reference: str, npu_type: str = "Ascend910B2"):
     """Get CANNInitTask instance."""
     return CANNInitTask(data={
         "op_name": op_name,

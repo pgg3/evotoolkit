@@ -1,89 +1,440 @@
 # Copyright (c) 2025 Ping Guo
 # Licensed under the MIT License
 
-"""Kernel + Tiling 联合分支 Prompt 默认实现"""
+"""Default prompt implementations for Kernel + Tiling Joint Branch"""
 
-from typing import List
+from typing import List, Dict, Any
+
+from .phase0 import _format_signature
+
+
+# ============================================================
+# Ascend Chip Specification Table
+# ============================================================
+# Note: UB buffer sizes are estimated values (official docs rarely disclose).
+# AI Core counts are from HAMi virtualization configs and official sources.
+# References:
+# - https://www.theriseunion.com/en/blog/HAMi-ascend-910b-support.html
+# - https://www.tomshardware.com/tech-industry/artificial-intelligence/huaweis-homegrown-ai-chip-examined
+# - https://zhuanlan.zhihu.com/p/599049070
+# ============================================================
+
+CHIP_SPECS: Dict[str, Dict[str, Any]] = {
+    "Ascend910A": {
+        "ub_capacity": 256 * 1024,      # Estimated, not officially disclosed
+        "ai_core_count": 30,            # 30 usable AI Cores (32 physical DaVinci Max)
+        "total_cores": 32,
+        "vector_align": 32,
+        "cube_m": 16,
+        "cube_n": 16,
+        "cube_k": 16,
+        "memory_gb": 32,                # 32 GB HBM
+        "fp16_tflops": 256,
+        "power_w": 310,
+        "process": "7nm EUV (TSMC)",
+        "description": "Training NPU (910A series)",
+    },
+    "Ascend910B2": {
+        "ub_capacity": 256 * 1024,      # Estimated
+        "ai_core_count": 24,            # Official: 24 AI Cores
+        "ai_cpu_count": 6,
+        "vector_align": 32,
+        "cube_m": 16,
+        "cube_n": 16,
+        "cube_k": 16,
+        "memory_gb": 64,                # 64 GB HBM2e
+        "description": "Training NPU (910B2 series)",
+    },
+    "Ascend910B3": {
+        "ub_capacity": 256 * 1024,      # Estimated
+        "ai_core_count": 20,            # Official: 20 AI Cores
+        "ai_cpu_count": 7,
+        "vector_align": 32,
+        "cube_m": 16,
+        "cube_n": 16,
+        "cube_k": 16,
+        "memory_gb": 64,                # 64 GB HBM3e
+        "memory_bandwidth": "1.2 TB/s",
+        "description": "Training NPU (910B3 series)",
+    },
+    "Ascend310": {
+        "ub_capacity": 128 * 1024,      # Estimated
+        "ai_core_count": 1,             # Single AI Core (edge inference)
+        "arm_cpu_cores": 8,             # 8x ARM A55 CPU
+        "vector_align": 32,
+        "cube_m": 16,
+        "cube_n": 16,
+        "cube_k": 16,
+        "int8_tops": 16,
+        "fp16_tflops": 8,
+        "power_w": 8,
+        "process": "12nm",
+        "description": "Edge Inference NPU",
+    },
+    "Ascend310P": {
+        "ub_capacity": 128 * 1024,      # Estimated
+        "ai_core_count": 8,             # Estimated, not officially disclosed
+        "vector_align": 32,
+        "cube_m": 16,
+        "cube_n": 16,
+        "cube_k": 16,
+        "description": "Inference NPU (310P series)",
+    },
+}
+
+# Aliases for common usage
+CHIP_SPECS["Ascend910B"] = CHIP_SPECS["Ascend910B3"]  # Default 910B -> 910B3
+
+DEFAULT_CHIP = "Ascend910B3"
+
+
+def get_chip_spec(npu_type: str) -> Dict[str, Any]:
+    """Get chip specification by NPU type."""
+    return CHIP_SPECS.get(npu_type, CHIP_SPECS[DEFAULT_CHIP])
+
+
+def format_chip_spec(npu_type: str) -> str:
+    """Format chip specification for prompt."""
+    spec = get_chip_spec(npu_type)
+    ub_kb = spec['ub_capacity'] // 1024
+    core_count = spec.get('ai_core_count', 'unknown')
+    mem_info = f", {spec['memory_gb']}GB HBM" if 'memory_gb' in spec else ""
+    return f"""- Chip: {npu_type}
+- UB Capacity: {ub_kb}KB per core (estimated)
+- AI Core Count: {core_count}{mem_info}
+- Vector Alignment: {spec['vector_align']} bytes
+- Cube Tile Size: {spec['cube_m']}x{spec['cube_n']}x{spec['cube_k']}"""
+
+
+# ============================================================
+# Reference: Joint Branch Design (from phase1_joint_branch.md)
+# ============================================================
+# Why Joint Design?
+# 1. Kernel depends on Tiling:
+#    - Kernel needs tiling params (blockSize, tileSize) to access data
+#    - Kernel loop structure is determined by tiling strategy
+#
+# 2. Tiling depends on Kernel:
+#    - Tiling strategy needs to know kernel's compute pattern
+#    - Different kernel implementations may need different tiling granularity
+#
+# Three-Phase Flow:
+#   Phase 1: Joint Planning Discussion
+#       Tiling Agent <-> Kernel Agent -> Design Consensus
+#   Phase 2: Knowledge Retrieval
+#       get_api_doc(), get_operator_example()
+#   Phase 3: Code Implementation
+#       Kernel Agent -> kernel_src
+#       Tiling Agent -> tiling (or decide to use default)
+#
+# Default Tiling Suitable For:
+#   - Add, Sub, Mul, Div (element-wise)
+#   - ReLU, Sigmoid, Tanh (activations)
+#   - Exp, Log, Sqrt (math functions)
+#
+# Custom Tiling Required For:
+#   - MatMul: custom InferShape needed
+#   - Reduce: need to compute reduction dimension tiling
+#   - LayerNorm, Softmax: special tiling strategies
+# ============================================================
 
 
 class JointPromptMixin:
-    """Kernel + Tiling 联合分支 Prompt"""
+    """Prompts for Kernel + Tiling Joint Branch"""
 
-    # ==================== 多轮对话 ====================
+    # ==================== Multi-turn Dialogue ====================
+
+    def _extract_current_plan(self, conversation: List[dict]) -> str:
+        """Extract current best plan from conversation (avoid passing full history)."""
+        if not conversation:
+            return None
+        # Find the last tiling proposal
+        for msg in reversed(conversation):
+            if msg.get('role') == 'tiling' and '<response>' in msg.get('content', ''):
+                content = msg['content']
+                start = content.find('<response>')
+                end = content.find('</response>')
+                if start != -1 and end != -1:
+                    return content[start:end + len('</response>')]
+        return None
+
+    def _extract_kernel_feedback(self, conversation: List[dict]) -> str:
+        """Extract latest kernel feedback from conversation."""
+        if not conversation:
+            return None
+        for msg in reversed(conversation):
+            if msg.get('role') == 'kernel':
+                return msg.get('content', '')
+        return None
 
     def get_tiling_propose_prompt(self, context: dict, conversation: List[dict]) -> str:
-        """生成 Tiling 专员提出策略 Prompt"""
-        history = "\n".join([f"[{msg['role']}]: {msg['content']}" for msg in conversation])
+        """Generate prompt for Tiling Specialist to propose strategy"""
+        formatted_sig = _format_signature(context.get('signature'))
+        compute_pattern = context.get('compute_pattern', 'other')
 
-        return f"""
-你是昇腾 Ascend C Tiling 专员。基于以下信息提出 tiling 策略。
+        # Get hardware specification from context
+        npu_type = context.get('npu_type', DEFAULT_CHIP)
+        hw_spec = format_chip_spec(npu_type)
+        chip = get_chip_spec(npu_type)
+        ub_kb = chip['ub_capacity'] // 1024
+        core_count = chip.get('ai_core_count', 8)
 
-## 算子信息
-- 计算模式: {context.get('compute_pattern')}
-- 签名: {context.get('signature')}
+        # Check if this is first round or revision round
+        current_plan = self._extract_current_plan(conversation)
+        kernel_feedback = self._extract_kernel_feedback(conversation)
 
-## Python Reference
+        # Use different prompts for first round vs revision
+        if current_plan and kernel_feedback:
+            return self._get_tiling_revise_prompt(
+                formatted_sig, compute_pattern, context.get('python_ref'),
+                current_plan, kernel_feedback, ub_kb, core_count
+            )
+
+        # First round: full prompt with examples
+        return f"""## Role
+You are the **tiling agent**. Design a tiling strategy for the kernel agent.
+
+## Hardware
+{hw_spec}
+
+## Compute Pattern: `{compute_pattern}`
+
+## Decision Guide
+
+| Pattern | Strategy | Paradigm | Action |
+|---------|----------|----------|--------|
+| element-wise | default | vector | **Quick path** (skip analysis) |
+| reduction | custom | vector | Full analysis |
+| broadcast | custom | vector | Full analysis |
+| matmul | custom | cube | Full analysis (cube unit) |
+| other | custom | analyze | Full analysis |
+
+## Input
+
+### Operator Signature
+{formatted_sig}
+
+### Python Reference
 ```python
 {context.get('python_ref')}
 ```
 
-## 对话历史
-{history if history else "(这是第一轮，请提出初始方案)"}
+## Output
 
-## 你的任务
-1. 分析计算模式，确定编程范式（vector / cube）
-2. 提出 tiling 策略：
-   - block_dim: 并行核心数
-   - tile_size: 每次处理的数据量
-   - 是否使用默认 tiling 模板
-3. 说明数据切分方式
+**If `element-wise`** (quick path):
+<response>
+Strategy: default
+Paradigm: vector
+block_dim: {core_count}
+Reason: <1 sentence>
+</response>
 
-## 输出格式
-```json
-{{
-  "paradigm": "vector | cube",
-  "use_default_tiling": true | false,
-  "tiling_params": {{
-    "block_dim": 8,
-    "tile_size": "auto | 具体值"
-  }},
-  "data_partition": "说明数据如何切分",
-  "reasoning": "策略理由"
-}}
+**Otherwise** (full analysis):
+<response>
+## Analysis
+1. **Ops**: <operations with shapes>
+2. **Dims**: <which are independent vs reduction>
+3. **Memory**: <per-tile size>, fits {ub_kb}KB? <yes/no>
+
+## Decision
+- block_dim: <N> (<which dim, why>)
+- tile_num: <M> (<reason>)
+- buffer_num: <1|2>
+- Paradigm: <vector|cube>
+
+## Execution
 ```
+for i in range(tile_num):
+    CopyIn: <what>
+    Compute: <APIs>
+    CopyOut: <what>
+```
+
+## Tiling Fields
+- <field>: <type> // <purpose>
+
+## Summary
+Strategy: <default|custom>, Key: <1 sentence>
+</response>
+
+## Examples
+
+### Ex1: Add (element-wise -> quick path)
+Pattern: `element-wise`, Python: `z = x + y`
+<response>
+Strategy: default
+Paradigm: vector
+block_dim: {core_count}
+Reason: All dims independent, standard tiling.
+</response>
+
+### Ex2: Softmax (reduction -> full)
+Pattern: `reduction`, Python: `y = softmax(x, dim=-1)` x=[B,D]
+<response>
+## Analysis
+1. **Ops**: ReduceMax, Sub, Exp, ReduceSum, Div
+2. **Dims**: B=independent (parallelize), D=reduction (full row)
+3. **Memory**: D*8 bytes/row, D=1024 -> 8KB << {ub_kb}KB
+
+## Decision
+- block_dim: min({core_count}, B)
+- tile_num: rowsPerCore
+- buffer_num: 2
+- Paradigm: vector
+
+## Execution
+```
+for row in range(rowsPerCore):
+    CopyIn: x[row*D:(row+1)*D]
+    Compute: max, sub, exp, sum, div
+    CopyOut: y[row*D:(row+1)*D]
+```
+
+## Tiling Fields
+- batchSize: uint32_t // B
+- featureDim: uint32_t // D
+- rowsPerCore: uint32_t
+
+## Summary
+Strategy: custom, Key: Reduction along D requires full row; parallelize B.
+</response>
+
+### Ex3: MatMul (matmul -> cube)
+Pattern: `matmul`, Python: `C = A @ B` A=[M,K], B=[K,N]
+<response>
+## Analysis
+1. **Ops**: MatMul [M,K]@[K,N]->[M,N]
+2. **Dims**: M,N=independent, K=reduction (accumulate)
+3. **Memory**: tiles ~80KB < {ub_kb}KB
+
+## Decision
+- block_dim: min({core_count}, M/tileM)
+- tile_num: nTiles * kTiles
+- buffer_num: 2
+- Paradigm: cube
+
+## Execution
+```
+for m in myMTiles:
+    for n in range(nTiles):
+        acc = 0
+        for k in range(kTiles):
+            CopyIn: A[m,k], B[k,n]
+            Compute: acc += Cube(A,B)
+        CopyOut: C[m,n]
+```
+
+## Tiling Fields
+- M, N, K: uint32_t
+- tileM, tileN, tileK: uint32_t
+
+## Summary
+Strategy: custom, Key: Cube unit; tile all dims, accumulate K.
+</response>
+
+Now analyze the given operator:
+"""
+
+    def _get_tiling_revise_prompt(
+        self,
+        formatted_sig: str,
+        compute_pattern: str,
+        python_ref: str,
+        current_plan: str,
+        kernel_feedback: str,
+        ub_kb: int,
+        core_count: int,
+    ) -> str:
+        """Generate concise prompt for revision round (no examples, no redundant info)."""
+        return f"""## Role
+You are the **tiling agent**. Revise your tiling strategy based on kernel feedback.
+
+## Context
+- Pattern: `{compute_pattern}`
+- UB: {ub_kb}KB, Cores: {core_count}
+
+## Operator Signature
+{formatted_sig}
+
+## Python Reference
+```python
+{python_ref}
+```
+
+## Your Previous Plan
+{current_plan}
+
+## Kernel Feedback
+{kernel_feedback}
+
+## Task
+Revise the plan to address the feedback. Use the **same format** as your previous plan.
+
+**If quick path** (element-wise):
+<response>
+Strategy: default
+Paradigm: vector
+block_dim: {core_count}
+Reason: <1 sentence>
+</response>
+
+**If full analysis**:
+<response>
+## Analysis
+1. **Ops**: ...
+2. **Dims**: ...
+3. **Memory**: ...
+
+## Decision
+- block_dim: ...
+- tile_num: ...
+- buffer_num: ...
+- Paradigm: ...
+
+## Execution
+```
+...
+```
+
+## Tiling Fields
+- ...
+
+## Summary
+Strategy: ..., Key: ...
+</response>
 """
 
     def get_kernel_review_prompt(self, context: dict, conversation: List[dict]) -> str:
-        """生成 Kernel 专员评审 Prompt"""
+        """Generate prompt for Kernel Specialist to review the proposal"""
         history = "\n".join([f"[{msg['role']}]: {msg['content']}" for msg in conversation])
 
         return f"""
-你是昇腾 Ascend C Kernel 专员。评审 Tiling 专员的方案。
+You are an Ascend C Kernel Specialist. Review the Tiling Specialist's proposal.
 
-## 算子信息
-- 计算模式: {context.get('compute_pattern')}
+## Operator Information
+- Compute Pattern: {context.get('compute_pattern')}
 
 ## Python Reference
 ```python
 {context.get('python_ref')}
 ```
 
-## 对话历史
+## Conversation History
 {history}
 
-## 你的任务
-1. 评估 tiling 方案是否合理
-2. 设计 kernel 数据流：CopyIn → Compute → CopyOut
-3. 确定需要的 Ascend C API
-4. 确定流水线策略（single_buffer / double_buffer）
+## Your Tasks
+1. Evaluate whether the tiling strategy is reasonable
+2. Design the kernel data flow: CopyIn -> Compute -> CopyOut
+3. Determine the required Ascend C APIs
+4. Determine the pipeline strategy (single_buffer / double_buffer)
 
-## 输出格式
-如果接受方案，回复中**必须包含 "accepted"**：
+## Output Format
+If you accept the proposal, your response **must include "accepted"**:
 ```json
 {{
   "accepted": true,
   "kernel_design": {{
-    "data_flow": "CopyIn → Compute → CopyOut",
+    "data_flow": "CopyIn -> Compute -> CopyOut",
     "pipeline": "double_buffer",
     "key_apis": ["Add", "DataCopy", "AllocTensor"]
   }},
@@ -94,36 +445,36 @@ class JointPromptMixin:
 }}
 ```
 
-如果需要修改，说明原因并提出建议。
+If modifications are needed, explain the reasons and provide suggestions.
 """
 
-    # ==================== 代码实现 ====================
+    # ==================== Code Implementation ====================
 
     def get_kernel_impl_prompt(self, plan: dict, knowledge: dict, python_ref: str) -> str:
-        """生成 Kernel 实现 Prompt"""
+        """Generate prompt for Kernel implementation"""
         return f"""
-你是昇腾 Ascend C Kernel 开发专家。请生成完整的 kernel 代码。
+You are an Ascend C Kernel Development Expert. Please generate the complete kernel code.
 
 ## Python Reference
 ```python
 {python_ref}
 ```
 
-## 联合规划
+## Joint Plan
 {plan}
 
-## 可用知识（API 文档 / 示例代码）
+## Available Knowledge (API Documentation / Example Code)
 {knowledge}
 
-## 代码要求
-1. 使用 Ascend C API
-2. 实现标准结构：
+## Code Requirements
+1. Use Ascend C APIs
+2. Implement the standard structure:
    - class KernelXxx: Init, Process, CopyIn, Compute, CopyOut
-   - extern "C" __global__ 入口函数
-3. 正确处理 tiling 参数
-4. 使用流水线优化
+   - extern "C" __global__ entry function
+3. Handle tiling parameters correctly
+4. Use pipeline optimization
 
-## 代码模板
+## Code Template
 ```cpp
 #include "kernel_operator.h"
 
@@ -133,17 +484,17 @@ class KernelXxx {{
 public:
     __aicore__ inline KernelXxx() {{}}
     __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR z, uint32_t totalLength) {{
-        // 初始化 GlobalTensor, 计算 tiling 参数
+        // Initialize GlobalTensor, calculate tiling parameters
     }}
     __aicore__ inline void Process() {{
-        // 主循环：CopyIn → Compute → CopyOut
+        // Main loop: CopyIn -> Compute -> CopyOut
     }}
 private:
     __aicore__ inline void CopyIn(int32_t progress) {{ /* DataCopy GM -> UB */ }}
-    __aicore__ inline void Compute(int32_t progress) {{ /* 计算 */ }}
+    __aicore__ inline void Compute(int32_t progress) {{ /* Compute */ }}
     __aicore__ inline void CopyOut(int32_t progress) {{ /* DataCopy UB -> GM */ }}
 
-    // 成员变量
+    // Member variables
     GlobalTensor<half> xGm, yGm, zGm;
     TPipe pipe;
     TQue<QuePosition::VECIN, 2> inQueueX, inQueueY;
@@ -158,23 +509,23 @@ extern "C" __global__ __aicore__ void xxx_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z
 }}
 ```
 
-请返回完整的 kernel C++ 代码。
+Please return the complete kernel C++ code.
 """
 
     def get_tiling_impl_prompt(self, plan: dict, knowledge: dict) -> str:
-        """生成 Tiling 实现 Prompt"""
+        """Generate prompt for Tiling implementation"""
         return f"""
-你是昇腾 Ascend C Host 端开发专家。请生成 tiling 相关代码。
+You are an Ascend C Host-side Development Expert. Please generate tiling-related code.
 
-## 联合规划
+## Joint Plan
 {plan}
 
-## 可用知识
+## Available Knowledge
 {knowledge}
 
-## 需要生成两个文件
+## Two Files to Generate
 
-### 1. tiling.h (Tiling 数据结构)
+### 1. tiling.h (Tiling Data Structure)
 ```cpp
 #include "register/tilingdata_base.h"
 
@@ -188,14 +539,14 @@ REGISTER_TILING_DATA_CLASS(Xxx, XxxTilingData)
 }}
 ```
 
-### 2. op_host.cpp (Tiling 计算 + InferShape)
+### 2. op_host.cpp (Tiling Calculation + InferShape)
 ```cpp
 #include "xxx_tiling.h"
 #include "register/op_def_registry.h"
 
 namespace optiling {{
 static ge::graphStatus TilingFunc(gert::TilingContext* context) {{
-    // 计算 tiling 参数
+    // Calculate tiling parameters
     XxxTilingData tiling;
     tiling.set_totalLength(...);
     tiling.SaveToBuffer(context->GetRawTilingData()->GetData(), ...);
@@ -207,10 +558,10 @@ namespace ops {{
 class Xxx : public OpDef {{
 public:
     Xxx(const char* name) : OpDef(name) {{
-        // 定义输入输出
+        // Define inputs and outputs
         this->Input("x").ParamType(REQUIRED).DataType({{ge::DT_FLOAT16}});
         this->Output("z").ParamType(REQUIRED).DataType({{ge::DT_FLOAT16}});
-        // 注册 tiling
+        // Register tiling
         this->SetInferShape(ge::InferShape).SetTiling(optiling::TilingFunc);
     }}
 }};
@@ -218,11 +569,11 @@ OP_ADD(Xxx);
 }}
 ```
 
-## 返回 JSON 格式
+## Return JSON Format
 ```json
 {{
-  "host_tiling_src": "完整的 tiling.h 代码",
-  "host_operator_src": "完整的 op_host.cpp 代码"
+  "host_tiling_src": "Complete tiling.h code",
+  "host_operator_src": "Complete op_host.cpp code"
 }}
 ```
 """

@@ -111,7 +111,7 @@ class CANNInitTask(BaseTask):
         """Process input data and initialize components."""
         self.op_name = data["op_name"]
         self.python_reference = data["python_reference"]
-        self.npu_type = data.get("npu_type", "Ascend910B")
+        self.npu_type = data.get("npu_type", "Ascend910B2")
         self.cann_version = data.get("cann_version", "8.0")
 
         # Parse Python reference to extract operator signature
