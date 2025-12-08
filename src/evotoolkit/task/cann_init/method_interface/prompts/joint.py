@@ -182,12 +182,13 @@ class JointPromptMixin:
         # Check if this is first round or revision round
         current_plan = self._extract_current_plan(conversation)
         kernel_feedback = self._extract_kernel_feedback(conversation)
+        kernel_design = self._extract_kernel_design(conversation)
 
         # Use different prompts for first round vs revision
         if current_plan and kernel_feedback:
             return self._get_tiling_revise_prompt(
                 formatted_sig, compute_pattern, context.get('python_ref'),
-                current_plan, kernel_feedback, ub_kb, core_count
+                current_plan, kernel_feedback, kernel_design, ub_kb, core_count
             )
 
         # First round: full prompt with examples
@@ -335,6 +336,19 @@ Strategy: custom, Key: Cube unit; tile all dims, accumulate K.
 Now analyze the given operator:
 """
 
+    def _extract_kernel_design(self, conversation: List[dict]) -> str:
+        """Extract kernel design (including pseudocode) from conversation."""
+        for msg in reversed(conversation):
+            if msg.get('role') == 'kernel' and 'accepted: true' in msg.get('content', '').lower():
+                content = msg['content']
+                # Extract from ## Kernel Design to end of response
+                start = content.find('## Kernel Design')
+                if start != -1:
+                    end = content.find('</response>')
+                    if end != -1:
+                        return content[start:end].strip()
+        return None
+
     def _get_tiling_revise_prompt(
         self,
         formatted_sig: str,
@@ -342,12 +356,26 @@ Now analyze the given operator:
         python_ref: str,
         current_plan: str,
         kernel_feedback: str,
+        kernel_design: str,
         ub_kb: int,
         core_count: int,
     ) -> str:
         """Generate concise prompt for revision round (no examples, no redundant info)."""
+        # Build kernel section based on whether design exists
+        if kernel_design:
+            kernel_section = f"""## Kernel Design (from kernel agent)
+{kernel_design}
+
+## Kernel Feedback
+{kernel_feedback}"""
+        else:
+            kernel_section = f"""## Kernel Feedback
+{kernel_feedback}"""
+
         return f"""## Role
 You are the **tiling agent**. Revise your tiling strategy based on kernel feedback.
+
+The tiling fields you define will be used in the kernel pseudocode. Ensure consistency.
 
 ## Context
 - Pattern: `{compute_pattern}`
@@ -364,8 +392,7 @@ You are the **tiling agent**. Revise your tiling strategy based on kernel feedba
 ## Your Previous Plan
 {current_plan}
 
-## Kernel Feedback
-{kernel_feedback}
+{kernel_section}
 
 ## Task
 Revise the plan to address the feedback. Use the **same format** as your previous plan.
@@ -404,48 +431,272 @@ Strategy: ..., Key: ...
 </response>
 """
 
+    def _extract_tiling_strategy(self, conversation: List[dict]) -> dict:
+        """Extract tiling strategy info from the current plan."""
+        current_plan = self._extract_current_plan(conversation)
+        if not current_plan:
+            return {"strategy": "unknown", "paradigm": "vector"}
+
+        plan_lower = current_plan.lower()
+        strategy = "default" if "strategy: default" in plan_lower else "custom"
+        paradigm = "cube" if "paradigm: cube" in plan_lower else "vector"
+        return {"strategy": strategy, "paradigm": paradigm}
+
     def get_kernel_review_prompt(self, context: dict, conversation: List[dict]) -> str:
         """Generate prompt for Kernel Specialist to review the proposal"""
-        history = "\n".join([f"[{msg['role']}]: {msg['content']}" for msg in conversation])
+        formatted_sig = _format_signature(context.get('signature'))
+        compute_pattern = context.get('compute_pattern', 'other')
 
-        return f"""
-You are an Ascend C Kernel Specialist. Review the Tiling Specialist's proposal.
+        # Get hardware specification
+        npu_type = context.get('npu_type', DEFAULT_CHIP)
+        hw_spec = format_chip_spec(npu_type)
 
-## Operator Information
-- Compute Pattern: {context.get('compute_pattern')}
+        # Extract current tiling plan and check if revision round
+        current_plan = self._extract_current_plan(conversation)
+        previous_feedback = None
+
+        # Check if this is a revision round (kernel already gave feedback before)
+        for msg in conversation:
+            if msg.get('role') == 'kernel':
+                previous_feedback = msg.get('content', '')
+                break
+
+        if previous_feedback and current_plan:
+            return self._get_kernel_re_review_prompt(
+                formatted_sig, compute_pattern, context.get('python_ref'),
+                current_plan, previous_feedback
+            )
+
+        # First round: full prompt with examples
+        return f"""## Role
+You are the **kernel agent**. Review the tiling proposal and design kernel implementation.
+
+**This is conceptual design phase.** You describe:
+- Operations conceptually (e.g., "row-wise reduction"), not exact API names
+- Useful references for knowledge retrieval (similar ops, APIs to look up)
+
+The retrieval system will fetch actual API docs and examples based on your output.
+
+## Hardware
+{hw_spec}
+
+## Compute Pattern: `{compute_pattern}`
+
+## Operator Signature
+{formatted_sig}
 
 ## Python Reference
 ```python
 {context.get('python_ref')}
 ```
 
-## Conversation History
-{history}
+## Tiling Proposal
+{current_plan}
+
+## Review Checklist
+1. **Paradigm match**: vector for element-wise/reduction/broadcast, cube for matmul
+2. **Memory fit**: tile size fits UB capacity?
+3. **Dim handling**: reduction dims handled correctly? independent dims parallelized?
+4. **Alignment**: cube tiles aligned to 16? vector aligned to 32?
 
 ## Your Tasks
-1. Evaluate whether the tiling strategy is reasonable
-2. Design the kernel data flow: CopyIn -> Compute -> CopyOut
-3. Determine the required Ascend C APIs
-4. Determine the pipeline strategy (single_buffer / double_buffer)
+1. Review tiling strategy (reject if checklist fails)
+2. Design kernel data flow: CopyIn -> Compute -> CopyOut
+3. List operations (conceptual description)
+4. List useful references for retrieval
+
+## Decision Guide
+
+| Paradigm | When to Use | Pipeline | Typical Operations |
+|----------|-------------|----------|-------------------|
+| vector | element-wise, reduction, broadcast | double_buffer | add, sub, mul, exp, reduce-sum, reduce-max |
+| cube | matmul | double_buffer | matrix multiply-accumulate |
 
 ## Output Format
-If you accept the proposal, your response **must include "accepted"**:
-```json
-{{
-  "accepted": true,
-  "kernel_design": {{
-    "data_flow": "CopyIn -> Compute -> CopyOut",
-    "pipeline": "double_buffer",
-    "key_apis": ["Add", "DataCopy", "AllocTensor"]
-  }},
-  "retrieval_requests": [
-    {{"type": "api", "name": "Add"}},
-    {{"type": "example", "name": "add_custom"}}
-  ]
-}}
+
+**If you ACCEPT:**
+<response>
+accepted: true
+
+## Kernel Design
+- Pipeline: <single_buffer | double_buffer>
+- Operations: [<conceptual op1>, <conceptual op2>, ...]
+
+## Kernel Pseudocode
+```cpp
+// Using tiling fields: <field1>, <field2>, ...
+for (...) {
+    // CopyIn
+    <load data using tiling fields>
+
+    // Compute
+    <operations using tiling fields>
+
+    // CopyOut
+    <store data using tiling fields>
+}
 ```
 
-If modifications are needed, explain the reasons and provide suggestions.
+## Useful References
+- <name>: <why>
+</response>
+
+**If you REJECT:**
+<response>
+accepted: false
+
+## Issues
+1. <which checklist item failed, why>
+
+## Suggestions
+<specific changes for tiling agent>
+</response>
+
+## Examples
+
+### Ex1: Accept element-wise Add (default tiling)
+Pattern: `element-wise`, Tiling: default, vector, fields: totalLength, tileNum, tileLength
+<response>
+accepted: true
+
+## Kernel Design
+- Pipeline: double_buffer
+- Operations: [element-wise add]
+
+## Kernel Pseudocode
+```cpp
+// Using tiling fields: totalLength, tileNum, tileLength
+for (int i = 0; i < tileNum; i++) {
+    // CopyIn
+    xLocal = LoadTile(xGm, i * tileLength, tileLength);
+    yLocal = LoadTile(yGm, i * tileLength, tileLength);
+
+    // Compute
+    zLocal = Add(xLocal, yLocal, tileLength);
+
+    // CopyOut
+    StoreTile(zGm, i * tileLength, zLocal, tileLength);
+}
+```
+
+## Useful References
+- add_custom: similar element-wise pattern
+</response>
+
+### Ex2: Accept Softmax (custom tiling)
+Pattern: `reduction`, Tiling: custom, vector, fields: batchSize, featureDim, rowsPerCore
+<response>
+accepted: true
+
+## Kernel Design
+- Pipeline: double_buffer
+- Operations: [row-wise max, broadcast sub, element-wise exp, row-wise sum, broadcast div]
+
+## Kernel Pseudocode
+```cpp
+// Using tiling fields: batchSize, featureDim, rowsPerCore
+for (int row = 0; row < rowsPerCore; row++) {
+    int offset = (blockIdx * rowsPerCore + row) * featureDim;
+
+    // CopyIn: load one row
+    xLocal = LoadTile(xGm, offset, featureDim);
+
+    // Compute
+    maxVal = ReduceMax(xLocal, featureDim);
+    xLocal = Sub(xLocal, maxVal, featureDim);      // broadcast
+    xLocal = Exp(xLocal, featureDim);
+    sumVal = ReduceSum(xLocal, featureDim);
+    xLocal = Div(xLocal, sumVal, featureDim);      // broadcast
+
+    // CopyOut
+    StoreTile(yGm, offset, xLocal, featureDim);
+}
+```
+
+## Useful References
+- softmax_custom: similar reduction pattern
+- ReduceMax: need for row-wise max
+- ReduceSum: need for normalization
+</response>
+
+### Ex3: Reject wrong paradigm
+Pattern: `matmul`, Tiling: custom, **vector** (wrong!)
+<response>
+accepted: false
+
+## Issues
+1. Paradigm mismatch: matmul requires cube, not vector
+2. Alignment: cube tiles must be aligned to 16
+
+## Suggestions
+Change paradigm to cube. Use tileM/tileN/tileK as multiples of 16.
+</response>
+
+Now review the tiling proposal. Output ONLY the `<response>` block:
+"""
+
+    def _get_kernel_re_review_prompt(
+        self,
+        formatted_sig: str,
+        compute_pattern: str,
+        python_ref: str,
+        current_plan: str,
+        previous_feedback: str,
+    ) -> str:
+        """Generate concise prompt for re-reviewing revised tiling proposal."""
+        return f"""## Role
+You are the **kernel agent**. Re-review the revised tiling proposal.
+
+**Conceptual design phase** - describe operations conceptually, provide pseudocode using tiling fields.
+
+## Context
+- Pattern: `{compute_pattern}`
+
+## Operator Signature
+{formatted_sig}
+
+## Python Reference
+```python
+{python_ref}
+```
+
+## Revised Tiling Proposal
+{current_plan}
+
+## Your Previous Feedback
+{previous_feedback}
+
+## Task
+Check if the revised proposal addresses your feedback. Use the **same format** as before.
+
+**If you ACCEPT:**
+<response>
+accepted: true
+
+## Kernel Design
+- Pipeline: <...>
+- Operations: [...]
+
+## Kernel Pseudocode
+```cpp
+// Using tiling fields: <fields from tiling proposal>
+<pseudocode using those fields>
+```
+
+## Useful References
+- <name>: <why>
+</response>
+
+**If still needs revision:**
+<response>
+accepted: false
+
+## Issues
+1. <remaining issue>
+
+## Suggestions
+<what to change>
+</response>
 """
 
     # ==================== Code Implementation ====================
