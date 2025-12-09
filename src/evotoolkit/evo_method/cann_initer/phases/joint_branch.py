@@ -404,30 +404,93 @@ class JointBranch:
         return requests
 
     def _retrieve_knowledge(self):
-        """根据规划检索知识"""
+        """根据规划检索知识
+
+        Two-stage retrieval:
+        1. RetrievalPlanner: 概念性请求 → 精确请求
+        2. KnowledgeSummarizer: 原始知识 → 精简摘要
+        """
         if not self.config.knowledge_base:
             self.run_state_dict.knowledge = {}
+            self.run_state_dict.knowledge_context = ""
             return
 
-        knowledge = {}
-        retrieval_requests = self.run_state_dict.joint_plan.get("retrieval_requests", [])
+        joint_plan = self.run_state_dict.joint_plan
+        raw_requests = joint_plan.get("retrieval_requests", [])
 
-        for req in retrieval_requests:
-            if req.get("type") == "api":
-                api_name = req.get("name")
-                knowledge[f"api_{api_name}"] = self.config.knowledge_base.search_api(api_name)
-            elif req.get("type") == "example":
-                op_name = req.get("name")
-                knowledge[f"example_{op_name}"] = self.config.knowledge_base.search_operator(op_name)
+        # Get LLM client if available
+        llm_client = None
+        if self.config.running_llm:
+            def llm_client(prompt: str) -> str:
+                response, _ = self.config.running_llm.get_response(prompt)
+                return response
 
-        self.run_state_dict.knowledge = knowledge
+        # Stage 1: RetrievalPlanner (概念性请求 → 精确请求)
+        from ..knowledge import RetrievalPlanner, KnowledgeSummarizer
+
+        planner = RetrievalPlanner(self.config.knowledge_base, llm_client=llm_client)
+        plan_result = planner.plan(
+            operator_description=self.run_state_dict.signature or "",
+            kernel_pseudocode=joint_plan.get("kernel_pseudocode", ""),
+            tiling_execution=joint_plan.get("tiling_execution", ""),
+            tiling_fields=joint_plan.get("tiling_fields", []),
+            raw_requests=raw_requests,
+        )
+
+        self._verbose(f"[Joint] RetrievalPlanner: {len(plan_result.get('api_requests', []))} APIs, "
+                     f"{len(plan_result.get('example_requests', []))} examples")
+
+        # Fetch raw knowledge
+        raw_knowledge = {"apis": {}, "examples": {}}
+        kb = self.config.knowledge_base
+
+        for req in plan_result.get("api_requests", []):
+            name = req.get("name")
+            if name:
+                raw_knowledge["apis"][name] = kb.search_api(name)
+
+        for req in plan_result.get("example_requests", []):
+            name = req.get("name")
+            if name:
+                raw_knowledge["examples"][name] = kb.search_operator(name)
+
+        # Stage 2: KnowledgeSummarizer (原始知识 → 精简摘要)
+        cann_path = getattr(self.config.knowledge_base.config, 'cann_path', None) \
+            if hasattr(self.config.knowledge_base, 'config') else None
+
+        summarizer = KnowledgeSummarizer(
+            llm_client=llm_client,
+            max_examples=2,
+            cann_path=cann_path,
+        )
+
+        summarized = summarizer.summarize(
+            task_context={
+                "operator_description": self.run_state_dict.signature or "",
+                "kernel_pseudocode": joint_plan.get("kernel_pseudocode", ""),
+                "tiling_execution": joint_plan.get("tiling_execution", ""),
+                "tiling_fields": joint_plan.get("tiling_fields", []),
+            },
+            raw_knowledge=raw_knowledge,
+        )
+
+        self._verbose(f"[Joint] KnowledgeSummarizer: {len(summarized.get('api_summaries', []))} API summaries, "
+                     f"{len(summarized.get('example_summaries', []))} example summaries")
+
+        # Store results
+        self.run_state_dict.knowledge = raw_knowledge
+        self.run_state_dict.knowledge_context = summarized.get("combined_context", "")
+        self.run_state_dict.retrieval_plan = plan_result
 
     def _implement_code(self, python_ref: str):
-        """代码实现"""
+        """代码实现
+
+        使用 knowledge_context（KnowledgeSummarizer 的输出）作为知识上下文
+        """
         # Kernel 必须生成
         kernel_prompt = self.config.interface.get_kernel_impl_prompt(
             self.run_state_dict.joint_plan,
-            self.run_state_dict.knowledge,
+            self.run_state_dict.knowledge_context,  # 使用精简后的知识上下文
             python_ref
         )
         response, _ = self.config.running_llm.get_response(kernel_prompt)
@@ -440,7 +503,7 @@ class JointBranch:
         else:
             tiling_prompt = self.config.interface.get_tiling_impl_prompt(
                 self.run_state_dict.joint_plan,
-                self.run_state_dict.knowledge
+                self.run_state_dict.knowledge_context  # 使用精简后的知识上下文
             )
             response, _ = self.config.running_llm.get_response(tiling_prompt)
             result = parse_json(response)

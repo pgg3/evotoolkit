@@ -3,17 +3,17 @@
 # Licensed under the MIT License
 
 """
-知识检索模块测试 - RetrievalPlanner with LLM
+知识检索模块测试 - 完整 Pipeline 测试
 
-测试 FlashAttention 案例：
-- 将 Phase 1 的概念性请求转换为精确请求
-- 验证 LLM 能否正确映射模糊名称
+测试 FlashAttention 案例的完整知识检索流程:
+1. RetrievalPlanner: 概念性请求 → 精确请求
+2. KnowledgeBase: 精确请求 → 原始知识
+3. KnowledgeSummarizer: 原始知识 → 精简摘要
 
 用法:
     python 6_knowledge_retrieval.py [--build-index]
 """
 
-import json
 import os
 import sys
 from pathlib import Path
@@ -28,6 +28,7 @@ from evotoolkit.evo_method.cann_initer import (
     KnowledgeBaseConfig,
     KnowledgeIndexBuilder,
     RetrievalPlanner,
+    KnowledgeSummarizer,
 )
 
 # Load .env from current directory
@@ -52,41 +53,19 @@ def get_llm():
     return HttpsApi(api_url=api_url, key=api_key, model=model)
 
 
-def test_retrieval_planner():
-    """测试 RetrievalPlanner - FlashAttention 案例"""
-    print("=" * 60)
-    print("Testing RetrievalPlanner - FlashAttention")
-    print("=" * 60)
+# =============================================================================
+# FlashAttention 测试数据
+# =============================================================================
 
-    # 1. 初始化 LLM
-    print("\n[1] Initializing LLM...")
-    llm = get_llm()
-
-    def llm_call(prompt: str) -> str:
-        response, _ = llm.get_response(prompt)
-        return response
-
-    # 2. 初始化知识库
-    print("[2] Loading Knowledge Base...")
-    config = KnowledgeBaseConfig()
-    kb = RealKnowledgeBase(config)
-    print(f"    Loaded: {len(kb.index['operators'])} operators, {len(kb.index['apis'])} APIs")
-
-    # 3. 创建 RetrievalPlanner
-    planner = RetrievalPlanner(kb, llm_client=llm_call)
-
-    # =========================================================================
-    # FlashAttention 测试案例
-    # =========================================================================
-
-    operator_description = """
+FLASH_ATTENTION_CONTEXT = {
+    "operator_description": """
 FlashAttention: Memory-efficient attention mechanism.
 Input: Q[B,H,S,D], K[B,H,S,D], V[B,H,S,D]
 Output: O[B,H,S,D]
 Computation: O = softmax(Q @ K^T / sqrt(D)) @ V
-"""
+""",
 
-    kernel_pseudocode = """
+    "kernel_pseudocode": """
 // Using tiling fields: batchSize, numHeads, seqLen, headDim, blockSize
 for (int b = 0; b < batchSize; b++) {
     for (int h = 0; h < numHeads; h++) {
@@ -127,9 +106,9 @@ for (int b = 0; b < batchSize; b++) {
         }
     }
 }
-"""
+""",
 
-    tiling_execution = """
+    "tiling_execution": """
 for b in range(batchSize):
     for h in range(numHeads):
         for i_block in range(seqLen // blockSize):
@@ -144,119 +123,156 @@ for b in range(batchSize):
                     O += softmax(score) @ V
 
             CopyOut: O[b,h,i_block] / sumVal
-"""
+""",
 
-    tiling_fields = [
+    "tiling_fields": [
         {"name": "batchSize", "type": "uint32_t", "purpose": "batch dimension B"},
         {"name": "numHeads", "type": "uint32_t", "purpose": "number of attention heads H"},
         {"name": "seqLen", "type": "uint32_t", "purpose": "sequence length S"},
         {"name": "headDim", "type": "uint32_t", "purpose": "head dimension D"},
         {"name": "blockSize", "type": "uint32_t", "purpose": "tile size for sequence dimension"},
         {"name": "scale", "type": "float", "purpose": "1/sqrt(headDim)"},
-    ]
+    ],
+}
 
-    # 模拟 Phase 1 的概念性请求
-    raw_requests = [
-        # APIs - 有些精确，有些模糊
-        {"type": "api", "name": "MatMul"},
-        {"type": "api", "name": "Transpose"},
-        {"type": "api", "name": "Muls"},
-        {"type": "api", "name": "ReduceMax"},
-        {"type": "api", "name": "ReduceSum"},
-        {"type": "api", "name": "Sub"},
-        {"type": "api", "name": "Exp"},
-        {"type": "api", "name": "Div"},
-        {"type": "api", "name": "Max"},
-        {"type": "api", "name": "SetZero"},
-        # Examples - 概念性名称
-        {"type": "example", "name": "flash attention"},
-        {"type": "example", "name": "attention operators"},
-        {"type": "example", "name": "softmax implementation"},
-        {"type": "example", "name": "online softmax"},
-        {"type": "example", "name": "batch matmul"},
-    ]
+# 模拟 Phase 1 的概念性请求
+RAW_REQUESTS = [
+    # APIs - 有些精确，有些模糊
+    {"type": "api", "name": "MatMul"},
+    {"type": "api", "name": "Transpose"},
+    {"type": "api", "name": "Muls"},
+    {"type": "api", "name": "ReduceMax"},
+    {"type": "api", "name": "ReduceSum"},
+    {"type": "api", "name": "Sub"},
+    {"type": "api", "name": "Exp"},
+    {"type": "api", "name": "Div"},
+    {"type": "api", "name": "Max"},
+    {"type": "api", "name": "SetZero"},
+    # Examples - 概念性名称
+    {"type": "example", "name": "flash attention"},
+    {"type": "example", "name": "attention operators"},
+    {"type": "example", "name": "softmax implementation"},
+]
 
-    # =========================================================================
-    # 显示输入
-    # =========================================================================
 
-    print("\n[3] Input - Operator Description:")
-    print("-" * 40)
-    print(operator_description.strip())
+def test_full_pipeline():
+    """测试完整流程：RetrievalPlanner → KnowledgeBase → KnowledgeSummarizer"""
+    print("=" * 70)
+    print("Full Knowledge Retrieval Pipeline Test - FlashAttention")
+    print("=" * 70)
 
-    print("\n[4] Input - Tiling Fields:")
-    print("-" * 40)
-    for f in tiling_fields:
-        print(f"  - {f['name']}: {f['type']} // {f['purpose']}")
+    # 1. 初始化
+    print("\n[1] Initializing components...")
+    llm = get_llm()
+    def llm_call(prompt: str) -> str:
+        response, _ = llm.get_response(prompt)
+        return response
 
-    print("\n[5] Input - Raw Requests from Phase 1:")
-    print("-" * 40)
-    for req in raw_requests:
-        print(f"  [{req['type']}] {req['name']}")
+    config = KnowledgeBaseConfig()
+    kb = RealKnowledgeBase(config)
+    print(f"    Knowledge Base: {kb.get_api_count()} APIs, {kb.get_operator_count()} operators")
 
-    # =========================================================================
-    # 调用 RetrievalPlanner
-    # =========================================================================
+    # 2. Stage 1: RetrievalPlanner
+    print("\n" + "=" * 70)
+    print("[2] Stage 1: RetrievalPlanner")
+    print("=" * 70)
 
-    print("\n[6] Calling RetrievalPlanner with LLM...")
-    print("-" * 40)
-
-    result = planner.plan(
-        operator_description=operator_description,
-        kernel_pseudocode=kernel_pseudocode,
-        tiling_execution=tiling_execution,
-        tiling_fields=tiling_fields,
-        raw_requests=raw_requests,
+    planner = RetrievalPlanner(kb, llm_client=llm_call)
+    plan_result = planner.plan(
+        operator_description=FLASH_ATTENTION_CONTEXT["operator_description"],
+        kernel_pseudocode=FLASH_ATTENTION_CONTEXT["kernel_pseudocode"],
+        tiling_execution=FLASH_ATTENTION_CONTEXT["tiling_execution"],
+        tiling_fields=FLASH_ATTENTION_CONTEXT["tiling_fields"],
+        raw_requests=RAW_REQUESTS,
     )
 
-    # =========================================================================
-    # 显示结果
-    # =========================================================================
+    print("\n--- API Requests ---")
+    for req in plan_result.get("api_requests", []):
+        print(f"  [{req.get('priority', '?')}] {req.get('name', '?')}")
 
-    print("\n[7] Result - API Requests:")
-    print("-" * 40)
-    for req in result.get("api_requests", []):
-        priority = req.get("priority", "?")
-        name = req.get("name", "?")
-        reason = req.get("reason", "")
-        print(f"  [{priority}] {name}")
-        if reason:
-            print(f"       -> {reason}")
+    print("\n--- Example Requests ---")
+    for req in plan_result.get("example_requests", []):
+        print(f"  [{req.get('priority', '?')}] {req.get('name', '?')}")
 
-    print("\n[8] Result - Example Requests:")
-    print("-" * 40)
-    for req in result.get("example_requests", []):
-        priority = req.get("priority", "?")
-        name = req.get("name", "?")
-        reason = req.get("reason", "")
-        print(f"  [{priority}] {name}")
-        if reason:
-            print(f"       -> {reason}")
+    print("\n--- Skipped ---")
+    for skip in plan_result.get("skipped", []):
+        print(f"  [{skip.get('type', '?')}] {skip.get('original', '?')}: {skip.get('reason', '')}")
 
-    print("\n[9] Result - Skipped:")
-    print("-" * 40)
-    for skip in result.get("skipped", []):
-        print(f"  [{skip.get('type', '?')}] {skip.get('original', '?')}")
-        print(f"       -> {skip.get('reason', '')}")
+    # 3. Fetch raw knowledge
+    print("\n" + "=" * 70)
+    print("[3] Fetching Raw Knowledge")
+    print("=" * 70)
 
-    print(f"\n[10] Analysis:")
-    print("-" * 40)
-    print(result.get("analysis", "N/A"))
+    raw_knowledge = {"apis": {}, "examples": {}}
 
-    print("\n[11] Full JSON Result:")
-    print("-" * 40)
-    print(json.dumps(result, indent=2, ensure_ascii=False))
+    for req in plan_result.get("api_requests", []):
+        name = req.get("name")
+        if name:
+            raw_knowledge["apis"][name] = kb.search_api(name)
+            status = raw_knowledge["apis"][name].get("status", "?")
+            print(f"  API {name}: {status}")
 
-    print("\n" + "=" * 60)
-    print("Done!")
+    for req in plan_result.get("example_requests", []):
+        name = req.get("name")
+        if name:
+            raw_knowledge["examples"][name] = kb.search_operator(name)
+            confidence = raw_knowledge["examples"][name].get("confidence", "?")
+            print(f"  Example {name}: {confidence}")
 
-    return result
+    # 4. Stage 2: KnowledgeSummarizer
+    print("\n" + "=" * 70)
+    print("[4] Stage 2: KnowledgeSummarizer")
+    print("=" * 70)
+
+    summarizer = KnowledgeSummarizer(
+        llm_client=llm_call,
+        max_examples=2,
+        cann_path=config.cann_path,
+    )
+
+    summarized = summarizer.summarize(
+        task_context={
+            "operator_description": FLASH_ATTENTION_CONTEXT["operator_description"],
+            "kernel_pseudocode": FLASH_ATTENTION_CONTEXT["kernel_pseudocode"],
+            "tiling_execution": FLASH_ATTENTION_CONTEXT["tiling_execution"],
+            "tiling_fields": FLASH_ATTENTION_CONTEXT["tiling_fields"],
+        },
+        raw_knowledge=raw_knowledge,
+    )
+
+    print(f"\n--- API Summaries ({len(summarized['api_summaries'])} APIs) ---")
+    for api in summarized["api_summaries"]:
+        print(f"  {api['name']}: {api.get('description', '')[:50]}...")
+
+    print(f"\n--- Example Summaries ({len(summarized['example_summaries'])} examples) ---")
+    for ex in summarized["example_summaries"]:
+        print(f"  {ex['name']}: {ex.get('purpose', '')[:50]}...")
+
+    # 5. Final combined context
+    print("\n" + "=" * 70)
+    print("[5] Combined Context (for Implementation Agent)")
+    print("=" * 70)
+
+    combined = summarized["combined_context"]
+    print(f"\n{combined[:2000]}")
+    if len(combined) > 2000:
+        print(f"\n... (truncated, total {len(combined)} chars)")
+
+    print("\n" + "=" * 70)
+    print("Pipeline Complete!")
+    print("=" * 70)
+
+    return {
+        "plan_result": plan_result,
+        "raw_knowledge": raw_knowledge,
+        "summarized": summarized,
+    }
 
 
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="Knowledge Retrieval Test")
+    parser = argparse.ArgumentParser(description="Knowledge Retrieval Pipeline Test")
     parser.add_argument("--build-index", action="store_true", help="Build knowledge index first")
     args = parser.parse_args()
 
@@ -267,7 +283,7 @@ def main():
         builder.build_index()
         print("Done!\n")
 
-    test_retrieval_planner()
+    test_full_pipeline()
 
 
 if __name__ == "__main__":

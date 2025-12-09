@@ -6,13 +6,15 @@
 Two retrieval strategies:
 - API: Strict mode (exact match, no guessing)
 - Example: Relaxed mode (fuzzy match allowed)
+
+API scanning from CANN SDK headers with categorization.
 """
 
 import json
 import os
 import re
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Set
 
 from ..utils import KnowledgeBase
 
@@ -25,6 +27,26 @@ def _default_index_path() -> str:
     return str(index_dir / "knowledge_index.json")
 
 
+def _default_cann_path() -> str:
+    """Get default CANN installation path"""
+    # Check environment variable first
+    cann_path = os.environ.get("ASCEND_HOME_PATH")
+    if cann_path and Path(cann_path).exists():
+        return cann_path
+
+    # Standard paths
+    candidates = [
+        "/usr/local/Ascend/ascend-toolkit/latest",
+        "/usr/local/Ascend/ascend-toolkit/8.1.RC1",
+        "/opt/Ascend/ascend-toolkit/latest",
+    ]
+    for path in candidates:
+        if Path(path).exists():
+            return path
+
+    return "/usr/local/Ascend/ascend-toolkit/latest"
+
+
 class KnowledgeBaseConfig:
     """Knowledge base configuration"""
 
@@ -33,6 +55,7 @@ class KnowledgeBaseConfig:
         repo_data_path: str = "/root/Huawei_CANN/KernelOptWorkspace/CannOptTask/benchmarks/Repo_Data",
         operator_repos: List[str] = None,
         index_path: str = None,
+        cann_path: str = None,
     ):
         self.repo_data_path = repo_data_path
         self.operator_repos = operator_repos or [
@@ -42,10 +65,75 @@ class KnowledgeBaseConfig:
             "ops-cv",
         ]
         self.index_path = index_path or _default_index_path()
+        self.cann_path = cann_path or _default_cann_path()
+
+
+# =============================================================================
+# API Category Mapping
+# =============================================================================
+
+# Map header file names to API categories
+HEADER_TO_CATEGORY = {
+    # Vector operations
+    "kernel_operator_vec_binary_intf.h": "vec_binary",
+    "kernel_operator_vec_binary_scalar_intf.h": "vec_binary_scalar",
+    "kernel_operator_vec_unary_intf.h": "vec_unary",
+    "kernel_operator_vec_reduce_intf.h": "vec_reduce",
+    "kernel_operator_vec_cmpsel_intf.h": "vec_compare",
+    "kernel_operator_vec_duplicate_intf.h": "vec_duplicate",
+    "kernel_operator_vec_gather_intf.h": "vec_gather",
+    "kernel_operator_vec_scatter_intf.h": "vec_scatter",
+    "kernel_operator_vec_transpose_intf.h": "vec_transpose",
+    "kernel_operator_vec_vconv_intf.h": "vec_convert",
+    "kernel_operator_vec_vpadding_intf.h": "vec_padding",
+    "kernel_operator_vec_brcb_intf.h": "vec_broadcast",
+    "kernel_operator_vec_mulcast_intf.h": "vec_mulcast",
+    "kernel_operator_vec_ternary_scalar_intf.h": "vec_ternary",
+    "kernel_operator_vec_createvecindex_intf.h": "vec_index",
+    "kernel_operator_vec_gather_mask_intf.h": "vec_gather",
+    "kernel_operator_vec_bilinearinterpalation_intf.h": "vec_interpolation",
+    # Cube/Matrix operations
+    "kernel_operator_mm_intf.h": "cube_matmul",
+    "kernel_operator_gemm_intf.h": "cube_gemm",
+    "kernel_operator_conv2d_intf.h": "cube_conv",
+    # Data movement
+    "kernel_operator_data_copy_intf.h": "data_copy",
+    "kernel_operator_fixpipe_intf.h": "data_fixpipe",
+    # Scalar operations
+    "kernel_operator_scalar_intf.h": "scalar",
+    # Synchronization
+    "kernel_operator_determine_compute_sync_intf.h": "sync",
+    "kernel_operator_set_atomic_intf.h": "atomic",
+    # System
+    "kernel_operator_sys_var_intf.h": "system",
+    "kernel_operator_common_intf.h": "common",
+    # Other
+    "kernel_operator_dump_tensor_intf.h": "debug",
+    "kernel_operator_list_tensor_intf.h": "tensor_list",
+    "kernel_operator_proposal_intf.h": "proposal",
+}
+
+# Higher-level category grouping for display
+CATEGORY_GROUPS = {
+    "Vector Compute": [
+        "vec_binary", "vec_unary", "vec_reduce", "vec_compare",
+        "vec_ternary", "vec_binary_scalar",
+    ],
+    "Vector Data": [
+        "vec_duplicate", "vec_gather", "vec_scatter", "vec_transpose",
+        "vec_convert", "vec_padding", "vec_broadcast", "vec_mulcast",
+        "vec_index", "vec_interpolation",
+    ],
+    "Cube/Matrix": ["cube_matmul", "cube_gemm", "cube_conv"],
+    "Data Movement": ["data_copy", "data_fixpipe"],
+    "Scalar": ["scalar"],
+    "Sync & Atomic": ["sync", "atomic"],
+    "System & Debug": ["system", "common", "debug", "tensor_list", "proposal"],
+}
 
 
 class KnowledgeIndexBuilder:
-    """Build knowledge index from source directories"""
+    """Build knowledge index from source directories and CANN headers"""
 
     def __init__(self, config: KnowledgeBaseConfig):
         self.config = config
@@ -54,16 +142,21 @@ class KnowledgeIndexBuilder:
         """Build complete index"""
         index = {
             "operators": {},
-            "apis": [],
+            "apis": {},  # Changed to dict: {api_name: {category, description, header}}
+            "api_categories": {},  # {category: [api_names]}
             "aliases": {},
             "categories": {},
         }
 
         # 1. Scan operator repos
+        if verbose:
+            print("[IndexBuilder] Scanning operator repositories...")
         self._scan_operator_repos(index, verbose)
 
-        # 2. Add common APIs
-        self._add_common_apis(index)
+        # 2. Scan CANN APIs from headers
+        if verbose:
+            print("[IndexBuilder] Scanning CANN SDK APIs...")
+        self._scan_cann_apis(index, verbose)
 
         # 3. Build aliases
         self._build_aliases(index)
@@ -77,6 +170,8 @@ class KnowledgeIndexBuilder:
         """Scan operator repositories"""
         repo_data = Path(self.config.repo_data_path)
         if not repo_data.exists():
+            if verbose:
+                print(f"  Warning: Repo data path not found: {repo_data}")
             return
 
         skip_dirs = {"cmake", "common", "docs", "examples", "experimental",
@@ -129,24 +224,134 @@ class KnowledgeIndexBuilder:
             }
             index["categories"][category].append(op_name)
 
-    def _add_common_apis(self, index: dict):
-        """Add common Ascend C APIs"""
-        index["apis"] = [
-            # Vector
-            "Add", "Sub", "Mul", "Div", "Muls", "Divs", "Adds", "Subs",
-            "Exp", "Log", "Sqrt", "Rsqrt", "Abs", "Neg",
-            "ReduceMax", "ReduceMin", "ReduceSum", "ReduceMean",
-            "Relu", "Sigmoid", "Tanh", "Gelu", "Silu", "Softmax",
-            "Cast", "Duplicate",
-            # Cube
-            "MatMul", "BatchMatMul", "Gemm",
-            # Data Movement
-            "DataCopy", "DataCopyPad",
-            # Pipeline
-            "EnQue", "DeQue", "AllocTensor", "FreeTensor",
-            # Buffer
-            "LocalTensor", "GlobalTensor", "TPipe", "TQue",
+    def _scan_cann_apis(self, index: dict, verbose: bool):
+        """Scan Ascend C APIs from CANN SDK headers"""
+        cann_path = Path(self.config.cann_path)
+
+        # Find interface headers directory
+        interface_dirs = [
+            cann_path / "aarch64-linux" / "ascendc" / "include" / "basic_api" / "interface",
+            cann_path / "x86_64-linux" / "ascendc" / "include" / "basic_api" / "interface",
+            cann_path / "include" / "ascendc" / "basic_api" / "interface",
         ]
+
+        interface_dir = None
+        for d in interface_dirs:
+            if d.exists():
+                interface_dir = d
+                break
+
+        if not interface_dir:
+            if verbose:
+                print(f"  Warning: CANN interface headers not found in {cann_path}")
+            # Fall back to hardcoded common APIs
+            self._add_fallback_apis(index)
+            return
+
+        if verbose:
+            print(f"  Found interface headers: {interface_dir}")
+
+        # Scan each header file
+        total_apis = 0
+        for header_file in interface_dir.glob("kernel_operator_*.h"):
+            if header_file.name.startswith("kernel_struct_"):
+                continue
+
+            category = HEADER_TO_CATEGORY.get(header_file.name, "other")
+            apis = self._extract_apis_from_header(header_file)
+
+            for api_name, description in apis:
+                if api_name not in index["apis"]:
+                    index["apis"][api_name] = {
+                        "category": category,
+                        "description": description,
+                        "header": header_file.name,
+                    }
+                    if category not in index["api_categories"]:
+                        index["api_categories"][category] = []
+                    index["api_categories"][category].append(api_name)
+                    total_apis += 1
+
+        if verbose:
+            print(f"  Scanned {total_apis} APIs from {len(index['api_categories'])} categories")
+
+    def _extract_apis_from_header(self, header_path: Path) -> List[tuple]:
+        """Extract API function names and descriptions from a header file
+
+        Returns list of (api_name, description) tuples
+
+        Strategy: Find comment blocks with @brief, then find the first function
+        declaration after each comment block. This ensures correct matching.
+        """
+        apis = []
+        seen: Set[str] = set()
+
+        try:
+            content = header_path.read_text(errors="ignore")
+        except Exception:
+            return apis
+
+        # Pattern to match comment block followed by function declaration
+        # This ensures the @brief belongs to the function that follows it
+        pattern = r"""
+            /\*[^*]*\*+(?:[^/*][^*]*\*+)*/           # Comment block /* ... */
+            \s*                                      # Whitespace
+            (?:template\s*<[^>]+>\s*)?               # Optional template
+            __aicore__\s+inline\s+                   # __aicore__ inline
+            (?:__inout_pipe__\([^)]+\)\s+)?          # Optional pipe annotation
+            (?:void|[A-Za-z_][A-Za-z0-9_]*)\s+       # Return type
+            ([A-Z][A-Za-z0-9]+)                      # Function name (PascalCase)
+            \s*\(                                    # Opening paren
+        """
+
+        for match in re.finditer(pattern, content, re.VERBOSE):
+            api_name = match.group(1)
+            if api_name not in seen:
+                seen.add(api_name)
+                # Extract @brief from the matched comment block
+                comment_block = match.group(0)
+                desc = self._extract_description_from_comment(comment_block)
+                apis.append((api_name, desc))
+
+        return apis
+
+    def _extract_description_from_comment(self, comment_block: str) -> str:
+        """Extract brief description from a comment block"""
+        # Find @brief in the comment
+        brief_match = re.search(r"@brief\s+(.+?)(?:\n|$)", comment_block)
+        if brief_match:
+            return brief_match.group(1).strip()
+        return ""
+
+    def _add_fallback_apis(self, index: dict):
+        """Add common APIs when CANN headers not available"""
+        fallback_apis = {
+            "vec_binary": ["Add", "Sub", "Mul", "Div", "Max", "Min", "And", "Or"],
+            "vec_binary_scalar": ["Adds", "Subs", "Muls", "Divs", "Maxs", "Mins"],
+            "vec_unary": ["Abs", "Exp", "Ln", "Sqrt", "Rsqrt", "Relu", "Not", "Reciprocal"],
+            "vec_reduce": ["ReduceMax", "ReduceMin", "ReduceSum", "BlockReduceMax",
+                          "BlockReduceMin", "BlockReduceSum", "WholeReduceMax",
+                          "WholeReduceMin", "WholeReduceSum"],
+            "vec_compare": ["Compare", "Select"],
+            "vec_duplicate": ["Duplicate"],
+            "vec_convert": ["Cast"],
+            "cube_matmul": ["Mmad", "LoadData"],
+            "cube_gemm": ["Gemm"],
+            "data_copy": ["DataCopy", "DataCopyPad", "DataCopyExtParams"],
+            "scalar": ["ScalarAdd", "ScalarSub", "ScalarMul", "ScalarDiv"],
+            "sync": ["SetFlag", "WaitFlag", "PipeBarrier"],
+            "system": ["GetBlockIdx", "GetBlockNum", "GetBlockDim", "pipe_barrier"],
+        }
+
+        for category, api_list in fallback_apis.items():
+            index["api_categories"][category] = []
+            for api_name in api_list:
+                index["apis"][api_name] = {
+                    "category": category,
+                    "description": "",
+                    "header": "fallback",
+                }
+                index["api_categories"][category].append(api_name)
 
     def _build_aliases(self, index: dict):
         """Build name aliases (case variants, snake/camel)"""
@@ -206,14 +411,17 @@ class RealKnowledgeBase(KnowledgeBase):
             return self._rebuild_index()
 
         # Return empty index
-        return {"operators": {}, "apis": [], "aliases": {}, "categories": {}}
+        return {"operators": {}, "apis": {}, "api_categories": {}, "aliases": {}, "categories": {}}
 
     def _rebuild_index(self) -> dict:
         """Rebuild the knowledge index"""
-        print(f"[KnowledgeBase] Building index from: {self.config.repo_data_path}")
+        print(f"[KnowledgeBase] Building index...")
+        print(f"  Operators from: {self.config.repo_data_path}")
+        print(f"  APIs from: {self.config.cann_path}")
         builder = KnowledgeIndexBuilder(self.config)
         index = builder.build_index(verbose=True)
-        print(f"[KnowledgeBase] Index built: {len(index['operators'])} operators, {len(index['apis'])} APIs")
+        api_count = len(index.get("apis", {}))
+        print(f"[KnowledgeBase] Index built: {len(index['operators'])} operators, {api_count} APIs")
         print(f"[KnowledgeBase] Index saved to: {self.config.index_path}")
         return index
 
@@ -232,32 +440,45 @@ class RealKnowledgeBase(KnowledgeBase):
         Returns:
             {
                 "status": "found" | "not_found" | "ambiguous",
-                "api_doc": str | None,
+                "api_info": dict | None,
                 "candidates": list
             }
         """
+        apis = self.index.get("apis", {})
+
+        # Handle both old format (list) and new format (dict)
+        if isinstance(apis, list):
+            # Old format compatibility
+            if name in apis:
+                return {"status": "found", "api_info": {"name": name}, "candidates": []}
+            name_lower = name.lower()
+            for api in apis:
+                if api.lower() == name_lower:
+                    return {"status": "found", "api_info": {"name": api}, "candidates": []}
+            candidates = [api for api in apis
+                         if name_lower in api.lower() or api.lower() in name_lower]
+            if candidates:
+                return {"status": "ambiguous", "api_info": None, "candidates": candidates[:5]}
+            return {"status": "not_found", "api_info": None, "candidates": []}
+
+        # New format (dict)
         # Exact match
-        if name in self.index["apis"]:
-            return {"status": "found", "api_doc": self._get_api_doc(name), "candidates": []}
+        if name in apis:
+            return {"status": "found", "api_info": {"name": name, **apis[name]}, "candidates": []}
 
         # Case-insensitive match
         name_lower = name.lower()
-        for api in self.index["apis"]:
-            if api.lower() == name_lower:
-                return {"status": "found", "api_doc": self._get_api_doc(api), "candidates": []}
+        for api_name, api_info in apis.items():
+            if api_name.lower() == name_lower:
+                return {"status": "found", "api_info": {"name": api_name, **api_info}, "candidates": []}
 
         # Not found - return candidates
-        candidates = [api for api in self.index["apis"]
+        candidates = [api for api in apis
                       if name_lower in api.lower() or api.lower() in name_lower]
         if candidates:
-            return {"status": "ambiguous", "api_doc": None, "candidates": candidates[:5]}
+            return {"status": "ambiguous", "api_info": None, "candidates": candidates[:5]}
 
-        return {"status": "not_found", "api_doc": None, "candidates": []}
-
-    def _get_api_doc(self, name: str) -> str:
-        """Get API documentation (placeholder)"""
-        # TODO: Load from CANN installation
-        return f"[API: {name}] Documentation placeholder"
+        return {"status": "not_found", "api_info": None, "candidates": []}
 
     # =========================================================================
     # Operator Search (Relaxed Mode)
@@ -280,7 +501,7 @@ class RealKnowledgeBase(KnowledgeBase):
 
         # Alias match
         name_lower = name.lower()
-        if name_lower in self.index["aliases"]:
+        if name_lower in self.index.get("aliases", {}):
             canonical = self.index["aliases"][name_lower]
             return self._build_operator_result(canonical, "high")
 
@@ -373,33 +594,74 @@ class RealKnowledgeBase(KnowledgeBase):
         return [name for name, _ in scores[:top_k]]
 
     # =========================================================================
-    # Utility Methods
+    # Utility Methods - Progressive Disclosure
     # =========================================================================
 
     def get_api_categories(self) -> Dict[str, List[str]]:
-        """Get APIs grouped by category"""
-        return {
-            "vector": [a for a in self.index["apis"] if a in {
-                "Add", "Sub", "Mul", "Div", "Exp", "Log", "ReduceMax", "ReduceSum"}],
-            "cube": [a for a in self.index["apis"] if a in {"MatMul", "BatchMatMul", "Gemm"}],
-            "data": [a for a in self.index["apis"] if a in {"DataCopy", "DataCopyPad"}],
-        }
+        """Get APIs grouped by high-level category"""
+        api_categories = self.index.get("api_categories", {})
+
+        # Group by high-level categories
+        result = {}
+        for group_name, subcategories in CATEGORY_GROUPS.items():
+            apis_in_group = []
+            for subcat in subcategories:
+                apis_in_group.extend(api_categories.get(subcat, []))
+            if apis_in_group:
+                result[group_name] = apis_in_group
+
+        return result
 
     def get_operator_categories(self) -> Dict[str, List[str]]:
         """Get operators grouped by category"""
-        return self.index["categories"]
+        return self.index.get("categories", {})
 
     def get_available_knowledge_summary(self) -> str:
-        """Get summary for LLM progressive disclosure"""
-        lines = ["## Available APIs"]
-        for cat, apis in self.get_api_categories().items():
-            if apis:
-                lines.append(f"- {cat}: {', '.join(apis[:8])}")
+        """Get summary for LLM progressive disclosure
 
+        Returns a structured overview of available APIs and operators
+        for the LLM to understand what knowledge it can request.
+        """
+        lines = []
+
+        # APIs section
+        lines.append("## Available APIs")
+        api_cats = self.get_api_categories()
+        if api_cats:
+            for cat_name, apis in api_cats.items():
+                if apis:
+                    # Show first 8 APIs, indicate if more
+                    preview = ", ".join(apis[:8])
+                    suffix = f", ... (+{len(apis)-8} more)" if len(apis) > 8 else ""
+                    lines.append(f"- **{cat_name}** ({len(apis)}): {preview}{suffix}")
+        else:
+            lines.append("- No APIs indexed")
+
+        # Operators section
         lines.append("\n## Available Operator Examples")
-        for cat, ops in self.get_operator_categories().items():
-            if ops:
-                preview = ', '.join(ops[:4])
-                lines.append(f"- {cat} ({len(ops)}): {preview}...")
+        op_cats = self.get_operator_categories()
+        if op_cats:
+            for cat_name, ops in op_cats.items():
+                if ops:
+                    preview = ", ".join(ops[:4])
+                    suffix = "..." if len(ops) > 4 else ""
+                    lines.append(f"- **{cat_name}** ({len(ops)}): {preview}{suffix}")
+        else:
+            lines.append("- No operators indexed")
 
         return "\n".join(lines)
+
+    def get_api_list(self) -> List[str]:
+        """Get flat list of all API names"""
+        apis = self.index.get("apis", {})
+        if isinstance(apis, list):
+            return apis
+        return list(apis.keys())
+
+    def get_api_count(self) -> int:
+        """Get total number of APIs"""
+        return len(self.get_api_list())
+
+    def get_operator_count(self) -> int:
+        """Get total number of operators"""
+        return len(self.index.get("operators", {}))

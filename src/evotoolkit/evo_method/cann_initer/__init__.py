@@ -10,6 +10,7 @@ from .knowledge import (
     KnowledgeIndexBuilder,
     RealKnowledgeBase,
     RetrievalPlanner,
+    KnowledgeSummarizer,
 )
 
 __all__ = [
@@ -21,4 +22,5 @@ __all__ = [
     "KnowledgeIndexBuilder",
     "RealKnowledgeBase",
     "RetrievalPlanner",
+    "KnowledgeSummarizer",
 ]
