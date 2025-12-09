@@ -141,6 +141,10 @@ for (...) {{
 }}
 ```
 
+## Tiling Fields Required
+<List tiling fields needed by the kernel>
+- <field>: <type> // <purpose>
+
 ## Useful References
 - APIs: [<conceptual API names for documentation lookup>]
 - Examples: [<similar operator names for code reference>]
@@ -184,6 +188,11 @@ for (int i = 0; i < tileNum; i++) {{
 }}
 ```
 
+## Tiling Fields Required
+- totalLength: uint32_t // total number of elements
+- tileNum: uint32_t // number of tiles to process
+- tileLength: uint32_t // elements per tile
+
 ## Useful References
 - APIs: [Add]
 - Examples: [add_custom]
@@ -218,6 +227,11 @@ for (int row = 0; row < rowsPerCore; row++) {{
     StoreTile(yGm, offset, xLocal, featureDim);
 }}
 ```
+
+## Tiling Fields Required
+- batchSize: uint32_t // B dimension
+- featureDim: uint32_t // D dimension (row length)
+- rowsPerCore: uint32_t // rows assigned to each core
 
 ## Useful References
 - APIs: [ReduceMax, ReduceSum, Exp, Sub, Div]
@@ -289,6 +303,9 @@ accepted: true
 // Using tiling fields: <fields from tiling proposal>
 <pseudocode using those fields>
 ```
+
+## Tiling Fields Required
+- <field>: <type> // <purpose>
 
 ## Useful References
 - APIs: [<conceptual API names>]
@@ -392,6 +409,15 @@ for (...) {{
     // CopyOut
     <store data using tiling fields>
 }}
+```
+
+## Tiling Execution
+<High-level tiling execution flow - this is your final decision on how tiling works>
+```
+for <loop structure>:
+    CopyIn: <what data to load>
+    Compute: <what operations>
+    CopyOut: <what data to store>
 ```
 
 ## Tiling Fields Required

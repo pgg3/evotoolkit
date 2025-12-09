@@ -3,7 +3,8 @@
 
 """Kernel + Tiling 联合分支"""
 
-from typing import TYPE_CHECKING
+import re
+from typing import TYPE_CHECKING, List
 
 from ..parsers import parse_code, parse_json
 
@@ -115,12 +116,292 @@ class JointBranch:
         return False
 
     def _extract_joint_plan(self, conversation: list) -> dict:
-        """从对话中提取联合规划"""
-        # TODO: 实现从对话中提取结构化规划
+        """从对话中提取联合规划
+
+        提取最后两条消息：
+        - 倒数第二条（tiling agent）：tiling 策略
+        - 最后一条（kernel agent）：kernel 设计 + Tiling Fields + Useful References
+
+        两种情况：
+        1. 非 final round 达成共识：
+           - tiling_execution 从 tiling agent 的 ## Execution 提取
+           - kernel_pseudocode 从 kernel agent 的 ## Kernel Pseudocode 提取
+
+        2. Final round 强制共识：
+           - tiling_execution 从 kernel agent 的 ## Tiling Execution 提取
+           - kernel_pseudocode 从 kernel agent 的 ## Kernel Pseudocode 提取
+
+        Returns:
+            dict: {
+                "tiling_proposal": str,  # tiling agent 的 <response> 内容
+                "kernel_design": str,    # kernel agent 的 <response> 内容
+                "tiling_strategy": str,  # "default" or "custom"
+                "tiling_fields": list,   # 从 kernel design 中提取的 tiling fields
+                "kernel_pseudocode": str,  # 提取的 kernel 伪代码
+                "tiling_execution": str,   # 提取的 tiling 执行伪代码
+                "retrieval_requests": [{"type": "api"|"example", "name": str}, ...]
+            }
+        """
+        if len(conversation) < 2:
+            return {"tiling_proposal": None, "kernel_design": None,
+                    "tiling_strategy": "default", "tiling_fields": [],
+                    "kernel_pseudocode": None, "tiling_execution": None,
+                    "retrieval_requests": []}
+
+        # 倒数第二条是 tiling agent，最后一条是 kernel agent
+        tiling_msg = conversation[-2] if conversation[-2].get('role') == 'tiling' else None
+        kernel_msg = conversation[-1] if conversation[-1].get('role') == 'kernel' else None
+
+        # 提取 <response> 块内容
+        tiling_proposal = self._extract_response_block(
+            tiling_msg.get('content', '')) if tiling_msg else None
+        kernel_design = self._extract_response_block(
+            kernel_msg.get('content', '')) if kernel_msg else None
+
+        # 从 kernel design 中提取 Tiling Fields Required
+        tiling_fields = self._parse_tiling_fields(kernel_design) if kernel_design else []
+
+        # 提取 kernel pseudocode
+        kernel_pseudocode = self._parse_kernel_pseudocode(kernel_design) if kernel_design else None
+
+        # 判断是否是 final round（通过检查 kernel 输出是否有 ## Tiling Execution）
+        is_final_round = kernel_design and '## tiling execution' in kernel_design.lower()
+
+        if is_final_round:
+            # Final round: tiling execution 在 kernel output
+            tiling_execution = self._parse_tiling_execution(kernel_design)
+        else:
+            # 非 final: tiling execution 在 tiling agent output (## Execution)
+            tiling_execution = self._parse_tiling_execution(tiling_proposal) if tiling_proposal else None
+
+        # 解析 tiling 策略：
+        # 1. 优先从 kernel design 中判断（如果有 Tiling Fields Required 则为 custom）
+        # 2. 否则从 tiling proposal 中解析
+        if tiling_fields:
+            tiling_strategy = "custom"
+        else:
+            tiling_strategy = self._parse_tiling_strategy(tiling_proposal)
+
+        # 更新 run_state_dict.strategies
+        if not hasattr(self.run_state_dict, 'strategies') or self.run_state_dict.strategies is None:
+            self.run_state_dict.strategies = {}
+        self.run_state_dict.strategies["tiling"] = tiling_strategy
+
+        # 解析 Useful References 生成 retrieval_requests
+        retrieval_requests = self._parse_useful_references(kernel_design) if kernel_design else []
+
         return {
-            "conversation": conversation,
-            "retrieval_requests": []
+            "tiling_proposal": tiling_proposal,
+            "kernel_design": kernel_design,
+            "tiling_strategy": tiling_strategy,
+            "tiling_fields": tiling_fields,
+            "kernel_pseudocode": kernel_pseudocode,
+            "tiling_execution": tiling_execution,
+            "retrieval_requests": retrieval_requests,
         }
+
+    def _extract_response_block(self, content: str) -> str:
+        """提取 <response> 块的内容"""
+        start = content.find('<response>')
+        end = content.find('</response>')
+        if start != -1 and end != -1:
+            return content[start + len('<response>'):end].strip()
+        return content.strip()
+
+    def _parse_tiling_strategy(self, tiling_proposal: str) -> str:
+        """解析 tiling 策略类型
+
+        从 tiling proposal 中解析 "Strategy: default" 或 "Strategy: custom"
+        """
+        if not tiling_proposal:
+            return "default"
+
+        proposal_lower = tiling_proposal.lower()
+        if 'strategy: default' in proposal_lower or 'strategy:default' in proposal_lower:
+            return "default"
+        if 'strategy: custom' in proposal_lower or 'strategy:custom' in proposal_lower:
+            return "custom"
+
+        # 未找到明确策略，默认为 custom（更安全）
+        return "custom"
+
+    def _parse_tiling_fields(self, kernel_design: str) -> List[dict]:
+        """解析 Tiling Fields Required 部分
+
+        格式（来自 kernel agent final round）：
+        ## Tiling Fields Required
+        - batchSize: uint32_t // B
+        - seqLen: uint32_t // sequence length
+        - dModel: uint32_t // model dimension
+
+        Returns:
+            list: [{"name": str, "type": str, "purpose": str}, ...]
+        """
+        fields = []
+        if not kernel_design:
+            return fields
+
+        # 找到 Tiling Fields Required 部分
+        fields_start = kernel_design.lower().find('## tiling fields required')
+        if fields_start == -1:
+            # 也尝试匹配 "## Tiling Fields"
+            fields_start = kernel_design.lower().find('## tiling fields')
+            if fields_start == -1:
+                return fields
+
+        # 从该位置开始提取，直到下一个 ## 或结束
+        rest = kernel_design[fields_start:]
+        # 找到下一个 section（## 开头）
+        next_section = rest.find('\n##', 1)
+        if next_section != -1:
+            fields_section = rest[:next_section]
+        else:
+            fields_section = rest
+
+        # 解析每一行 "- name: type // purpose" 或 "- name: type"
+        for line in fields_section.split('\n'):
+            line = line.strip()
+            if not line.startswith('-'):
+                continue
+
+            line = line[1:].strip()  # 去掉 "-"
+
+            # 解析 "name: type // purpose" 格式
+            if '//' in line:
+                main_part, purpose = line.split('//', 1)
+                purpose = purpose.strip()
+            else:
+                main_part = line
+                purpose = ""
+
+            if ':' in main_part:
+                name, type_str = main_part.split(':', 1)
+                name = name.strip()
+                type_str = type_str.strip()
+                if name:
+                    fields.append({
+                        "name": name,
+                        "type": type_str,
+                        "purpose": purpose
+                    })
+
+        return fields
+
+    def _parse_kernel_pseudocode(self, content: str) -> str:
+        """解析 Kernel Pseudocode 部分
+
+        格式：
+        ## Kernel Pseudocode
+        ```cpp
+        // code here
+        ```
+        """
+        if not content:
+            return None
+
+        # 找到 ## Kernel Pseudocode 部分
+        section_start = content.lower().find('## kernel pseudocode')
+        if section_start == -1:
+            return None
+
+        rest = content[section_start:]
+
+        # 找到代码块
+        code_start = rest.find('```')
+        if code_start == -1:
+            return None
+
+        # 跳过 ```cpp 或 ``` 行
+        code_start = rest.find('\n', code_start) + 1
+        code_end = rest.find('```', code_start)
+        if code_end == -1:
+            return None
+
+        return rest[code_start:code_end].strip()
+
+    def _parse_tiling_execution(self, content: str) -> str:
+        """解析 Tiling Execution 或 Execution 部分
+
+        两种格式：
+        1. ## Tiling Execution (from kernel final round)
+        2. ## Execution (from tiling agent)
+
+        格式：
+        ## Execution
+        ```
+        for i in range(...):
+            CopyIn: ...
+            Compute: ...
+            CopyOut: ...
+        ```
+        """
+        if not content:
+            return None
+
+        content_lower = content.lower()
+
+        # 优先查找 ## Tiling Execution，然后是 ## Execution
+        section_start = content_lower.find('## tiling execution')
+        if section_start == -1:
+            section_start = content_lower.find('## execution')
+        if section_start == -1:
+            return None
+
+        rest = content[section_start:]
+
+        # 找到代码块
+        code_start = rest.find('```')
+        if code_start == -1:
+            return None
+
+        # 跳过 ``` 行
+        code_start = rest.find('\n', code_start) + 1
+        code_end = rest.find('```', code_start)
+        if code_end == -1:
+            return None
+
+        return rest[code_start:code_end].strip()
+
+    def _parse_useful_references(self, kernel_design: str) -> List[dict]:
+        """解析 Useful References 部分，生成 retrieval_requests
+
+        格式：
+        ## Useful References
+        - APIs: [API1, API2 (Desc), ...]
+        - Examples: [example1, example2, ...]
+        """
+        requests = []
+
+        # 找到 Useful References 部分
+        ref_start = kernel_design.lower().find('## useful references')
+        if ref_start == -1:
+            return requests
+
+        ref_section = kernel_design[ref_start:]
+
+        # 解析 APIs: [...]
+        apis_match = re.search(r'-\s*APIs?:\s*\[([^\]]*)\]', ref_section, re.IGNORECASE)
+        if apis_match:
+            apis_str = apis_match.group(1)
+            for api in apis_str.split(','):
+                api = api.strip()
+                if not api:
+                    continue
+                # 清理括号内的说明，如 "MatMul (Cube)" -> "MatMul"
+                api_name = re.sub(r'\s*\([^)]*\)', '', api).strip()
+                if api_name:
+                    requests.append({"type": "api", "name": api_name})
+
+        # 解析 Examples: [...]
+        examples_match = re.search(r'-\s*Examples?:\s*\[([^\]]*)\]', ref_section, re.IGNORECASE)
+        if examples_match:
+            examples_str = examples_match.group(1)
+            for example in examples_str.split(','):
+                example = example.strip()
+                if example:
+                    requests.append({"type": "example", "name": example})
+
+        return requests
 
     def _retrieve_knowledge(self):
         """根据规划检索知识"""
