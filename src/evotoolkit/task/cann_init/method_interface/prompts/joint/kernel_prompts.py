@@ -103,6 +103,8 @@ At the end, list what knowledge would help implementation - exact names are NOT 
 2. **Memory fit**: tile size fits UB capacity?
 3. **Dim handling**: reduction dims handled correctly? independent dims parallelized?
 4. **Alignment**: cube tiles aligned to 16? vector aligned to 32?
+5. **Multi-core offset**: Each core's data offset MUST be computed using `GetBlockIdx()` in kernel.
+   DO NOT include `block_offset` in tiling fields - tiling data is shared by all cores!
 
 ## Your Tasks
 1. Review tiling strategy (reject if checklist fails)
@@ -212,7 +214,7 @@ accepted: true
 ```cpp
 // Using tiling fields: batchSize, featureDim, rowsPerCore
 for (int row = 0; row < rowsPerCore; row++) {{
-    int offset = (blockIdx * rowsPerCore + row) * featureDim;
+    int offset = (GetBlockIdx() * rowsPerCore + row) * featureDim;
 
     // CopyIn: load one row
     xLocal = LoadTile(xGm, offset, featureDim);
@@ -422,7 +424,11 @@ The next phase will generate actual code based on your output. You cannot reject
 ## Current Tiling Proposal
 {current_plan}
 
-{feedback_section}## Your Task
+{feedback_section}## IMPORTANT: Multi-core Parallelism Rule
+Each core's data offset MUST be computed using `GetBlockIdx()` in the kernel.
+DO NOT include `block_offset` in tiling fields - tiling data is shared by all cores!
+
+## Your Task
 
 Even if the tiling proposal has minor issues, you must:
 1. Accept it and work around the issues in your kernel design, OR

@@ -139,69 +139,63 @@ JOINT_PLAN_CONTEXT = {
     "easy": {
         'tiling_strategy': 'custom',
         'tiling_fields': [
-            {'name': 'block_dim', 'type': 'uint32_t', 'purpose': 'Number of AI cores to use (8)'},
-            {'name': 'tile_size', 'type': 'uint32_t', 'purpose': 'Elements per tile iteration (2048 float32 = 8KB)'},
-            {'name': 'total_length', 'type': 'uint32_t', 'purpose': 'Total number of elements (262144)'},
-            {'name': 'block_offset', 'type': 'uint32_t', 'purpose': 'Starting element index for this block'},
-            {'name': 'block_length', 'type': 'uint32_t', 'purpose': 'Number of elements this block processes'},
+            {'name': 'total_length', 'type': 'uint32_t', 'purpose': 'Total number of elements across entire tensor (batch_size * dim)'},
+            {'name': 'tile_length', 'type': 'uint32_t', 'purpose': 'Maximum elements to process per iteration (constrained by UB size, e.g., 8192 floats = 32KB per buffer, with 3 buffers = 96KB total)'},
         ],
-        'kernel_pseudocode': '''// Using tiling fields: tile_size, total_length, block_offset, block_length
-// Input shape: [batch_size, dim] = [16, 16384] flattened to total_elements = 262144
-// Each block processes block_length elements with internal tiling by tile_size
+        'kernel_pseudocode': '''// Using tiling fields: total_length, tile_length
+// Multi-core: each core processes its own data slice based on GetBlockIdx()
 
-const uint32_t TILE_SIZE = 2048;  // Process 2048 float32 elements per iteration (8KB)
-const uint32_t total_elements = batch_size * dim;
-const uint32_t elements_per_block = (total_elements + block_dim - 1) / block_dim;
+// Calculate per-core workload
+uint32_t block_idx = GetBlockIdx();
+uint32_t core_count = block_dim;  // 8 cores
+uint32_t elements_per_core = total_length / core_count;
+uint32_t core_offset = block_idx * elements_per_core;
+uint32_t core_length = (block_idx == core_count - 1) ?
+                       (total_length - core_offset) : elements_per_core;
 
-// Allocate double buffers in UB
-LocalTensor<float> input_buf_0 = AllocTensor<float>(TILE_SIZE);
-LocalTensor<float> input_buf_1 = AllocTensor<float>(TILE_SIZE);
-LocalTensor<float> output_buf_0 = AllocTensor<float>(TILE_SIZE);
-LocalTensor<float> output_buf_1 = AllocTensor<float>(TILE_SIZE);
+// Tile processing loop for this core's data
+uint32_t processed = 0;
+while (processed < core_length) {
+    uint32_t current_tile = min(tile_length, core_length - processed);
+    uint32_t gm_offset = core_offset + processed;
 
-uint32_t block_start = block_idx * elements_per_block;
-uint32_t block_end = min(block_start + elements_per_block, total_elements);
-uint32_t num_tiles = (block_end - block_start + TILE_SIZE - 1) / TILE_SIZE;
-
-for (uint32_t tile_idx = 0; tile_idx < num_tiles; ++tile_idx) {
-    uint32_t tile_offset = block_start + tile_idx * TILE_SIZE;
-    uint32_t current_tile_size = min(TILE_SIZE, total_elements - tile_offset);
-
-    uint32_t buf_idx = tile_idx % 2;
-    LocalTensor<float> input_buf = (buf_idx == 0) ? input_buf_0 : input_buf_1;
-    LocalTensor<float> output_buf = (buf_idx == 0) ? output_buf_0 : output_buf_1;
-
-    // CopyIn: Load input tile from GM to UB
-    DataCopy(input_buf, x_gm[tile_offset], current_tile_size);
+    // CopyIn: GM -> UB
+    DataCopy(ubInput, gmInput[gm_offset], current_tile);
 
     // Compute: ReLU = max(x, 0)
-    Relu(output_buf, input_buf, current_tile_size);
+    Duplicate(ubZero, 0.0f, current_tile);
+    Max(ubOutput, ubInput, ubZero, current_tile);
 
-    // CopyOut: Store output tile from UB to GM
-    DataCopy(output_gm[tile_offset], output_buf, current_tile_size);
+    // CopyOut: UB -> GM
+    DataCopy(gmOutput[gm_offset], ubOutput, current_tile);
+
+    processed += current_tile;
 }''',
-        'tiling_execution': '''total_elements = batch_size * dim = 16 * 16384 = 262144
-block_dim = 8
-elements_per_block = 262144 / 8 = 32768 elements per AI core
-tile_size = 2048 elements (8KB per buffer, 32KB total for double buffering)
+        'tiling_execution': '''Input shape: [batch_size, dim] = [16, 16384] → total 262144 elements
+Multi-core split: 8 cores, each processes 32768 elements
 
-for each block (AI core) in range(0, 8):
-    block_start = block_idx * 32768
-    block_end = min(block_start + 32768, 262144)
+For each core (parallel):
+  core_offset = GetBlockIdx() * 32768
+  core_length = 32768 (or remaining for last core)
 
-    for each tile in range(0, 16):  // 32768 / 2048 = 16 tiles per block
-        tile_offset = block_start + tile_idx * 2048
-        current_tile_size = min(2048, total_elements - tile_offset)
+  Loop over core's data in tiles:
+    tile_size = min(tile_length, remaining_elements)
 
-        CopyIn: Load x[tile_offset : tile_offset + current_tile_size] from GM to UB
-        Compute: Apply ReLU activation (max with 0)
-        CopyOut: Store output[tile_offset : tile_offset + current_tile_size] from UB to GM''',
+    CopyIn: Load tile_size elements from GM[core_offset + processed] to UB
+    Compute: Apply ReLU (max(input, 0)) on tile_size elements
+    CopyOut: Store tile_size elements from UB to GM[core_offset + processed]
+
+    processed += tile_size''',
         'retrieval_requests': [
             {'type': 'api', 'name': 'DataCopy'},
-            {'type': 'api', 'name': 'Relu'},
             {'type': 'api', 'name': 'Max'},
-            {'type': 'example', 'name': 'elementwise_relu'},
-            {'type': 'example', 'name': 'elementwise_add'},
+            {'type': 'api', 'name': 'Duplicate'},
+            {'type': 'api', 'name': 'SetTilingData'},
+            {'type': 'api', 'name': 'GetBlockIdx'},
+            {'type': 'example', 'name': 'Abs'},
+            {'type': 'example', 'name': 'Exp'},
+            {'type': 'example', 'name': 'Sqrt'},
+            {'type': 'example', 'name': 'Add (for element-wise patterns)'},
         ],
     },
     "medium": None,  # TODO
@@ -295,30 +289,46 @@ for (uint32_t b = batchStart; b < batchEnd; b++) {
 KNOWLEDGE_CONTEXT = {
     "easy": """## API Reference
 
-### Relu
-- **Signature**: `void Relu(const LocalTensor<T>& dstLocal, const LocalTensor<T>& srcLocal, uint64_t mask[],
-    const uint8_t repeatTimes, const UnaryRepeatParams& repeatParams)`
-- **Description**: dst[i] = (src[i] < 0) ? 0 : src[i]
-
 ### DataCopy
 - **Signature**: `void DataCopy(const LocalTensor<T>& dstLocal, const GlobalTensor<T>& srcGlobal,
                                                      const Nd2NzParams& intriParams)`
 - **Description**: format transform(such as nd2nz) during data load from OUT to L1
 
+### Max
+- **Signature**: `void Max(const LocalTensor<T>& dstLocal, const LocalTensor<T>& src0Local,
+                           const LocalTensor<T>& src1Local, uint64_t mask[], const uint8_t repeatTimes,
+                           const BinaryRepeatParams& repeatParams)`
+- **Description**: dst = src0 > src1 ? src0 : src1
+
+### Duplicate
+- **Signature**: `void Duplicate(const LocalTensor<T>& dstLocal, const T& scalarValue, uint64_t mask,
+    const uint8_t repeatTimes, const uint16_t dstBlockStride, const uint8_t dstRepeatStride)`
+- **Description**: dst[i] = scalar
+
+### SetFixPipeConfig
+- **Signature**: `void SetFixPipeConfig(const LocalTensor<T> &reluPre, const LocalTensor<T> &quantPre,
+    bool isUnitFlag = false)`
+- **Description**: After calculation, process the results
+
+### SyncAll
+- **Signature**: `void SyncAll(const GlobalTensor<int32_t>& gmWorkspace, const LocalTensor<int32_t>& ubWorkspace,
+                                 const int32_t usedCores = 0)`
+
 ## Example Reference
 
-### relu
-**Purpose**: Element-wise ReLU activation (max(x, 0))
+### abs
+**Purpose**: The Abs operator is highly relevant as it shares the same fundamental structure as ReLU:
+1. Single input tensor, single output tensor element-wise operation
+2. Simple mathematical transformation applied to each element independently
+3. No reduction or complex computation - direct element mapping
+4. Multi-core tiling strategy with GM→UB→Compute→GM data flow
+5. Same memory access patterns and buffer management requirements
 
 **Mapping to Current Task**:
-- Example's input tensor → Current task's `x` (float tensor)
-- Example's output tensor → Current task's `output` (float tensor)
-- Example's computation `max(x, 0)` → Current task's `Relu(output_buf, input_buf, current_tile_size)`
-
-**Implementation Patterns**:
-- Data flow: GM → UB (DataCopy) → Compute (ReLU: max with 0) → UB → GM (DataCopy)
-- Pipeline: Double buffer optimization for overlapping I/O and computation
-- Element-wise activation using Ascend C's built-in `Relu` API for hardware acceleration
+- Abs's `input` tensor → Current task's `x` tensor
+- Abs's `output` tensor → Current task's `output` tensor
+- Abs's element-wise `|input_i|` operation → Current task's element-wise `max(x_i, 0)` operation
+- Abs's `total_length` tiling field → Current task's `total_length` tiling field
 """,
     "medium": "",  # TODO
     "hard": """## API Reference
