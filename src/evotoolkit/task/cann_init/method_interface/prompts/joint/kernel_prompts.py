@@ -35,7 +35,8 @@ class KernelPromptsMixin:
         previous_feedback = None
 
         # Check if this is a revision round (kernel already gave feedback before)
-        for msg in conversation:
+        # Use reversed() to get the LATEST kernel feedback, not the first one
+        for msg in reversed(conversation):
             if msg.get('role') == 'kernel':
                 previous_feedback = msg.get('content', '')
                 break
@@ -238,7 +239,52 @@ for (int row = 0; row < rowsPerCore; row++) {{
 - Examples: [softmax_custom]
 </response>
 
-### Ex3: Reject wrong paradigm
+### Ex3: Accept MatMul (cube paradigm)
+Pattern: `matmul`, Tiling: custom, **cube**, fields: M, N, K, tileM, tileN, tileK
+<response>
+accepted: true
+
+## Kernel Design
+- Pipeline: double_buffer
+- Operations: [matrix multiply-accumulate]
+
+## Kernel Pseudocode
+```cpp
+// Using tiling fields: M, N, K, tileM, tileN, tileK
+for (int m = myMStart; m < myMEnd; m += tileM) {{
+    for (int n = 0; n < N; n += tileN) {{
+        // Init accumulator
+        LocalTensor<float> cLocal = InitTensor(tileM, tileN);
+
+        for (int k = 0; k < K; k += tileK) {{
+            // CopyIn
+            aLocal = LoadTile(aGm, m, k, tileM, tileK);
+            bLocal = LoadTile(bGm, k, n, tileK, tileN);
+
+            // Compute (cube unit)
+            cLocal = Mmad(cLocal, aLocal, bLocal);
+        }}
+
+        // CopyOut
+        StoreTile(cGm, m, n, cLocal, tileM, tileN);
+    }}
+}}
+```
+
+## Tiling Fields Required
+- M: uint32_t // rows of A and C
+- N: uint32_t // cols of B and C
+- K: uint32_t // cols of A, rows of B (reduction dim)
+- tileM: uint32_t // tile size for M (aligned to 16)
+- tileN: uint32_t // tile size for N (aligned to 16)
+- tileK: uint32_t // tile size for K (aligned to 16)
+
+## Useful References
+- APIs: [Mmad, MatMul]
+- Examples: [matmul_custom]
+</response>
+
+### Ex4: Reject wrong paradigm
 Pattern: `matmul`, Tiling: custom, **vector** (wrong!)
 <response>
 accepted: false
