@@ -59,14 +59,17 @@ class JointBranch:
 
         for turn in range(self.config.max_joint_turns):
             self._verbose(f"[Joint] Turn {turn + 1}")
+            is_final_round = (turn == self.config.max_joint_turns - 1)
 
             # Tiling 专员提出策略
             tiling_prompt = self.config.interface.get_tiling_propose_prompt(context, conversation)
             tiling_msg, _ = self.config.running_llm.get_response(tiling_prompt)
             conversation.append({"role": "tiling", "content": tiling_msg})
 
-            # Kernel 专员评审
-            kernel_prompt = self.config.interface.get_kernel_review_prompt(context, conversation)
+            # Kernel 专员评审（最后一轮强制要求输出可实现的方案）
+            kernel_prompt = self.config.interface.get_kernel_review_prompt(
+                context, conversation, is_final_round=is_final_round
+            )
             kernel_msg, _ = self.config.running_llm.get_response(kernel_prompt)
             conversation.append({"role": "kernel", "content": kernel_msg})
 
@@ -74,6 +77,8 @@ class JointBranch:
             if self._check_consensus(kernel_msg):
                 self._verbose("[Joint] Consensus reached")
                 break
+            elif is_final_round:
+                self._verbose("[Joint] Final round - forcing consensus for implementation")
 
         self.run_state_dict.joint_conversation = conversation
         self.run_state_dict.joint_plan = self._extract_joint_plan(conversation)
