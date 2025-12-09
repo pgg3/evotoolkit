@@ -87,13 +87,18 @@ def main(test_case: str = "hard"):
     print("\n--- Generated pybind_src ---")
     if run_state_dict.pybind_src:
         print(run_state_dict.pybind_src)
-
-        # Save output
-        output_dir = ensure_output_dir(f"pybind_{test_case}")
-        (output_dir / "pybind_src.cpp").write_text(run_state_dict.pybind_src)
-        print(f"\n[Saved to {output_dir / 'pybind_src.cpp'}]")
     else:
         print("(None - using default template)")
+
+    # Save output to both pybind_xxx and impl_xxx directories
+    output_dir = ensure_output_dir(f"pybind_{test_case}")
+    impl_dir = ensure_output_dir(f"impl_{test_case}")
+
+    if run_state_dict.pybind_src:
+        (output_dir / "pybind_src.cpp").write_text(run_state_dict.pybind_src)
+        (impl_dir / "pybind_src.cpp").write_text(run_state_dict.pybind_src)
+        print(f"\n[Saved to {output_dir / 'pybind_src.cpp'}]")
+        print(f"[Saved to {impl_dir / 'pybind_src.cpp'}]")
 
 
 if __name__ == "__main__":

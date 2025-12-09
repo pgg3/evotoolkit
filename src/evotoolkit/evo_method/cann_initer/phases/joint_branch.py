@@ -27,13 +27,33 @@ class JointBranch:
 
     def run(self, python_ref: str):
         """
-        执行 Joint 分支
+        执行 Joint 分支完整流程 (Phase 1-3)
 
         Args:
             python_ref: Python 参考实现代码
         """
         self._verbose("[Joint] Starting...")
 
+        # Phase 1 + 2: Planning
+        self.run_planning(python_ref)
+
+        # Phase 3: 代码实现
+        self._verbose("[Joint] Phase 3: Code Implementation...")
+        self._implement_code(python_ref)
+
+        self._verbose("[Joint] Done")
+
+    def run_planning(self, python_ref: str):
+        """
+        仅执行 Planning 阶段 (Phase 1 + Phase 2)
+
+        输出:
+            - run_state_dict.joint_plan
+            - run_state_dict.knowledge_context
+
+        Args:
+            python_ref: Python 参考实现代码
+        """
         # Phase 1: 联合规划讨论
         self._verbose("[Joint] Phase 1: Joint Planning...")
         self._joint_planning(python_ref)
@@ -42,10 +62,19 @@ class JointBranch:
         self._verbose("[Joint] Phase 2: Knowledge Retrieval...")
         self._retrieve_knowledge()
 
-        # Phase 3: 代码实现
+    def run_implementation(self, python_ref: str):
+        """
+        仅执行 Implementation 阶段 (Phase 3)
+
+        前置条件:
+            - run_state_dict.joint_plan 已填充
+            - run_state_dict.knowledge_context 已填充 (可选)
+
+        Args:
+            python_ref: Python 参考实现代码
+        """
         self._verbose("[Joint] Phase 3: Code Implementation...")
         self._implement_code(python_ref)
-
         self._verbose("[Joint] Done")
 
     def _joint_planning(self, python_ref: str):

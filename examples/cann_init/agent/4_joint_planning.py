@@ -3,15 +3,14 @@
 # Licensed under the MIT License
 
 """
-Joint Branch 完整测试
+Joint Branch Planning 测试
 
-测试 Joint Branch 的完整流程:
+测试 Joint Branch 的规划流程 (不含代码实现):
 - Phase 1: Tiling-Kernel 多轮对话
 - Phase 2: Knowledge Retrieval
-- Phase 3: Code Implementation
 
 输入: signature, compute_pattern, python_ref (来自 Phase 0)
-输出: joint_plan, kernel_src, tiling_src, operator_src
+输出: joint_plan, knowledge_context
 
 用法:
     python 4_joint_planning.py [easy|medium|hard]
@@ -38,7 +37,7 @@ def main(test_case: str = "hard"):
     python_ref = load_python_ref(test_case)
 
     print("=" * 70)
-    print(f"Joint Branch Test - {config_info['name']}")
+    print(f"Joint Branch Planning Test - {config_info['name']}")
     print("=" * 70)
 
     # Get Phase 0 context
@@ -79,15 +78,15 @@ def main(test_case: str = "hard"):
     run_state_dict.compute_pattern = phase0_ctx["compute_pattern"]
     run_state_dict.strategies = phase0_ctx["strategies"]
 
-    # Run Joint Branch
-    print("\n[2] Running Joint Branch...")
+    # Run Joint Branch Planning (Phase 1 + 2 only)
+    print("\n[2] Running Joint Branch Planning...")
     print("-" * 70)
     joint_branch = JointBranch(config, run_state_dict)
-    joint_branch.run(python_ref)
+    joint_branch.run_planning(python_ref)
 
     # Print results
     print("\n" + "=" * 70)
-    print("Joint Branch Results")
+    print("Joint Branch Planning Results")
     print("=" * 70)
 
     print("\n--- Joint Plan ---")
@@ -105,21 +104,6 @@ def main(test_case: str = "hard"):
         print(ctx[:500] + "..." if len(ctx) > 500 else ctx)
     else:
         print("(none)")
-
-    print("\n--- Generated Code ---")
-    print(f"  kernel_src: {'Yes' if run_state_dict.kernel_src else 'No'} ({len(run_state_dict.kernel_src or '')} chars)")
-    print(f"  tiling_src: {'Yes' if run_state_dict.tiling_src else 'No'} ({len(run_state_dict.tiling_src or '')} chars)")
-    print(f"  operator_src: {'Yes' if run_state_dict.operator_src else 'No'} ({len(run_state_dict.operator_src or '')} chars)")
-
-    # Save outputs
-    output_dir = ensure_output_dir(f"joint_{test_case}")
-    if run_state_dict.kernel_src:
-        (output_dir / "op_kernel.cpp").write_text(run_state_dict.kernel_src)
-    if run_state_dict.tiling_src:
-        (output_dir / "tiling.h").write_text(run_state_dict.tiling_src)
-    if run_state_dict.operator_src:
-        (output_dir / "op_host.cpp").write_text(run_state_dict.operator_src)
-    print(f"\n[Saved to {output_dir}/]")
 
     # Output context for _config.py
     print("\n" + "=" * 70)

@@ -135,14 +135,117 @@ PHASE0_CONTEXT = {
 JOINT_PLAN_CONTEXT = {
     "easy": None,    # TODO: Fill after running 4_joint_planning.py
     "medium": None,  # TODO
-    "hard": None,    # TODO
+    "hard": {
+        'tiling_strategy': 'custom',
+        'tiling_fields': [
+            {'name': 'batchSize', 'type': 'uint32_t', 'purpose': 'batch dimension (32)'},
+            {'name': 'seqLen', 'type': 'uint32_t', 'purpose': 'sequence length dimension (128)'},
+            {'name': 'dModel', 'type': 'uint32_t', 'purpose': 'model dimension (768)'},
+            {'name': 'tileSeq', 'type': 'uint32_t', 'purpose': 'number of query rows per tile (4-8)'},
+            {'name': 'scaleVal', 'type': 'float', 'purpose': '1/sqrt(dModel) for attention scaling'},
+        ],
+        'kernel_pseudocode': '''// Using tiling fields: batchSize, seqLen, dModel, tileSeq, scaleVal
+for (int batch_idx = blockIdx / num_seq_tiles; batch_idx < batchSize; batch_idx += blockDim / num_seq_tiles) {
+    for (int seq_tile_idx = blockIdx % num_seq_tiles; seq_tile_idx < seqLen / tileSeq; seq_tile_idx += step) {
+        // CopyIn
+        qLocal = LoadTile(qGm, qRowOffset, tileSeq * dModel);          // [tileSeq, dModel]
+        kLocal = LoadTile(kGm, kOffset, seqLen * dModel);              // [seqLen, dModel]
+        vLocal = LoadTile(vGm, vOffset, seqLen * dModel);              // [seqLen, dModel]
+
+        // Compute: Q @ K^T
+        scoresLocal = MatMul(qLocal, kLocal_transposed, tileSeq, seqLen, dModel);  // [tileSeq, seqLen]
+
+        // Compute: Scale
+        scoresLocal = Muls(scoresLocal, scaleVal, tileSeq * seqLen);
+
+        // Compute: Softmax (row-wise over seqLen dimension)
+        for (int row = 0; row < tileSeq; row++) {
+            maxVal = ReduceMax(scoresLocal[row], seqLen);
+            scoresLocal[row] = Sub(scoresLocal[row], maxVal, seqLen);
+            scoresLocal[row] = Exp(scoresLocal[row], seqLen);
+            sumVal = ReduceSum(scoresLocal[row], seqLen);
+            scoresLocal[row] = Div(scoresLocal[row], sumVal, seqLen);
+        }
+
+        // Compute: scores @ V
+        outLocal = MatMul(scoresLocal, vLocal, tileSeq, dModel, seqLen);  // [tileSeq, dModel]
+
+        // CopyOut
+        StoreTile(outGm, outOffset, outLocal, tileSeq * dModel);
+    }
+}''',
+        'tiling_execution': '''for batch_idx in myBatches:
+    for seq_tile in mySeqTiles:
+        CopyIn: Q[batch_idx, seq_tile, :], K[batch_idx, :, :], V[batch_idx, :, :]
+        Compute:
+            - Cube: scores = Q_tile @ K^T
+            - Vector: scores /= sqrt(d_model)
+            - Vector: softmax(scores, dim=-1)
+            - Cube: out = scores @ V
+        CopyOut: output[batch_idx, seq_tile, :]''',
+        'retrieval_requests': [
+            {'type': 'api', 'name': 'MatMul'},
+            {'type': 'api', 'name': 'Muls'},
+            {'type': 'api', 'name': 'ReduceMax'},
+            {'type': 'api', 'name': 'ReduceSum'},
+            {'type': 'api', 'name': 'Sub'},
+            {'type': 'api', 'name': 'Exp'},
+            {'type': 'api', 'name': 'Div'},
+            {'type': 'api', 'name': 'Transpose'},
+            {'type': 'example', 'name': 'matmul_custom'},
+            {'type': 'example', 'name': 'softmax_custom'},
+        ],
+    },
 }
 
 # Knowledge context - fill after running 4_joint_planning.py
 KNOWLEDGE_CONTEXT = {
     "easy": "",    # TODO
     "medium": "",  # TODO
-    "hard": "",    # TODO
+    "hard": """## API Reference
+
+### Mmad
+- **签名**: `void Mmad(const LocalTensor<DstT>& dstLocal, const LocalTensor<Src0T>& fmLocal,
+    const LocalTensor<Src1T>& filterLocal, const MmadParams& mmadParams)`
+- **描述**: Matrix multiplication and addition
+
+### Muls
+- **签名**: `void Muls(const LocalTensor<T>& dstLocal, const LocalTensor<T>& srcLocal, const T& scalarValue,
+    uint64_t mask[], const uint8_t repeatTimes, const UnaryRepeatParams& repeatParams)`
+- **描述**: dst[i] = src[i] * scalar
+
+### ReduceMax
+- **签名**: `void ReduceMax(const LocalTensor<T>& dstLocal, const LocalTensor<T>& srcLocal,
+    const LocalTensor<T>& workLocal, const int32_t mask, const int32_t repeatTimes, const int32_t srcRepStride,
+    bool calIndex = 0)`
+- **描述**: Index of the maximum value of all input elements
+
+### ReduceSum
+- **签名**: `void ReduceSum(const LocalTensor<T>& dstLocal, const LocalTensor<T>& srcLocal,
+    const LocalTensor<T>& workLocal, const int32_t mask, const int32_t repeatTimes, const int32_t srcRepStride)`
+- **描述**: sum all input elements
+
+### Sub
+- **签名**: `void Sub(const LocalTensor<T>& dstLocal, const LocalTensor<T>& src0Local,
+    const LocalTensor<T>& src1Local, uint64_t mask[], const uint8_t repeatTimes,
+    const BinaryRepeatParams& repeatParams)`
+- **描述**: dst = src0 - src1
+
+### Exp
+- **签名**: `void Exp(const LocalTensor<T>& dstLocal, const LocalTensor<T>& srcLocal, uint64_t mask[],
+    const uint8_t repeatTimes, const UnaryRepeatParams& repeatParams)`
+- **描述**: dst[i] = exp(src[i])
+
+### Div
+- **签名**: `void Div(const LocalTensor<T>& dstLocal, const LocalTensor<T>& src0Local,
+    const LocalTensor<T>& src1Local, uint64_t mask[], const uint8_t repeatTimes,
+    const BinaryRepeatParams& repeatParams)`
+- **描述**: dst = src0 / src1
+
+### DataCopy
+- **签名**: `void DataCopy(const LocalTensor<T>& dstLocal, const GlobalTensor<T>& srcGlobal, const Nd2NzParams& params)`
+- **描述**: Copy data between global and local memory
+""",
 }
 
 
