@@ -617,35 +617,35 @@ class RealKnowledgeBase(KnowledgeBase):
         return self.index.get("categories", {})
 
     def get_available_knowledge_summary(self) -> str:
-        """Get summary for LLM progressive disclosure
+        """Get complete knowledge summary for RetrievalPlanner
 
-        Returns a structured overview of available APIs and operators
-        for the LLM to understand what knowledge it can request.
+        Returns a structured overview with:
+        - Complete API list (grouped by category)
+        - Operator example names (grouped by category)
         """
         lines = []
 
-        # APIs section
-        lines.append("## Available APIs")
+        # APIs section - COMPLETE list
+        lines.append("## Available APIs (Complete List)")
         api_cats = self.get_api_categories()
         if api_cats:
             for cat_name, apis in api_cats.items():
                 if apis:
-                    # Show first 8 APIs, indicate if more
-                    preview = ", ".join(apis[:8])
-                    suffix = f", ... (+{len(apis)-8} more)" if len(apis) > 8 else ""
-                    lines.append(f"- **{cat_name}** ({len(apis)}): {preview}{suffix}")
+                    # Show ALL APIs in this category
+                    api_list = ", ".join(sorted(apis))
+                    lines.append(f"- **{cat_name}**: {api_list}")
         else:
             lines.append("- No APIs indexed")
 
-        # Operators section
+        # Operators section - names only
         lines.append("\n## Available Operator Examples")
         op_cats = self.get_operator_categories()
         if op_cats:
             for cat_name, ops in op_cats.items():
                 if ops:
-                    preview = ", ".join(ops[:4])
-                    suffix = "..." if len(ops) > 4 else ""
-                    lines.append(f"- **{cat_name}** ({len(ops)}): {preview}{suffix}")
+                    # Show all operator names
+                    op_list = ", ".join(sorted(ops))
+                    lines.append(f"- **{cat_name}**: {op_list}")
         else:
             lines.append("- No operators indexed")
 

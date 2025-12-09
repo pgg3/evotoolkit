@@ -230,10 +230,22 @@ class KnowledgeSummarizer:
         # Prepare examples content
         examples_content = self._format_examples_for_llm(examples)
 
+        # Format tiling fields for display
+        tiling_fields = task_context.get("tiling_fields", [])
+        if isinstance(tiling_fields, list):
+            tiling_fields_str = "\n".join(
+                f"- {f.get('name', 'unknown')}: {f.get('type', 'unknown')} - {f.get('purpose', '')}"
+                for f in tiling_fields
+            ) if tiling_fields else "None"
+        else:
+            tiling_fields_str = str(tiling_fields)
+
         # Build prompt
         prompt = SUMMARIZER_PROMPT.format(
             operator_description=task_context.get("operator_description", ""),
             kernel_pseudocode=task_context.get("kernel_pseudocode", ""),
+            tiling_execution=task_context.get("tiling_execution", ""),
+            tiling_fields=tiling_fields_str,
             examples_content=examples_content,
             max_examples=self.max_examples,
         )
@@ -307,9 +319,23 @@ class KnowledgeSummarizer:
 
             summary = {
                 "name": name,
-                "purpose": self._extract_field(section, "理由|相关度|目的"),
-                "key_techniques": self._extract_list_field(section, "关键技术"),
-                "code_snippet": self._extract_code_block(section),
+                "purpose": self._extract_field(
+                    section, "Selection Reason|选择理由|理由|相关度|目的"
+                ),
+                "mapping": self._extract_list_field(
+                    section, "Mapping to Current Task|与当前任务的映射"
+                ),
+                "patterns": self._extract_list_field(
+                    section, "Implementation Patterns|实现模式"
+                ),
+                "key_techniques": self._extract_list_field(
+                    section, "Key Techniques|关键技术"
+                ),
+                "not_applicable": self._extract_list_field(
+                    section, "Not Applicable|不适用部分"
+                ),
+                "kernel_snippet": self._extract_labeled_code_block(section, "Kernel"),
+                "tiling_snippet": self._extract_labeled_code_block(section, "Tiling"),
             }
             summaries.append(summary)
 
@@ -338,6 +364,22 @@ class KnowledgeSummarizer:
     def _extract_code_block(self, text: str) -> str:
         """Extract code block from text"""
         match = re.search(r"```(?:cpp)?\s*\n(.*?)```", text, re.DOTALL)
+        if match:
+            return match.group(1).strip()
+        return ""
+
+    def _extract_labeled_code_block(self, text: str, label: str) -> str:
+        """Extract code block with a specific label (e.g., Kernel, Tiling)
+
+        Looks for patterns like:
+        **Kernel Reference Code**:
+        ```cpp
+        ...
+        ```
+        """
+        # Pattern: **Label ... Code**: followed by code block
+        pattern = rf"\*\*{label}[^*]*\*\*:\s*\n```(?:cpp)?\s*\n(.*?)```"
+        match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
         if match:
             return match.group(1).strip()
         return ""
@@ -522,9 +564,9 @@ class KnowledgeSummarizer:
             parts.append("## API Reference\n")
             for api in api_summaries:
                 parts.append(f"### {api['name']}")
-                parts.append(f"- **签名**: `{api['signature']}`")
+                parts.append(f"- **Signature**: `{api['signature']}`")
                 if api.get("description"):
-                    parts.append(f"- **描述**: {api['description']}")
+                    parts.append(f"- **Description**: {api['description']}")
                 parts.append("")
 
         # Example Reference section
@@ -533,26 +575,48 @@ class KnowledgeSummarizer:
             for ex in example_summaries:
                 parts.append(f"### {ex['name']}")
                 if ex.get("purpose"):
-                    parts.append(f"**目的**: {ex['purpose']}\n")
+                    parts.append(f"**Purpose**: {ex['purpose']}\n")
 
+                # Mapping to current task (new field)
+                if ex.get("mapping"):
+                    parts.append("**Mapping to Current Task**:")
+                    for item in ex["mapping"]:
+                        parts.append(f"- {item}")
+                    parts.append("")
+
+                # Implementation patterns (new field)
+                if ex.get("patterns"):
+                    parts.append("**Implementation Patterns**:")
+                    for pattern in ex["patterns"]:
+                        parts.append(f"- {pattern}")
+                    parts.append("")
+
+                # Key techniques
                 if ex.get("key_techniques"):
-                    parts.append("**关键技术**:")
+                    parts.append("**Key Techniques**:")
                     for tech in ex["key_techniques"]:
                         parts.append(f"- {tech}")
                     parts.append("")
 
-                # Kernel snippet (精简后的核心逻辑)
+                # Not applicable (new field)
+                if ex.get("not_applicable"):
+                    parts.append("**Not Applicable**:")
+                    for item in ex["not_applicable"]:
+                        parts.append(f"- {item}")
+                    parts.append("")
+
+                # Kernel snippet
                 kernel_snippet = ex.get("kernel_snippet") or ex.get("code_snippet")
                 if kernel_snippet:
-                    parts.append("**Kernel 参考代码** (核心逻辑):")
+                    parts.append("**Kernel Reference Code** (core logic):")
                     parts.append("```cpp")
                     parts.append(kernel_snippet)
                     parts.append("```")
 
-                # Tiling snippet (精简后的 tiling 逻辑)
+                # Tiling snippet
                 tiling_snippet = ex.get("tiling_snippet")
                 if tiling_snippet:
-                    parts.append("\n**Tiling 参考代码** (核心逻辑):")
+                    parts.append("\n**Tiling Reference Code** (core logic):")
                     parts.append("```cpp")
                     parts.append(tiling_snippet)
                     parts.append("```")

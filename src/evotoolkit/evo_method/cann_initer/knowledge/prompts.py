@@ -43,21 +43,26 @@ Your task: Convert conceptual knowledge requests into precise retrieval requests
 
 ## Instructions
 
-1. **For API requests**:
-   - Check if the API name exists in "Available APIs"
-   - If exact match, keep it
-   - If not found, find the closest API or mark as "skip" (with reason)
+### 1. For API requests
+- Check if the API name exists in the API list above
+- If exact match found, keep it
+- If not found but a similar API exists, map to the correct name (APIs may have aliases or naming variants)
+- If no reasonable match, mark as "skip" with reason
 
-2. **For Example requests**:
-   - Map conceptual names to actual operator names in "Available Operator Examples"
-   - "attention operators" → find specific like "flash_attention_score"
-   - "bmm (batch matmul)" → find "batch_matmul" or similar
-   - If no match, mark as "skip" (with reason)
+### 2. For Example requests
+- Map conceptual names to actual operator names in the example list
+- Use semantic matching: "attention operators" → "flash_attention_score", "bmm" → "batch_matmul"
+- If no match, mark as "skip" with reason
 
-3. **You may**:
-   - Remove duplicates
-   - Add essential APIs/Examples that are clearly needed but missing
-   - Prioritize based on relevance to the design
+### 3. You may
+- Remove duplicates
+- Add essential APIs that are clearly implied by the pseudocode but missing from requests
+- Infer required APIs from operations in pseudocode (e.g., softmax needs Exp, ReduceSum, Div)
+
+### 4. Priority rules
+- **high**: Directly used in kernel pseudocode core computation
+- **medium**: Supporting operations (data movement, synchronization)
+- **low**: Optional or alternative implementations
 
 ## Output Format
 
@@ -73,15 +78,16 @@ Use the following structured format (NOT JSON):
 - NAME [PRIORITY]: REASON
 
 ## Skipped
-- [TYPE] ORIGINAL: REASON
+- [TYPE] "ORIGINAL_REQUEST": REASON
 
 ## Analysis
-Your brief explanation of the decisions made.
+Brief explanation of key decisions.
 </retrieval_plan>
 
 **Format rules**:
 - PRIORITY: high, medium, or low
 - TYPE: api or example
+- ORIGINAL_REQUEST: the original conceptual name from Phase 1
 - Each item on its own line starting with "- "
 - If a section is empty, write "None"
 
@@ -89,22 +95,22 @@ Your brief explanation of the decisions made.
 
 <retrieval_plan>
 ## API Requests
-- MatMul [high]: Exact match, needed for matrix multiply in attention score
-- ReduceMax [high]: Exact match, needed for online softmax numerator
-- ReduceSum [high]: Exact match, needed for softmax denominator
-- Exp [high]: Exact match, needed for softmax exponential
-- Sub [medium]: Exact match, needed for numerical stability
+- Mmad [high]: Core matrix multiply for Q*K^T and score*V
+- Exp [high]: Softmax exponential computation
+- ReduceSum [high]: Softmax denominator
+- Sub [medium]: Numerical stability (x - max)
+- DataCopy [medium]: Data movement between GM and UB
 
 ## Example Requests
-- flash_attention_score [high]: Best match for "attention operators", shows tiled attention pattern
-- softmax [medium]: Direct match for "softmax implementation"
+- flash_attention_score [high]: Best match for "attention operators"
+- softmax_custom [medium]: Reference for softmax pattern
 
 ## Skipped
-- [api] SetZero: Not found in available APIs, use Duplicate with 0 instead
-- [example] online softmax: Concept covered by flash_attention_score
+- [api] "SetZero": Not a standard API, use Duplicate with scalar 0
+- [example] "online softmax": Covered by flash_attention_score example
 
 ## Analysis
-Mapped all core APIs for FlashAttention computation. Selected flash_attention_score as primary example since it demonstrates the online softmax pattern. Skipped SetZero as it's not a standard API.
+Mapped core computation APIs from pseudocode. Added DataCopy for data movement implied by tiling. Selected flash_attention_score as primary example for tiled attention pattern.
 </retrieval_plan>
 """
 
@@ -114,58 +120,81 @@ Mapped all core APIs for FlashAttention computation. Selected flash_attention_sc
 # =============================================================================
 
 SUMMARIZER_PROMPT = """## Role
-你是 Ascend C 代码知识专家。根据当前任务，从检索到的算子示例中提取最相关的信息。
+You are an Ascend C code knowledge expert. Your task is to **select** the most relevant examples and establish mappings to the current task.
 
-## 当前任务
+## Current Task
 
-**算子描述**: {operator_description}
+**Operator Description**: {operator_description}
 
-**Kernel 伪代码**:
+**Kernel Pseudocode**:
 ```
 {kernel_pseudocode}
 ```
 
-## 检索到的算子示例
+**Tiling Execution Pseudocode**:
+```
+{tiling_execution}
+```
+
+**Tiling Fields**:
+{tiling_fields}
+
+## Retrieved Operator Examples
+
+> Note: The following code has been preprocessed to retain only core functions (Process/Compute/TilingFunc, etc.).
+> Your task is to **select** the most relevant examples and establish mappings, NOT to further simplify the code.
 
 {examples_content}
 
-## 任务
+## Task
 
-从上述示例中选择最相关的 {max_examples} 个，对于选中的示例，提取：
-1. 与当前任务相关的关键技术
-2. Kernel 代码中最相关的片段（核心计算逻辑）
-3. Tiling 代码中最相关的片段（tiling 计算逻辑）
+Select the {max_examples} most relevant examples from above. For each selected example:
 
-## 输出格式
+1. **Establish Mapping**: Clearly map concepts/variables/patterns from the example to the current task
+2. **Extract Patterns**: Summarize reusable implementation patterns (data flow, pipeline, API call sequence)
+3. **Mark Not Applicable**: Point out parts of the example that don't apply to the current task (if any)
+4. **Preserve Code**: Keep the most relevant Kernel and Tiling code snippets
+
+## Output Format
 
 <example_summaries>
 ### example_name_1
-**相关度**: high/medium
-**理由**: 为什么这个示例对当前任务有参考价值
+**Selection Reason**: Why this example is valuable for the current task
 
-**关键技术**:
-- 技术点1（如：分块 tiling 策略）
-- 技术点2（如：流水线优化）
+**Mapping to Current Task**:
+- Example's `varA` → Current task's `varB`
+- Example's XX computation pattern → Current task's YY implementation
 
-**Kernel 参考代码**:
+**Implementation Patterns**:
+- Data flow: GM → UB (DataCopy) → Compute → UB → GM
+- Pipeline: double buffer / single buffer
+- API sequence: DataCopy → Add/Mul/... → DataCopy
+
+**Key Techniques**:
+- Technique 1 (specific description, e.g., using ReduceMax + Sub for numerical stability)
+- Technique 2
+
+**Not Applicable** (if any):
+- Example's XX doesn't apply because current task is YY
+
+**Kernel Reference Code**:
 ```cpp
-// 最相关的 kernel 代码片段
-// 保留 Process/Compute 等核心函数
+// Code most relevant to current task
 ```
 
-**Tiling 参考代码**:
+**Tiling Reference Code**:
 ```cpp
-// 最相关的 tiling 代码片段
-// 保留 TilingFunc 核心逻辑
+// Code most relevant to current task
 ```
 
 ### example_name_2
 ...
 </example_summaries>
 
-**精简规则**:
-- Kernel: 只保留 Init/Process/Compute/CopyIn/CopyOut 等核心函数，删除 #include、namespace 等
-- Tiling: 只保留 TilingFunc 或 tiling 计算函数，删除注册宏等
-- 只选择真正相关的示例，不相关的不要输出
-- 关键技术要具体，如 "分块处理" 比 "优化" 更有价值
+## Selection Criteria
+
+- **Prefer**: Examples with similar computation patterns or using the same APIs as the current task
+- **Mapping must be specific**: Clearly map variables/parameters/patterns, not vague descriptions
+- **Patterns must be reusable**: Extracted patterns should directly guide current task implementation
+- **Not applicable must be clear**: Help downstream avoid incorrectly copying unsuitable code
 """
