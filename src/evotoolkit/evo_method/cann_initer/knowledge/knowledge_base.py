@@ -131,11 +131,19 @@ def _default_repo_data_path(auto_download: bool = True) -> str | None:
     cache_dir = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
     cached_path = cache_dir / "evotoolkit" / "cann_initer" / "repo_data"
     if cached_path.exists() and any(cached_path.iterdir()):
+        # Handle nested Repo_Data directory from tar extraction
+        nested_path = cached_path / "Repo_Data"
+        if nested_path.exists() and nested_path.is_dir():
+            return str(nested_path)
         return str(cached_path)
 
     # 3. Auto-download from GitHub Release
     if auto_download:
         if _download_repo_data(cached_path):
+            # Handle nested Repo_Data directory
+            nested_path = cached_path / "Repo_Data"
+            if nested_path.exists() and nested_path.is_dir():
+                return str(nested_path)
             return str(cached_path)
 
     # 4. No repo data available
