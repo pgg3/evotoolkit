@@ -13,10 +13,17 @@ API scanning from CANN SDK headers with categorization.
 import json
 import os
 import re
+import shutil
+import tarfile
+import tempfile
+import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Set
 
 from ..utils import KnowledgeBase
+
+# GitHub Release URL for repo_data
+REPO_DATA_RELEASE_URL = "https://github.com/pgg3/evotoolkit/releases/download/data-v1.0.0/repo_data.tar.gz"
 
 
 def _default_index_path() -> str:
@@ -47,26 +54,91 @@ def _default_cann_path() -> str:
     return "/usr/local/Ascend/ascend-toolkit/latest"
 
 
-def _default_repo_data_path() -> str | None:
-    """Get default repo data path from environment or cache
+def _download_repo_data(target_dir: Path, verbose: bool = True) -> bool:
+    """Download repo_data from GitHub Release
+
+    Args:
+        target_dir: Directory to extract repo_data into
+        verbose: Print progress messages
+
+    Returns:
+        True if download successful, False otherwise
+    """
+    if verbose:
+        print(f"[KnowledgeBase] Downloading operator examples from GitHub Release...")
+        print(f"  URL: {REPO_DATA_RELEASE_URL}")
+
+    try:
+        # Create temp file for download
+        with tempfile.NamedTemporaryFile(suffix=".tar.gz", delete=False) as tmp_file:
+            tmp_path = tmp_file.name
+
+        # Download with progress
+        def _report_progress(block_num, block_size, total_size):
+            if verbose and total_size > 0:
+                downloaded = block_num * block_size
+                percent = min(100, downloaded * 100 // total_size)
+                mb_downloaded = downloaded / (1024 * 1024)
+                mb_total = total_size / (1024 * 1024)
+                print(f"\r  Progress: {percent}% ({mb_downloaded:.1f}/{mb_total:.1f} MB)", end="", flush=True)
+
+        urllib.request.urlretrieve(REPO_DATA_RELEASE_URL, tmp_path, _report_progress)
+        if verbose:
+            print()  # New line after progress
+
+        # Extract to target directory
+        target_dir.mkdir(parents=True, exist_ok=True)
+        if verbose:
+            print(f"  Extracting to: {target_dir}")
+
+        with tarfile.open(tmp_path, "r:gz") as tar:
+            tar.extractall(target_dir)
+
+        # Clean up temp file
+        os.unlink(tmp_path)
+
+        if verbose:
+            print("  Download complete!")
+        return True
+
+    except Exception as e:
+        if verbose:
+            print(f"  Download failed: {e}")
+        # Clean up on failure
+        if "tmp_path" in locals() and os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        return False
+
+
+def _default_repo_data_path(auto_download: bool = True) -> str | None:
+    """Get default repo data path from environment, cache, or auto-download
 
     Search order:
     1. Environment variable EVOTOOLKIT_REPO_DATA
     2. Cache directory ~/.cache/evotoolkit/cann_initer/repo_data
-    3. None (operator examples will be unavailable, but API scanning still works)
+    3. Auto-download from GitHub Release (if auto_download=True)
+    4. None (operator examples will be unavailable, but API scanning still works)
+
+    Args:
+        auto_download: If True, automatically download repo_data when not found
     """
     # 1. Check environment variable
     env_path = os.environ.get("EVOTOOLKIT_REPO_DATA")
     if env_path and Path(env_path).exists():
         return env_path
 
-    # 2. Check cache directory (for future auto-download support)
+    # 2. Check cache directory
     cache_dir = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
     cached_path = cache_dir / "evotoolkit" / "cann_initer" / "repo_data"
     if cached_path.exists() and any(cached_path.iterdir()):
         return str(cached_path)
 
-    # 3. No repo data available
+    # 3. Auto-download from GitHub Release
+    if auto_download:
+        if _download_repo_data(cached_path):
+            return str(cached_path)
+
+    # 4. No repo data available
     return None
 
 
