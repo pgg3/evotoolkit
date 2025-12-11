@@ -47,17 +47,40 @@ def _default_cann_path() -> str:
     return "/usr/local/Ascend/ascend-toolkit/latest"
 
 
+def _default_repo_data_path() -> str | None:
+    """Get default repo data path from environment or cache
+
+    Search order:
+    1. Environment variable EVOTOOLKIT_REPO_DATA
+    2. Cache directory ~/.cache/evotoolkit/cann_initer/repo_data
+    3. None (operator examples will be unavailable, but API scanning still works)
+    """
+    # 1. Check environment variable
+    env_path = os.environ.get("EVOTOOLKIT_REPO_DATA")
+    if env_path and Path(env_path).exists():
+        return env_path
+
+    # 2. Check cache directory (for future auto-download support)
+    cache_dir = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
+    cached_path = cache_dir / "evotoolkit" / "cann_initer" / "repo_data"
+    if cached_path.exists() and any(cached_path.iterdir()):
+        return str(cached_path)
+
+    # 3. No repo data available
+    return None
+
+
 class KnowledgeBaseConfig:
     """Knowledge base configuration"""
 
     def __init__(
         self,
-        repo_data_path: str = "/root/Huawei_CANN/KernelOptWorkspace/CannOptTask/benchmarks/Repo_Data",
+        repo_data_path: str = None,
         operator_repos: List[str] = None,
         index_path: str = None,
         cann_path: str = None,
     ):
-        self.repo_data_path = repo_data_path
+        self.repo_data_path = repo_data_path or _default_repo_data_path()
         self.operator_repos = operator_repos or [
             "ops-nn",
             "ops-transformer",
@@ -168,6 +191,12 @@ class KnowledgeIndexBuilder:
 
     def _scan_operator_repos(self, index: dict, verbose: bool):
         """Scan operator repositories"""
+        if not self.config.repo_data_path:
+            if verbose:
+                print("  Skipping operator scan: repo_data_path not configured")
+                print("  (Set EVOTOOLKIT_REPO_DATA env var or pass repo_data_path to enable)")
+            return
+
         repo_data = Path(self.config.repo_data_path)
         if not repo_data.exists():
             if verbose:
@@ -415,8 +444,8 @@ class RealKnowledgeBase(KnowledgeBase):
 
     def _rebuild_index(self) -> dict:
         """Rebuild the knowledge index"""
-        print(f"[KnowledgeBase] Building index...")
-        print(f"  Operators from: {self.config.repo_data_path}")
+        print("[KnowledgeBase] Building index...")
+        print(f"  Operators from: {self.config.repo_data_path or '(not configured)'}")
         print(f"  APIs from: {self.config.cann_path}")
         builder = KnowledgeIndexBuilder(self.config)
         index = builder.build_index(verbose=True)
