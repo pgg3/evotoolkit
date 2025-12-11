@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "evotoolkit"
-version = "1.0.0rc3"
+version = "1.0.0rc4"
 description = "LLM-driven code evolution method library."
 readme = "README.md"
 requires-python = ">=3.10"
