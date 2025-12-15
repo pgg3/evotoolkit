@@ -15,13 +15,16 @@ from .base import TemplateBase
 class ModelSrcGenerator(TemplateBase):
     """Generate test model code for Ascend C operator."""
 
-    def generate(self) -> str:
+    def generate(self, project_path: str) -> str:
         """
         Generate test model code (ModelNew class).
 
         ModelNew must have the same interface as Model:
         - Same __init__ parameters
         - Same forward parameters
+
+        Args:
+            project_path: Absolute path to project directory (for .so loading)
 
         Returns:
             Complete Python model file content.
@@ -91,14 +94,16 @@ class ModelSrcGenerator(TemplateBase):
 
         # Generate model_src with local .so loading to avoid global pip conflicts
         # This ensures each project uses its own compiled custom_ops_lib
+        # NOTE: project_path is hardcoded at generation time to work with exec()
         return f'''import sys
 import os
 import glob
 
 # Priority load project-local custom_ops_lib to avoid global conflicts
 # This enables parallel compilation without .so file conflicts
-_current_dir = os.path.dirname(os.path.abspath(__file__))
-_build_dirs = glob.glob(os.path.join(_current_dir, "CppExtension", "build", "lib.*"))
+# Path hardcoded at generation time (exec() doesn't have __file__)
+_project_path = "{project_path}"
+_build_dirs = glob.glob(os.path.join(_project_path, "CppExtension", "build", "lib.*"))
 if _build_dirs:
     sys.path.insert(0, _build_dirs[0])
 

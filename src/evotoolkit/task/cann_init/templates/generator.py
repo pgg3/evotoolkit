@@ -53,6 +53,7 @@ class AscendCTemplateGenerator:
     def generate(
         self,
         kernel_src: str,
+        project_path: str,
         block_dim: int = 8,
         host_tiling_src: Optional[str] = None,
         host_operator_src: Optional[str] = None,
@@ -79,6 +80,7 @@ class AscendCTemplateGenerator:
 
         Args:
             kernel_src: Kernel code (from LLM, always required)
+            project_path: Absolute path to project directory (for model_src .so loading)
             block_dim: Number of parallel cores (only used in default mode)
             host_tiling_src: Complete tiling header (full LLM mode)
             host_operator_src: Complete host operator (full LLM mode)
@@ -133,5 +135,5 @@ class AscendCTemplateGenerator:
             "host_operator_src": host_operator_src,
             "kernel_src": kernel_src,
             "python_bind_src": python_bind_src,
-            "model_src": self._model_src_gen.generate(),
+            "model_src": self._model_src_gen.generate(project_path),
         }

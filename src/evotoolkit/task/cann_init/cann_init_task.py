@@ -210,6 +210,7 @@ Requirements:
             # Generate full code from kernel + templates (only if not load_from)
             full_code = self._template_gen.generate(
                 kernel_src=kernel_src,
+                project_path=project_path,
                 block_dim=config.block_dim,
                 host_tiling_src=config.host_tiling_src,
                 host_operator_src=config.host_operator_src,
