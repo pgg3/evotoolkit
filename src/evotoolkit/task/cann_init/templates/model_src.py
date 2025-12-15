@@ -7,8 +7,6 @@ Component 6: model_src generator.
 Generates test model code (ModelNew class) for verification.
 """
 
-from typing import Any, Dict
-
 from .base import TemplateBase
 
 
