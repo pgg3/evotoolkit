@@ -16,21 +16,23 @@ TEMPLATES_DIR = Path(__file__).parent
 
 def get_build_script() -> str:
     """Get the build_and_run.sh script content."""
+    # NOTE: No pip install needed!
+    # model_src dynamically loads .so from build/lib.*/ directory
+    # This avoids global site-packages pollution and speeds up compilation
     return '''#!/bin/bash
 # Auto-generated build script for custom operator Python binding
+# NOTE: Only build, no pip install - model_src loads from build/lib.*/ directly
 
 BASE_DIR=$(pwd)
 echo "Base directory: ${BASE_DIR}"
 
-# Build wheel package
-if ! python setup.py build bdist_wheel; then
-    echo "Error: Failed to build wheel package"
+# Build only (no wheel packaging needed, just compile the .so)
+if ! python setup.py build; then
+    echo "Error: Failed to build"
     exit 1
 fi
 
-# Install wheel package
-cd ${BASE_DIR}/dist
-python -m pip install --no-index --no-deps --force-reinstall ./*.whl
+echo "Build completed. .so file is in build/lib.*/"
 '''
 
 
