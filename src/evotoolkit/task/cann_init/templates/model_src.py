@@ -89,7 +89,20 @@ class ModelSrcGenerator(TemplateBase):
             op_args.append(f"self.{param['name']}")
         op_args_str = ", ".join(op_args)
 
-        return f'''import torch
+        # Generate model_src with local .so loading to avoid global pip conflicts
+        # This ensures each project uses its own compiled custom_ops_lib
+        return f'''import sys
+import os
+import glob
+
+# Priority load project-local custom_ops_lib to avoid global conflicts
+# This enables parallel compilation without .so file conflicts
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_build_dirs = glob.glob(os.path.join(_current_dir, "CppExtension", "build", "lib.*"))
+if _build_dirs:
+    sys.path.insert(0, _build_dirs[0])
+
+import torch
 import torch_npu
 import custom_ops_lib
 

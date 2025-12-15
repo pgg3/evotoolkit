@@ -279,21 +279,27 @@ def ascend_build(
         finally:
             os.chdir(original_cwd)
 
-        # Step 5: Deploy the operator package
+        # Step 5: Deploy the operator package to project-local opp directory
+        # IMPORTANT: Use --install-path to avoid global OPP pollution
+        # This enables parallel compilation without conflicts
         print("[INFO] Deploying operator package...")
         os.chdir(os.path.join(target_directory, "build_out"))
 
+        # Create local opp directory for this project
+        local_opp_path = os.path.join(project_path, "opp")
+        os.makedirs(local_opp_path, exist_ok=True)
+
         try:
             subprocess.run(
-                ["./custom_opp_ubuntu_aarch64.run"],
+                ["./custom_opp_ubuntu_aarch64.run", f"--install-path={local_opp_path}"],
                 check=True,
                 capture_output=True,
                 text=True,
                 timeout=60,
             )
-            print("[INFO] Deploy succeeded")
+            print(f"[INFO] Deploy succeeded to {local_opp_path}")
         except subprocess.CalledProcessError as e:
-            error_msg = f"Deploy failed:\nExit Code: {e.returncode}\nOutput:\n{e.stdout}"
+            error_msg = f"Deploy failed:\nExit Code: {e.returncode}\nOutput:\n{e.stdout}\nStderr:\n{e.stderr}"
             return {"success": False, "error": error_msg, "context": context}
         except subprocess.TimeoutExpired:
             return {"success": False, "error": "Deploy timed out", "context": context}
