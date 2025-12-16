@@ -77,20 +77,25 @@ Your job is to:
 
 ### Strategy Decision
 
-**Choose `default` when:**
-- Simple per-element operation (element-wise)
-- Output shape equals input shape
-- No aggregation or reduction
-- Examples: relu, sigmoid, add, mul, exp
+**Choose `default` when ALL of the following conditions are met:**
+1. Input has exactly ONE tensor
+2. Output has exactly ONE tensor with the SAME shape as input
+3. Data partitioning/tiling strategy does NOT need to change
 
-**Choose `generate` when:**
-- Involves reduction, aggregation, or shape transformation
+**Examples of `default`:** relu, sigmoid, tanh, abs, sqrt, exp, log, add (element-wise), mul (element-wise)
+
+**Choose `generate` for all other cases:**
+- Multiple input/output tensors
 - Output shape differs from input shape
-- Complex computation pattern
-- Examples: matmul, convolution, pooling, softmax, normalization
+- Requires reduction, aggregation, or shape transformation
+- Data partitioning/tiling needs to be customized
+
+**Note:** If you think data partitioning needs to change, use `generate` (but be aware this increases compilation failure risk)
+
+**Examples of `generate`:** softmax, sum, matmul, conv2d, pooling, normalization, broadcast operations
 
 **Strategy meanings:**
-- `default`: Downstream agent will use pre-defined template (no generation needed)
+- `default`: Downstream agent will use pre-defined template (no custom code generation needed)
 - `generate`: Downstream agent must generate custom code for this component
 
 ## Response Format
