@@ -40,14 +40,14 @@ def _format_signature(signature: Any) -> str:
 
 
 class Phase0PromptMixin:
-    """Phase 0: Compute pattern analysis for Ascend C operator generation."""
+    """Phase 0: Shape analysis and strategy decision for Ascend C operator generation."""
 
     def get_pattern_analysis_prompt(self, python_ref: str, signature: Any) -> str:
         """
-        Generate prompt for compute pattern analysis.
+        Generate prompt for operator analysis.
 
         Returns a prompt that asks LLM to analyze the Python reference code
-        and determine the compute pattern and generation strategies for
+        and determine shape relationships and generation strategies for
         Ascend C operator implementation.
         """
         formatted_sig = _format_signature(signature)
@@ -57,10 +57,9 @@ class Phase0PromptMixin:
 You are the **analysis agent** in a multi-agent Ascend C code generation pipeline.
 
 Your job is to:
-1. Analyze the Python reference and classify its compute pattern
-2. Analyze input/output shape relationship and provide shape inference formula
-3. Decide which components need custom generation vs default templates
-4. Provide a clear functionality description for downstream agents
+1. Analyze input/output shape relationship and provide shape inference formula
+2. Decide which components need custom generation vs default templates
+3. Provide a clear functionality description for downstream agents
 
 **Important:** You do NOT generate any code. Downstream agents will read your output and generate the actual Ascend C code based on your analysis.
 
@@ -76,20 +75,19 @@ Your job is to:
 
 ## Rules
 
-### Compute Pattern Categories
-| Pattern | Criteria | Examples |
-|---------|----------|----------|
-| element-wise | output shape = input shape, per-element ops | relu, sigmoid, add, mul, exp |
-| reduction | output shape <= input shape, aggregation | sum, mean, max, softmax |
-| matmul | matrix multiplication | mm, bmm, linear |
-| broadcast | shape broadcasting involved | add with mismatched shapes |
-| other | complex multi-step patterns | attention, convolution |
-
 ### Strategy Decision
-| Compute Pattern | tiling | pybind |
-|-----------------|--------|--------|
-| element-wise | default | default |
-| all others | generate | generate |
+
+**Choose `default` when:**
+- Simple per-element operation (element-wise)
+- Output shape equals input shape
+- No aggregation or reduction
+- Examples: relu, sigmoid, add, mul, exp
+
+**Choose `generate` when:**
+- Involves reduction, aggregation, or shape transformation
+- Output shape differs from input shape
+- Complex computation pattern
+- Examples: matmul, convolution, pooling, softmax, normalization
 
 **Strategy meanings:**
 - `default`: Downstream agent will use pre-defined template (no generation needed)
@@ -100,12 +98,6 @@ Your job is to:
 Respond inside `<response>` tags using the exact section headers:
 
 <response>
-## Compute Pattern
-<one of: element-wise | reduction | matmul | broadcast | other>
-
-## Output Equals Input Shape
-<true | false>
-
 ## Shape Inference
 input: <describe input shape, e.g., "[B, M, K]" or "[N]">
 output: <describe output shape, e.g., "[B, M, N]" or "same as input">
@@ -118,21 +110,12 @@ pybind: <default | generate>
 
 ## Functionality
 <1-2 sentences describing what this operator does mathematically>
-
-## Reasoning
-<1-2 sentences explaining your pattern classification>
 </response>
 
 ## Examples
 
-### Element-wise (ReLU)
+### Example 1: Element-wise (ReLU)
 <response>
-## Compute Pattern
-element-wise
-
-## Output Equals Input Shape
-true
-
 ## Shape Inference
 input: [*] (any shape)
 output: same as input
@@ -145,19 +128,10 @@ pybind: default
 
 ## Functionality
 Applies ReLU activation max(0, x) element-wise to the input tensor.
-
-## Reasoning
-ReLU is a per-element operation. Output shape equals input shape.
 </response>
 
-### Reduction (Softmax)
+### Example 2: Reduction with shape preservation (Softmax)
 <response>
-## Compute Pattern
-reduction
-
-## Output Equals Input Shape
-true
-
 ## Shape Inference
 input: [B, D] where B=batch, D=features
 output: same as input (softmax preserves shape)
@@ -170,19 +144,10 @@ pybind: generate
 
 ## Functionality
 Applies softmax along dimension 1: exp(x_i) / sum(exp(x_j)), normalizing to probability distribution.
-
-## Reasoning
-Softmax involves reduction (sum) along a dimension, but output shape equals input shape.
 </response>
 
-### MatMul
+### Example 3: Shape transformation (MatMul)
 <response>
-## Compute Pattern
-matmul
-
-## Output Equals Input Shape
-false
-
 ## Shape Inference
 input: a=[M, K], b=[K, N]
 output: [M, N]
@@ -195,9 +160,6 @@ pybind: generate
 
 ## Functionality
 Performs matrix multiplication C = A @ B where A is [M,K] and B is [K,N].
-
-## Reasoning
-MatMul changes output shape based on input dimensions. Requires custom shape inference.
 </response>
 
 Now analyze the given operator. Output ONLY the `<response>` block, nothing else:

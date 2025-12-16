@@ -556,13 +556,13 @@ Reason: Element-wise operation with all dimensions independent. Using default ti
         """获取 InferShape body（从 pybind 的 shape_inference_code 翻译）
 
         逻辑：
-        1. 如果 output_equals_input_shape = true：返回空（使用默认模板）
+        1. 如果 strategies 为 default：返回空（使用默认模板）
         2. 如果有 shape_inference_code：翻译成 Ascend 格式
         3. 如果没有：返回空（使用默认模板）
         """
-        # Same shape case: use default template in assemble_tiling_host
-        if self.run_state_dict.output_equals_input_shape:
-            self._verbose("[Joint] InferShape: using default (output = input)")
+        # Default strategy case: use default template in assemble_tiling_host
+        if self.run_state_dict.strategies.get("tiling") == "default":
+            self._verbose("[Joint] InferShape: using default (tiling strategy = default)")
             return ""
 
         # Get shape_inference_code from pybind branch
@@ -585,10 +585,13 @@ Reason: Element-wise operation with all dimensions independent. Using default ti
         signature = self.run_state_dict.signature
         sig_dict = signature.to_dict() if hasattr(signature, 'to_dict') else (signature or {})
 
+        # Check if tiling uses default strategy (implies output = input shape)
+        use_default = self.run_state_dict.strategies.get("tiling") == "default"
+
         infer_shape_body = translator.translate(
             shape_inference_code=shape_code,
             signature=sig_dict,
-            output_equals_input_shape=self.run_state_dict.output_equals_input_shape,
+            output_equals_input_shape=use_default,
         )
         self._verbose(f"[Joint] InferShape: translated from pybind shape code")
         return infer_shape_body
@@ -617,7 +620,7 @@ Reason: Element-wise operation with all dimensions independent. Using default ti
             "signature": self.run_state_dict.signature,
             "python_ref": python_ref,  # Available but not used by prompts
             "shape_inference": self.run_state_dict.shape_inference,
-            "output_equals_input_shape": self.run_state_dict.output_equals_input_shape,
+            "strategies": self.run_state_dict.strategies,
         }
         op_name = self.run_state_dict.op_name
         knowledge = self.run_state_dict.knowledge_context

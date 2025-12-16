@@ -7,10 +7,10 @@ Phase 0 Analyzer 独立测试
 
 测试 Phase 0 的两个功能:
 1. 签名解析 (Signature Parsing)
-2. 计算模式分析 (Compute Pattern Analysis)
+2. 形状分析与策略决策 (Shape Analysis & Strategy Decision)
 
 输入: op_name, python_ref
-输出: signature, compute_pattern, strategies, etc.
+输出: signature, shape_inference, strategies, etc.
 
 用法:
     python 2_phase0.py [easy|medium|hard]
@@ -74,12 +74,6 @@ def main(test_case: str = "hard"):
     print("\n--- Signature ---")
     print(run_state_dict.signature)
 
-    print("\n--- Compute Pattern ---")
-    print(f"  {run_state_dict.compute_pattern}")
-
-    print("\n--- Output Equals Input Shape ---")
-    print(f"  {run_state_dict.output_equals_input_shape}")
-
     print("\n--- Shape Inference ---")
     print(f"  {run_state_dict.shape_inference}")
 
@@ -98,8 +92,6 @@ def main(test_case: str = "hard"):
     "{test_case}": {{
         "op_name": "{op_name}",
         "signature": {repr(run_state_dict.signature)},
-        "compute_pattern": "{run_state_dict.compute_pattern}",
-        "output_equals_input_shape": {run_state_dict.output_equals_input_shape},
         "shape_inference": {repr(run_state_dict.shape_inference)},
         "functionality": {repr(run_state_dict.functionality)},
         "strategies": {repr(run_state_dict.strategies)},

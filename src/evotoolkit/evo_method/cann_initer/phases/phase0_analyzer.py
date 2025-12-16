@@ -17,12 +17,6 @@ def _parse_response(response: str) -> Dict[str, Any]:
 
     Expected format:
         <response>
-        ## Compute Pattern
-        element-wise
-
-        ## Output Equals Input Shape
-        true
-
         ## Shape Inference
         input: [B, D]
         output: same as input
@@ -35,9 +29,6 @@ def _parse_response(response: str) -> Dict[str, Any]:
 
         ## Functionality
         Brief description of what this operator does.
-
-        ## Reasoning
-        Some explanation here.
         </response>
 
     Strategy values:
@@ -46,16 +37,13 @@ def _parse_response(response: str) -> Dict[str, Any]:
         - Any other value will fallback to "generate" for safety
 
     Returns:
-        dict with keys: compute_pattern, output_equals_input_shape, shape_inference,
-                       strategies, functionality, reasoning
+        dict with keys: shape_inference, strategies, functionality
     """
     # Extract content inside <response> tags
     response_match = re.search(r"<response>(.*?)</response>", response, re.DOTALL)
     content = response_match.group(1) if response_match else response
 
     result = {
-        "compute_pattern": "other",
-        "output_equals_input_shape": False,
         "shape_inference": {
             "input": "",
             "output": "",
@@ -67,7 +55,6 @@ def _parse_response(response: str) -> Dict[str, Any]:
             "pybind": "generate",
         },
         "functionality": "",
-        "reasoning": "",
     }
 
     # Parse ## sections
@@ -81,16 +68,7 @@ def _parse_response(response: str) -> Dict[str, Any]:
         header = lines[0].strip().lower()
         body = lines[1].strip() if len(lines) > 1 else ""
 
-        if header == "compute pattern":
-            pattern = body.lower().strip()
-            # Validate compute pattern, fallback to "other"
-            valid_patterns = ("element-wise", "reduction", "matmul", "broadcast", "other")
-            result["compute_pattern"] = pattern if pattern in valid_patterns else "other"
-
-        elif header == "output equals input shape":
-            result["output_equals_input_shape"] = body.lower().strip() == "true"
-
-        elif header == "shape inference":
+        if header == "shape inference":
             # Parse shape inference section
             for line in body.split("\n"):
                 line = line.strip()
@@ -114,9 +92,6 @@ def _parse_response(response: str) -> Dict[str, Any]:
 
         elif header == "functionality":
             result["functionality"] = body.strip()
-
-        elif header == "reasoning":
-            result["reasoning"] = body.strip()
 
     # kernel must always be "generate" regardless of LLM output
     result["strategies"]["kernel"] = "generate"
@@ -151,22 +126,18 @@ class Phase0Analyzer:
         self._verbose("Parsing signature...")
         self.run_state_dict.signature = self.config.task._parser.parse(python_ref, op_name)
 
-        # 2. Compute pattern analysis (LLM)
-        self._verbose("Analyzing compute pattern with LLM...")
+        # 2. Shape and strategy analysis (LLM)
+        self._verbose("Analyzing shape relationship and strategies with LLM...")
         prompt = self.config.interface.get_pattern_analysis_prompt(
             python_ref, self.run_state_dict.signature
         )
         response, _ = self.config.running_llm.get_response(prompt)
         result = _parse_response(response)
 
-        self.run_state_dict.compute_pattern = result["compute_pattern"]
-        self.run_state_dict.output_equals_input_shape = result["output_equals_input_shape"]
         self.run_state_dict.shape_inference = result["shape_inference"]
         self.run_state_dict.functionality = result["functionality"]
         self.run_state_dict.strategies = result["strategies"]
 
-        self._verbose(f"Compute pattern: {self.run_state_dict.compute_pattern}")
-        self._verbose(f"Output equals input shape: {self.run_state_dict.output_equals_input_shape}")
         self._verbose(f"Shape inference formula: {self.run_state_dict.shape_inference.get('formula', 'N/A')}")
         self._verbose(f"Functionality: {self.run_state_dict.functionality}")
         self._verbose(f"Strategies: {self.run_state_dict.strategies}")

@@ -16,8 +16,6 @@ class CANNIniterRunStateDict:
         task_info: Optional[dict] = None,
         # Phase 0 outputs
         signature: Optional[Any] = None,
-        compute_pattern: Optional[str] = None,
-        output_equals_input_shape: bool = False,
         shape_inference: Optional[Dict[str, str]] = None,
         functionality: Optional[str] = None,
         strategies: Optional[Dict[str, str]] = None,
@@ -43,8 +41,6 @@ class CANNIniterRunStateDict:
 
         # Phase 0
         self.signature = signature
-        self.compute_pattern = compute_pattern
-        self.output_equals_input_shape = output_equals_input_shape
         self.shape_inference = shape_inference or {}
         self.functionality = functionality
         self.strategies = strategies or {}
