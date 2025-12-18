@@ -78,7 +78,7 @@ Your job is to:
 ### Strategy Decision
 
 **Choose `default` when ALL of the following conditions are met:**
-1. Input has exactly ONE tensor
+1. Input has exactly ONE tensor with NO additional scalar/attribute parameters
 2. Output has exactly ONE tensor with the SAME shape as input
 3. Data partitioning/tiling strategy does NOT need to change
 
