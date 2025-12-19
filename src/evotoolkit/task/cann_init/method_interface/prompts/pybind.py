@@ -209,13 +209,36 @@ You need to fill in the shape inference code at `// === YOUR CODE HERE ===`:
 Generate the shape inference code that computes `output_shape` from the input tensors.
 
 **Priority**:
-1. If a suggested formula is provided and correct, use it directly
-2. Otherwise, infer the output shape from the Python reference code
+1. **Always verify** the suggested formula against the Python reference code
+2. If correct, use it; if wrong or missing, infer from Python code
 
 **Common patterns**:
 - Element-wise: `auto output_shape = x.sizes();`
 - MatMul: `auto output_shape = {{a.size(0), b.size(1)}};`
+- Broadcast: `auto output_shape = at::infer_size(a.sizes(), b.sizes());`
 - Reduction with keepdim: compute based on axis parameter
+
+## Shape Inference Guidelines
+
+**Only use standard PyTorch C++ API:**
+- `x.sizes()` - get shape
+- `x.size(dim)` - get specific dimension
+- `at::infer_size(a.sizes(), b.sizes())` - broadcast shape
+- `std::vector<int64_t>{{...}}` - manual shape
+
+**⚠️ Do NOT invent functions** like `InferShapeWithBroadcast` - they don't exist!
+
+**Reduction operations:**
+
+| Python Code | Output Shape | C++ Code |
+|-------------|--------------|----------|
+| `torch.mean(x)` (no dim) | `[]` (0-dim scalar) | `std::vector<int64_t>{{}}` |
+| `torch.mean(x, dim=1)` | removes dim 1 | compute from sizes |
+| `torch.mean(x, dim=1, keepdim=True)` | dim 1 becomes 1 | compute with keepdim |
+
+**Common mistake:** `shape=[]` (0-dim scalar) ≠ `shape=[1]` (1-dim vector)
+- `torch.mean(x)` returns 0-dim scalar → `std::vector<int64_t>{{}}`
+- `x.view(1)` returns 1-dim vector → `std::vector<int64_t>{{1}}`
 
 ## Response Format
 
@@ -231,6 +254,14 @@ auto output_shape = x.sizes();
 
 <response>
 auto output_shape = {{a.size(0), b.size(1)}};
+</response>
+
+<response>
+auto output_shape = at::infer_size(a.sizes(), b.sizes());
+</response>
+
+<response>
+auto output_shape = std::vector<int64_t>{{}};
 </response>
 
 Now output the shape inference code. Output ONLY the `<response>` block:

@@ -167,5 +167,55 @@ pybind: generate
 Performs matrix multiplication C = A @ B where A is [M,K] and B is [K,N].
 </response>
 
+### Example 4: Reduction to scalar (Loss function)
+<response>
+## Shape Inference
+input: predictions=[B, D], targets=[B, D]
+output: [] (0-dimensional scalar)
+formula: auto output_shape = std::vector<int64_t>{{}};
+
+## Strategies
+kernel: generate
+tiling: generate
+pybind: generate
+
+## Functionality
+Computes mean loss over all elements, returning a 0-dimensional scalar tensor.
+</response>
+
+### Example 5: Broadcasting (element-wise with broadcast)
+<response>
+## Shape Inference
+input: a=[*], b=[*] (broadcastable shapes)
+output: broadcast(a, b) following NumPy rules
+formula: auto output_shape = at::infer_size(a.sizes(), b.sizes());
+
+## Strategies
+kernel: generate
+tiling: default
+pybind: generate
+
+## Functionality
+Performs element-wise operation with broadcasting between two tensors.
+</response>
+
+### Shape Inference Notes
+
+**Only use standard PyTorch C++ API in formula.** Available methods:
+- `x.sizes()` - get shape as IntArrayRef
+- `x.size(dim)` - get size of specific dimension
+- `at::infer_size(a.sizes(), b.sizes())` - compute broadcast output shape
+- `std::vector<int64_t>{{dim0, dim1, ...}}` - construct shape manually
+
+**Critical distinction for reductions:**
+- Full reduction (no `dim` arg): `torch.mean(x)`, `torch.sum(x)` → output is **0-dimensional scalar** `[]`
+  - C++: `auto output_shape = std::vector<int64_t>{{}};` (empty vector)
+- Partial reduction: `torch.mean(x, dim=1)` → removes that dimension
+- With `keepdim=True`: that dimension becomes 1 instead of being removed
+
+**⚠️ Common mistakes:**
+- `shape=[]` (0-dim scalar) ≠ `shape=[1]` (1-dim vector with one element)
+- Do NOT invent functions like `InferShapeWithBroadcast` - use `at::infer_size` instead
+
 Now analyze the given operator. Output ONLY the `<response>` block, nothing else:
 """
