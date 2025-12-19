@@ -59,8 +59,8 @@ class PybindBranch:
             prompt = self.config.interface.get_pybind_prompt(
                 signature=signature,
                 functionality=self.run_state_dict.functionality or "",
-                compute_pattern=self.run_state_dict.compute_pattern or "other",
                 shape_inference=self.run_state_dict.shape_inference or {},
+                python_ref=self.config.task.python_reference or "",
             )
             response, _ = self.config.running_llm.get_response(prompt)
             shape_inference_code = _parse_response(response)

@@ -137,8 +137,8 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {{
         self,
         signature: Any,
         functionality: str,
-        compute_pattern: str,
         shape_inference: dict,
+        python_ref: str = "",
     ) -> str:
         """
         Generate prompt for pybind code generation.
@@ -146,17 +146,31 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {{
         Args:
             signature: Operator signature from Phase 0
             functionality: Operator functionality description from Phase 0
-            compute_pattern: Compute pattern (reduction/matmul/broadcast/other)
             shape_inference: Shape inference info from Phase 0 (input, output, formula)
+            python_ref: Python reference code for additional context
         """
         # Get input info for LLM reference
         fixed = _generate_fixed_parts(signature)
         input_info = fixed["input_info"]
 
-        # Shape inference from Phase 0
-        shape_input = shape_inference.get("input", "unknown")
-        shape_output = shape_inference.get("output", "unknown")
-        shape_formula = shape_inference.get("formula", "auto output_shape = x.sizes();")
+        # Shape inference from Phase 0 (may be incomplete)
+        shape_input = shape_inference.get("input", "")
+        shape_output = shape_inference.get("output", "")
+        shape_formula = shape_inference.get("formula", "")
+
+        # Build shape analysis section
+        shape_analysis_lines = []
+        if shape_input:
+            shape_analysis_lines.append(f"- Input shape: {shape_input}")
+        if shape_output:
+            shape_analysis_lines.append(f"- Output shape: {shape_output}")
+        if shape_formula:
+            shape_analysis_lines.append(f"- Suggested formula: `{shape_formula}`")
+
+        if shape_analysis_lines:
+            shape_analysis = "\n".join(shape_analysis_lines)
+        else:
+            shape_analysis = "(No shape analysis available - infer from Python code)"
 
         # Generate template code with placeholder
         template_code = self.assemble_pybind_code(signature, "// === YOUR CODE HERE ===")
@@ -165,33 +179,43 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {{
 
 You are the **pybind agent** in a multi-agent Ascend C code generation pipeline.
 
-Your task: Verify and refine the **output shape inference code** for the Python binding.
+Your task: Generate the **output shape inference code** for the Python binding.
 
 ## Input
 
-### Available Parameters
+### Python Reference Code
+```python
+{python_ref}
+```
+
+### Available Parameters (C++ types)
 {input_info}
 
 ### Functionality
 {functionality}
 
-### Compute Pattern
-{compute_pattern}
+### Shape Analysis (from upstream agent, may be incomplete)
+{shape_analysis}
 
-### Shape Analysis (from upstream agent)
-- Input shape: {shape_input}
-- Output shape: {shape_output}
-- Suggested formula: `{shape_formula}`
+## Fixed Code Template
 
-## Fixed Code (you cannot modify)
+You need to fill in the shape inference code at `// === YOUR CODE HERE ===`:
 
 ```cpp
 {template_code}```
 
 ## Your Task
 
-Review the suggested shape formula and output the final shape inference code.
-If the formula is correct, use it directly. If not, fix it.
+Generate the shape inference code that computes `output_shape` from the input tensors.
+
+**Priority**:
+1. If a suggested formula is provided and correct, use it directly
+2. Otherwise, infer the output shape from the Python reference code
+
+**Common patterns**:
+- Element-wise: `auto output_shape = x.sizes();`
+- MatMul: `auto output_shape = {{a.size(0), b.size(1)}};`
+- Reduction with keepdim: compute based on axis parameter
 
 ## Response Format
 
