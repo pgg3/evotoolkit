@@ -111,10 +111,8 @@ PHASE0_CONTEXT = {
     "easy": {
         "op_name": "Relu",
         "signature": {'op_name': 'Relu', 'inputs': [{'name': 'x', 'dtype': 'float', 'is_tensor': True}], 'outputs': [{'name': 'output', 'dtype': 'float', 'is_tensor': True}], 'init_params': []},
-        "compute_pattern": "element-wise",
-        "output_equals_input_shape": True,
         "shape_inference": {'input': '[*] (any shape)', 'output': 'same as input', 'formula': 'auto output_shape = x.sizes();'},
-        "functionality": 'Applies ReLU activation function max(0, x) element-wise to the input tensor, replacing all negative values with zero.',
+        "functionality": 'Applies ReLU activation max(0, x) element-wise to the input tensor, setting all negative values to zero.',
         "strategies": {'kernel': 'generate', 'tiling': 'default', 'pybind': 'default'},
     },
     "medium": {
