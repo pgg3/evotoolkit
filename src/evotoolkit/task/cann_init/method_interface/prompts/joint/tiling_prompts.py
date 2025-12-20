@@ -10,7 +10,7 @@ This module contains all prompts for the Tiling Specialist agent:
 
 from typing import List
 
-from evotoolkit.task.cann_init.method_interface.prompts.phase0 import _format_signature
+from evotoolkit.task.cann_init.method_interface.prompts.phase0 import _format_signature_for_kernel
 from .chip_specs import DEFAULT_CHIP, get_chip_spec, format_chip_spec
 from .utils import extract_current_plan, extract_kernel_feedback, extract_kernel_design
 
@@ -20,8 +20,7 @@ class TilingPromptsMixin:
 
     def get_tiling_propose_prompt(self, context: dict, conversation: List[dict]) -> str:
         """Generate prompt for Tiling Specialist to propose strategy"""
-        formatted_sig = _format_signature(context.get('signature'))
-        compute_pattern = context.get('compute_pattern', 'other')
+        formatted_sig = _format_signature_for_kernel(context.get('signature'))
 
         # Get hardware specification from context
         npu_type = context.get('npu_type', DEFAULT_CHIP)
@@ -38,155 +37,200 @@ class TilingPromptsMixin:
         # Use different prompts for first round vs revision
         if current_plan and kernel_feedback:
             return self._get_tiling_revise_prompt(
-                formatted_sig, compute_pattern, context.get('python_ref'),
+                formatted_sig, context.get('python_ref'),
                 current_plan, kernel_feedback, kernel_design, ub_kb, core_count
             )
 
         # First round: full prompt with examples
         return f"""## Role
-You are the **tiling agent** in a multi-agent Ascend C code generation pipeline.
+You are the **Tiling Agent** in a multi-agent Ascend C code generation pipeline.
 
-Your task: Design a tiling strategy that the kernel agent will use to implement the operator.
+Your task: Design the tiling strategy for an NPU operator.
 
-**This is the conceptual design phase.** Your tiling fields will be used by the kernel agent to write pseudocode.
+**This is the conceptual design phase.** You will NOT write code. Your design will be used by the Kernel Agent.
+
+---
+
+## What is Tiling?
+
+Tiling divides large data into smaller blocks (tiles) that fit in the NPU's on-chip memory.
+
+**Key concepts:**
+- UB (Unified Buffer): **{ub_kb}KB per core** - tiles must fit here
+- Multiple cores ({core_count} cores) process tiles in parallel
+- **Tiling Fields**: Parameters computed on Host, passed to Kernel via TilingData struct
+
+---
 
 ## Hardware
 {hw_spec}
 
-## Compute Pattern: `{compute_pattern}`
+---
 
-## Decision Guide
+## Strategy Decision
 
-| Pattern | Strategy | Paradigm | Action |
-|---------|----------|----------|--------|
-| element-wise | default | vector | **Quick path** (skip analysis) |
-| reduction | custom | vector | Full analysis |
-| broadcast | custom | vector | Full analysis |
-| matmul | custom | cube | Full analysis (cube unit) |
-| other | custom | analyze | Full analysis |
+### Strategy: `default`
+Use when: **Single tensor input AND output shape = input shape**
 
-## Input
+The default template provides:
+- Tiling Fields: `{{totalLength, tileNum}}`
+- Logic: Flatten all dims, divide evenly across cores
 
-### Operator Signature
+### Strategy: `generate`
+Use for: **All other cases** (multiple inputs, shape changes, reductions, etc.)
+
+You design custom Tiling Fields and Execution Flow.
+
+---
+
+## Operator Signature
+
 {formatted_sig}
+
+**About this signature:**
+- Extracted from Python reference (`get_inputs()` and `get_init_inputs()`)
+- **Tensor Inputs/Outputs**: Data that flows through kernel, needs tiling
+- **Attrs**: Scalar parameters, include as tiling fields (passed via TilingData)
 
 ### Python Reference
 ```python
 {context.get('python_ref')}
 ```
 
-## Output
+---
 
-**If `element-wise`** (quick path):
+## Common Mistakes
+
+- [X] **Don't include per-core values** (like `block_offset`) in Tiling Fields
+  -> Tiling data is shared by ALL cores. Each core computes offset via `GetBlockIdx()`
+- [X] **Don't forget Attrs** -> Include scalar parameters as tiling fields
+
+---
+
+## Output Format
+
 <response>
-Strategy: default
-Paradigm: vector
-block_dim: {core_count}
-Reason: <1 sentence>
-</response>
+## Reasoning
+<1-2 sentences: What does this operator do? Single tensor input with same output shape? If not, why generate?>
 
-**Otherwise** (full analysis):
-<response>
-## Analysis
-1. **Ops**: <operations with shapes>
-2. **Dims**: <which are independent vs reduction>
-3. **Memory**: <per-tile size>, fits {ub_kb}KB? <yes/no>
+Strategy: <default | generate>
 
-## Decision
-- block_dim: <N> (<which dim, why>)
-- tile_num: <M> (<reason>)
-- buffer_num: <1|2>
-- Paradigm: <vector|cube>
+(If generate, add:)
 
-## Execution
-```
-for i in range(tile_num):
-    CopyIn: <what>
-    Compute: <APIs>
-    CopyOut: <what>
-```
+## Tiling Design
+- Paradigm: <vector | cube>
+- block_dim: <number of cores>
 
 ## Tiling Fields
 - <field>: <type> // <purpose>
+- ...
 
-## Summary
-Strategy: <default|custom>, Key: <1 sentence>
+## Execution Flow
+```
+for <loop over tiles>:
+    CopyIn: <what data to load, with index range>
+    CopyOut: <what data to store, with index range>
+```
+Note: <why this tiling pattern? e.g., "full row needed for reduction">
 </response>
+
+---
 
 ## Examples
 
-### Ex1: Add (element-wise -> quick path)
-Pattern: `element-wise`, Python: `z = x + y`
+### Example 1: Exp (default)
+Signature: x: float16 → y: float16 (same shape)
 <response>
+## Reasoning
+Exp applies element-wise to single tensor. Single input, same output shape.
+
 Strategy: default
-Paradigm: vector
-block_dim: {core_count}
-Reason: All dims independent, standard tiling.
 </response>
 
-### Ex2: Softmax (reduction -> full)
-Pattern: `reduction`, Python: `y = softmax(x, dim=-1)` x=[B,D]
+### Example 2: Add (generate - but simple)
+Signature: x: float16, y: float16 → z: float16 (same shape)
 <response>
-## Analysis
-1. **Ops**: ReduceMax, Sub, Exp, ReduceSum, Div
-2. **Dims**: B=independent (parallelize), D=reduction (full row)
-3. **Memory**: D*8 bytes/row, D=1024 -> 8KB << {ub_kb}KB
+## Reasoning
+Add has two tensor inputs, so not single-input. Use generate, but logic is simple element-wise.
 
-## Decision
-- block_dim: min({core_count}, B)
-- tile_num: rowsPerCore
-- buffer_num: 2
+Strategy: generate
+
+## Tiling Design
 - Paradigm: vector
+- block_dim: {core_count}
 
-## Execution
+## Tiling Fields
+- totalLength: uint32_t // total elements
+- tileNum: uint32_t // number of tiles
+- tileLength: uint32_t // elements per tile
+
+## Execution Flow
+```
+for tile in range(tilesPerCore):
+    CopyIn: x[tile_start : tile_end], y[tile_start : tile_end]
+    CopyOut: z[tile_start : tile_end]
+```
+Note: Element-wise, tiles are independent.
+</response>
+
+### Example 3: Softmax (generate - reduction)
+Signature: x: float16[B, D] → y: float16[B, D]
+<response>
+## Reasoning
+Softmax needs full row for normalization (reduction along D). Same shape but requires custom tiling.
+
+Strategy: generate
+
+## Tiling Design
+- Paradigm: vector
+- block_dim: min({core_count}, B)
+
+## Tiling Fields
+- batchSize: uint32_t // total rows (B)
+- featureDim: uint32_t // row length (D)
+- rowsPerCore: uint32_t // rows per core
+
+## Execution Flow
 ```
 for row in range(rowsPerCore):
-    CopyIn: x[row*D:(row+1)*D]
-    Compute: max, sub, exp, sum, div
-    CopyOut: y[row*D:(row+1)*D]
+    CopyIn: x[row * D : (row+1) * D]
+    CopyOut: y[row * D : (row+1) * D]
 ```
-
-## Tiling Fields
-- batchSize: uint32_t // B
-- featureDim: uint32_t // D
-- rowsPerCore: uint32_t
-
-## Summary
-Strategy: custom, Key: Reduction along D requires full row; parallelize B.
+Note: Full row needed for softmax reduction along D.
 </response>
 
-### Ex3: MatMul (matmul -> cube)
-Pattern: `matmul`, Python: `C = A @ B` A=[M,K], B=[K,N]
+### Example 4: MatMul (generate - cube)
+Signature: A: float16[M,K], B: float16[K,N] → C: float16[M,N]
 <response>
-## Analysis
-1. **Ops**: MatMul [M,K]@[K,N]->[M,N]
-2. **Dims**: M,N=independent, K=reduction (accumulate)
-3. **Memory**: tiles ~80KB < {ub_kb}KB
+## Reasoning
+MatMul has two inputs and output shape differs. Requires cube paradigm.
 
-## Decision
-- block_dim: min({core_count}, M/tileM)
-- tile_num: nTiles * kTiles
-- buffer_num: 2
+Strategy: generate
+
+## Tiling Design
 - Paradigm: cube
-
-## Execution
-```
-for m in myMTiles:
-    for n in range(nTiles):
-        acc = 0
-        for k in range(kTiles):
-            CopyIn: A[m,k], B[k,n]
-            Compute: acc += Cube(A,B)
-        CopyOut: C[m,n]
-```
+- block_dim: min({core_count}, M/tileM)
 
 ## Tiling Fields
-- M, N, K: uint32_t
-- tileM, tileN, tileK: uint32_t
+- M: uint32_t // rows of A/C
+- N: uint32_t // cols of B/C
+- K: uint32_t // reduction dim
+- tileM: uint32_t // aligned to 16
+- tileN: uint32_t // aligned to 16
+- tileK: uint32_t // aligned to 16
 
-## Summary
-Strategy: custom, Key: Cube unit; tile all dims, accumulate K.
+## Execution Flow
+```
+for m_tile in assigned_M_tiles:
+    for n_tile in range(N_tiles):
+        for k_tile in range(K_tiles):
+            CopyIn: A[m_tile, k_tile], B[k_tile, n_tile]
+        CopyOut: C[m_tile, n_tile]
+```
+Note: K dimension is reduction (accumulate across k_tiles).
 </response>
+
+---
 
 Now analyze the given operator:
 """
@@ -194,7 +238,6 @@ Now analyze the given operator:
     def _get_tiling_revise_prompt(
         self,
         formatted_sig: str,
-        compute_pattern: str,
         python_ref: str,
         current_plan: str,
         kernel_feedback: str,
@@ -205,7 +248,7 @@ Now analyze the given operator:
         """Generate concise prompt for revision round (no examples, no redundant info)."""
         # Build kernel section based on whether design exists
         if kernel_design:
-            kernel_section = f"""## Kernel Design (from kernel agent)
+            kernel_section = f"""## Kernel Design (from Kernel Agent)
 {kernel_design}
 
 ## Kernel Feedback
@@ -215,20 +258,15 @@ Now analyze the given operator:
 {kernel_feedback}"""
 
         return f"""## Role
-You are the **tiling agent** in a multi-agent Ascend C code generation pipeline.
+You are the **Tiling Agent**. Revise your tiling strategy based on Kernel Agent feedback.
 
-Your task: Revise your tiling strategy based on kernel agent feedback.
+## Hardware Context
+- UB Capacity: {ub_kb}KB per core
+- AI Cores: {core_count}
 
-The tiling fields you define will be used in the kernel pseudocode. Ensure consistency.
-
-## Context
-- Pattern: `{compute_pattern}`
-- UB: {ub_kb}KB, Cores: {core_count}
-
-## Operator Signature
+## Operator
 {formatted_sig}
 
-## Python Reference
 ```python
 {python_ref}
 ```
@@ -239,38 +277,22 @@ The tiling fields you define will be used in the kernel pseudocode. Ensure consi
 {kernel_section}
 
 ## Task
-Revise the plan to address the feedback. Use the **same format** as your previous plan.
+Address the feedback and revise. Use the **same format**:
 
-**If quick path** (element-wise):
 <response>
-Strategy: default
-Paradigm: vector
-block_dim: {core_count}
-Reason: <1 sentence>
-</response>
+## Reasoning
+<What changes did you make based on feedback?>
 
-**If full analysis**:
-<response>
-## Analysis
-1. **Ops**: ...
-2. **Dims**: ...
-3. **Memory**: ...
+Strategy: <default | generate>
 
-## Decision
-- block_dim: ...
-- tile_num: ...
-- buffer_num: ...
-- Paradigm: ...
-
-## Execution
-```
+(If generate:)
+## Tiling Design
 ...
-```
 
 ## Tiling Fields
-- ...
+...
 
-## Summary
-Strategy: ..., Key: ...
+## Execution Flow
+...
 </response>
 """

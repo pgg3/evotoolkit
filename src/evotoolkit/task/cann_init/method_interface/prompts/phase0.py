@@ -39,6 +39,49 @@ def _format_signature(signature: Any) -> str:
     return "\n".join(parts)
 
 
+def _format_signature_for_kernel(signature: Any) -> str:
+    """Format operator signature for Kernel/Tiling agent with clear Tensor vs Attr distinction.
+
+    This signature defines:
+    - Tensor Inputs: Data that flows through kernel, needs tiling
+    - Tensor Outputs: Results computed by kernel
+    - Attrs (Attributes): Scalar parameters, passed to kernel via TilingData struct
+    """
+    if isinstance(signature, dict):
+        sig = signature
+    elif hasattr(signature, "to_dict"):
+        sig = signature.to_dict()
+    else:
+        sig = {"op_name": "Unknown", "inputs": [], "outputs": [], "init_params": []}
+
+    op_name = sig.get('op_name', 'Unknown')
+    inputs = sig.get("inputs", [])
+    outputs = sig.get("outputs", [])
+    init_params = sig.get("init_params", [])
+
+    # Format tensor inputs
+    tensor_inputs = [p for p in inputs if p.get("is_tensor", True)]
+    tensor_input_strs = [f"{p['name']}: {p['dtype']}" for p in tensor_inputs]
+
+    # Format tensor outputs
+    tensor_output_strs = [f"{p['name']}: {p['dtype']}" for p in outputs]
+
+    # Format attrs (init_params, non-tensor inputs)
+    attrs = init_params + [p for p in inputs if not p.get("is_tensor", True)]
+    attr_strs = [f"{p['name']}: {p.get('dtype', 'float')}" for p in attrs]
+
+    lines = [
+        f"**Operator**: `{op_name}`",
+        f"**Tensor Inputs**: {', '.join(tensor_input_strs) if tensor_input_strs else '(none)'}",
+        f"**Tensor Outputs**: {', '.join(tensor_output_strs) if tensor_output_strs else '(none)'}",
+    ]
+
+    if attr_strs:
+        lines.append(f"**Attrs**: {', '.join(attr_strs)}")
+
+    return "\n".join(lines)
+
+
 class Phase0PromptMixin:
     """Phase 0: Shape analysis and strategy decision for Ascend C operator generation."""
 

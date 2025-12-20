@@ -80,79 +80,43 @@ class JointBranch:
     def _joint_planning(self, python_ref: str):
         """多轮对话达成共识
 
-        Quick Path Optimization:
-        - 当 compute_pattern == "element-wise" 且 strategies.tiling == "default" 时
-        - Tiling Agent 直接返回默认响应（不调用 LLM）
-        - Kernel Agent 仍调用一次（生成 pseudocode）
-        - 跳过多轮对话，节省 LLM 调用
+        Tiling Agent 和 Kernel Agent 通过多轮对话确定分块策略和 kernel 设计。
+        如果 Tiling Agent 在 prompt 层面判断适合使用 default 策略，
+        可通过流控提前结束对话。
         """
         context = {
             "signature": self.run_state_dict.signature,
-            "compute_pattern": self.run_state_dict.compute_pattern,
             "python_ref": python_ref,
             "npu_type": self.config.task.npu_type,
         }
         conversation = []
 
-        # 检查是否可以走快速路径
-        compute_pattern = self.run_state_dict.compute_pattern
-        tiling_strategy = self.run_state_dict.strategies.get("tiling")
-        is_quick_path = (compute_pattern == "element-wise" and tiling_strategy == "default")
+        # 多轮对话
+        for turn in range(self.config.max_joint_turns):
+            self._verbose(f"[Joint] Turn {turn + 1}")
+            is_final_round = (turn == self.config.max_joint_turns - 1)
 
-        if is_quick_path:
-            self._verbose("[Joint] Quick path: element-wise with default tiling (skip Tiling LLM)")
-
-            # Tiling Agent 直接返回默认响应（不调用 LLM）
-            tiling_msg = self._get_default_tiling_response()
+            # Tiling 专员提出策略
+            tiling_prompt = self.config.interface.get_tiling_propose_prompt(context, conversation)
+            tiling_msg, _ = self.config.running_llm.get_response(tiling_prompt)
             conversation.append({"role": "tiling", "content": tiling_msg})
 
-            # Kernel Agent 调用一次（使用 final round prompt 确保输出完整设计）
+            # Kernel 专员评审（最后一轮强制要求输出可实现的方案）
             kernel_prompt = self.config.interface.get_kernel_review_prompt(
-                context, conversation, is_final_round=True
+                context, conversation, is_final_round=is_final_round
             )
             kernel_msg, _ = self.config.running_llm.get_response(kernel_prompt)
             conversation.append({"role": "kernel", "content": kernel_msg})
 
-        else:
-            # 正常多轮对话
-            for turn in range(self.config.max_joint_turns):
-                self._verbose(f"[Joint] Turn {turn + 1}")
-                is_final_round = (turn == self.config.max_joint_turns - 1)
-
-                # Tiling 专员提出策略
-                tiling_prompt = self.config.interface.get_tiling_propose_prompt(context, conversation)
-                tiling_msg, _ = self.config.running_llm.get_response(tiling_prompt)
-                conversation.append({"role": "tiling", "content": tiling_msg})
-
-                # Kernel 专员评审（最后一轮强制要求输出可实现的方案）
-                kernel_prompt = self.config.interface.get_kernel_review_prompt(
-                    context, conversation, is_final_round=is_final_round
-                )
-                kernel_msg, _ = self.config.running_llm.get_response(kernel_prompt)
-                conversation.append({"role": "kernel", "content": kernel_msg})
-
-                # 检查是否达成共识
-                if self._check_consensus(kernel_msg):
-                    self._verbose("[Joint] Consensus reached")
-                    break
-                elif is_final_round:
-                    self._verbose("[Joint] Final round - forcing consensus for implementation")
+            # 检查是否达成共识
+            if self._check_consensus(kernel_msg):
+                self._verbose("[Joint] Consensus reached")
+                break
+            elif is_final_round:
+                self._verbose("[Joint] Final round - forcing consensus for implementation")
 
         self.run_state_dict.joint_conversation = conversation
         self.run_state_dict.joint_plan = self._extract_joint_plan(conversation)
-
-    def _get_default_tiling_response(self) -> str:
-        """生成默认的 Tiling 响应（element-wise 快速路径）
-
-        这是一个程序生成的响应，模拟 Tiling Agent 的输出格式，
-        用于跳过 element-wise 算子的 Tiling LLM 调用。
-        """
-        return """<response>
-Strategy: default
-Paradigm: vector
-block_dim: 8
-Reason: Element-wise operation with all dimensions independent. Using default tiling template.
-</response>"""
 
     def _check_consensus(self, kernel_msg: str) -> bool:
         """检查 Kernel 专员是否接受方案
@@ -205,7 +169,7 @@ Reason: Element-wise operation with all dimensions independent. Using default ti
             dict: {
                 "tiling_proposal": str,  # tiling agent 的 <response> 内容
                 "kernel_design": str,    # kernel agent 的 <response> 内容
-                "tiling_strategy": str,  # "default" or "custom"
+                "tiling_strategy": str,  # "default" or "generate"
                 "tiling_fields": list,   # 从 kernel design 中提取的 tiling fields
                 "kernel_pseudocode": str,  # 提取的 kernel 伪代码
                 "tiling_execution": str,   # 提取的 tiling 执行伪代码
@@ -245,10 +209,10 @@ Reason: Element-wise operation with all dimensions independent. Using default ti
             tiling_execution = self._parse_tiling_execution(tiling_proposal) if tiling_proposal else None
 
         # 解析 tiling 策略：
-        # 1. 优先从 kernel design 中判断（如果有 Tiling Fields Required 则为 custom）
+        # 1. 优先从 kernel design 中判断（如果有 Tiling Fields Required 则为 generate）
         # 2. 否则从 tiling proposal 中解析
         if tiling_fields:
-            tiling_strategy = "custom"
+            tiling_strategy = "generate"
         else:
             tiling_strategy = self._parse_tiling_strategy(tiling_proposal)
 
@@ -281,7 +245,7 @@ Reason: Element-wise operation with all dimensions independent. Using default ti
     def _parse_tiling_strategy(self, tiling_proposal: str) -> str:
         """解析 tiling 策略类型
 
-        从 tiling proposal 中解析 "Strategy: default" 或 "Strategy: custom"
+        从 tiling proposal 中解析 "Strategy: default" 或 "Strategy: generate"
         """
         if not tiling_proposal:
             return "default"
@@ -289,11 +253,11 @@ Reason: Element-wise operation with all dimensions independent. Using default ti
         proposal_lower = tiling_proposal.lower()
         if 'strategy: default' in proposal_lower or 'strategy:default' in proposal_lower:
             return "default"
-        if 'strategy: custom' in proposal_lower or 'strategy:custom' in proposal_lower:
-            return "custom"
+        if 'strategy: generate' in proposal_lower or 'strategy:generate' in proposal_lower:
+            return "generate"
 
-        # 未找到明确策略，默认为 custom（更安全）
-        return "custom"
+        # 未找到明确策略，默认为 generate（更安全）
+        return "generate"
 
     def _parse_tiling_fields(self, kernel_design: str) -> List[dict]:
         """解析 Tiling Fields Required 部分
@@ -604,8 +568,8 @@ Reason: Element-wise operation with all dimensions independent. Using default ti
         - 使用 assemble_* 方法组装完整代码
         - 固定结构由程序控制，防止 LLM 生成错误
 
-        Stage 1: tiling.h (仅 custom tiling)
-        Stage 2: op_host.cpp (仅 custom tiling)
+        Stage 1: tiling.h (仅 generate tiling)
+        Stage 2: op_host.cpp (仅 generate tiling)
         Stage 3: op_kernel.cpp (总是生成)
 
         使用 knowledge_context（KnowledgeSummarizer 的输出）作为知识上下文
