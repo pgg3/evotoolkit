@@ -81,6 +81,10 @@ Use for: **All other cases** (multiple inputs, shape changes, reductions, etc.)
 
 You design custom Tiling Fields and Execution Flow.
 
+**Paradigm Selection:**
+- **vector**: Element-wise, reduction, broadcast (uses Vector Unit)
+- **cube**: Matrix multiplication only (uses Cube Unit, tiles align to 16)
+
 ---
 
 ## Operator Signature
