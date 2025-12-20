@@ -114,8 +114,12 @@ Your task: Review the tiling proposal and design kernel implementation strategy.
 <1-2 sentences: Is the tiling proposal correct? What's the kernel strategy?>
 
 accepted: <true | false>
+strategy: <default | generate>
 
-(If true, add:)
+(If strategy=default: use default template, NO custom tiling fields needed)
+(If strategy=generate: you MUST provide Tiling Fields Required below)
+
+(If accepted=true, add:)
 
 ## Kernel Design
 - Paradigm: <vector | cube>
@@ -124,13 +128,15 @@ accepted: <true | false>
 
 ## Kernel Pseudocode
 ```cpp
-// Using tiling fields: <fields>
+// Multi-core: GetBlockIdx() for core offset
 for (...) {{
     CopyIn: <load data>
     Compute: <operations>
     CopyOut: <store data>
 }}
 ```
+
+(If strategy=generate, add:)
 
 ## Tiling Fields Required
 - <field>: <type> // <purpose>
@@ -139,7 +145,7 @@ for (...) {{
 - APIs: [<API names for doc lookup>]
 - Examples: [<similar operators>]
 
-(If false, add:)
+(If accepted=false, add:)
 
 ## Issues
 1. <what's wrong>
@@ -152,13 +158,45 @@ for (...) {{
 
 ## Examples
 
-### Ex1: Accept Add
-Tiling: generate, Paradigm: vector
+### Ex1: Accept ReLU (default strategy)
+Tiling: default (single input, same output shape)
 <response>
 ## Reasoning
-Simple element-wise add. Tiling proposal is correct with vector paradigm.
+ReLU is single-input element-wise. Default template is appropriate.
 
 accepted: true
+strategy: default
+
+## Kernel Design
+- Paradigm: vector
+- Pipeline: double_buffer
+- Operations: [ReLU]
+
+## Kernel Pseudocode
+```cpp
+// Default template: totalLength, tileNum from TilingData
+// Multi-core: GetBlockIdx() for core offset
+for (int i = 0; i < tileNum; i++) {{
+    offset = GetBlockIdx() * tilesPerCore + i
+    CopyIn: x[offset * tileLength : (offset+1) * tileLength]
+    Compute: y = Relu(x)
+    CopyOut: y[offset * tileLength : (offset+1) * tileLength]
+}}
+```
+
+## Useful References
+- APIs: [Relu, DataCopy]
+- Examples: [relu_custom]
+</response>
+
+### Ex2: Accept Add (generate strategy)
+Tiling: generate (two inputs)
+<response>
+## Reasoning
+Add has two inputs, needs generate strategy. Vector paradigm correct.
+
+accepted: true
+strategy: generate
 
 ## Kernel Design
 - Paradigm: vector
@@ -167,17 +205,18 @@ accepted: true
 
 ## Kernel Pseudocode
 ```cpp
-// Using tiling fields: totalLength, tileNum, tileLength
+// Multi-core: GetBlockIdx() for core offset
 for (int i = 0; i < tileNum; i++) {{
-    CopyIn: x[i], y[i]
+    globalIdx = GetBlockIdx() * tileNum + i
+    CopyIn: x[globalIdx * tileLength], y[globalIdx * tileLength]
     Compute: z = Add(x, y)
-    CopyOut: z[i]
+    CopyOut: z[globalIdx * tileLength]
 }}
 ```
 
 ## Tiling Fields Required
 - totalLength: uint32_t // total elements
-- tileNum: uint32_t // number of tiles
+- tileNum: uint32_t // tiles per core
 - tileLength: uint32_t // elements per tile
 
 ## Useful References
@@ -185,13 +224,14 @@ for (int i = 0; i < tileNum; i++) {{
 - Examples: [add_custom]
 </response>
 
-### Ex2: Accept Softmax
-Tiling: generate, Paradigm: vector, fields: batchSize, featureDim, rowsPerCore
+### Ex3: Accept Softmax (generate strategy)
+Tiling: generate (row-wise reduction)
 <response>
 ## Reasoning
-Softmax needs row-wise reduction. Tiling correctly processes full rows. Vector paradigm is appropriate.
+Softmax needs row-wise reduction. Generate strategy required.
 
 accepted: true
+strategy: generate
 
 ## Kernel Design
 - Paradigm: vector
@@ -200,12 +240,12 @@ accepted: true
 
 ## Kernel Pseudocode
 ```cpp
-// Using tiling fields: featureDim, rowsPerCore
+// Multi-core: GetBlockIdx() for core offset
 for (int row = 0; row < rowsPerCore; row++) {{
-    offset = (GetBlockIdx() * rowsPerCore + row) * featureDim
-    CopyIn: x[offset : offset + featureDim]
+    globalRow = GetBlockIdx() * rowsPerCore + row
+    CopyIn: x[globalRow * featureDim : (globalRow+1) * featureDim]
     Compute: max -> sub -> exp -> sum -> div
-    CopyOut: y[offset : offset + featureDim]
+    CopyOut: y[globalRow * featureDim : (globalRow+1) * featureDim]
 }}
 ```
 
@@ -219,37 +259,6 @@ for (int row = 0; row < rowsPerCore; row++) {{
 - Examples: [softmax_custom]
 </response>
 
-### Ex3: Accept MatMul (cube)
-Tiling: generate, Paradigm: cube
-<response>
-## Reasoning
-MatMul requires cube paradigm for matrix multiply. Tiling proposal is correct.
-
-accepted: true
-
-## Kernel Design
-- Paradigm: cube
-- Pipeline: double_buffer
-- Operations: [matrix multiply-accumulate]
-
-## Kernel Pseudocode
-```cpp
-// Using tiling fields: M, N, K, tileM, tileN, tileK
-for m, n, k tiles:
-    CopyIn: A[m,k], B[k,n]
-    Compute: C += Mmad(A, B)
-    CopyOut: C[m,n]
-```
-
-## Tiling Fields Required
-- M, N, K: uint32_t // matrix dimensions
-- tileM, tileN, tileK: uint32_t // tile sizes (aligned to 16)
-
-## Useful References
-- APIs: [Mmad, MatMul]
-- Examples: [matmul_custom]
-</response>
-
 ### Ex4: Reject wrong paradigm
 Tiling: generate, Paradigm: vector (wrong for matmul!)
 <response>
@@ -257,6 +266,7 @@ Tiling: generate, Paradigm: vector (wrong for matmul!)
 MatMul proposed with vector paradigm, but matmul requires cube.
 
 accepted: false
+strategy: generate
 
 ## Issues
 1. Paradigm mismatch: matmul requires cube, not vector
@@ -303,21 +313,26 @@ Check if the revised proposal addresses your feedback. Use the **same format**:
 <Does the revision address your feedback? Any remaining issues?>
 
 accepted: <true | false>
+strategy: <default | generate>
 
-(If true:)
+(If accepted=true:)
 ## Kernel Design
 ...
 
 ## Kernel Pseudocode
+```cpp
+// Multi-core: GetBlockIdx() for core offset
 ...
+```
 
+(If strategy=generate:)
 ## Tiling Fields Required
 ...
 
 ## Useful References
 ...
 
-(If false:)
+(If accepted=false:)
 ## Issues
 ...
 
@@ -370,6 +385,7 @@ You cannot reject. Either:
 
 {feedback_section}## Reminder
 - Each core computes offset via `GetBlockIdx()` (NOT in tiling fields)
+- Choose strategy: default (single input, same output shape) or generate (all other cases)
 
 ---
 
@@ -380,6 +396,7 @@ You cannot reject. Either:
 <Any assumptions or workarounds needed? If none, write "Proposal is correct.">
 
 accepted: true
+strategy: <default | generate>
 
 ## Kernel Design
 - Paradigm: <vector | cube>
@@ -388,7 +405,7 @@ accepted: true
 
 ## Kernel Pseudocode
 ```cpp
-// Using tiling fields: <fields>
+// Multi-core: GetBlockIdx() for core offset
 for (...) {{
     CopyIn: ...
     Compute: ...
@@ -404,6 +421,7 @@ for <loop>:
     CopyOut: <data>
 ```
 
+(If strategy=generate:)
 ## Tiling Fields Required
 - <field>: <type> // <purpose>
 

@@ -9,7 +9,7 @@ Joint Branch Planning 测试
 - Phase 1: Tiling-Kernel 多轮对话
 - Phase 2: Knowledge Retrieval
 
-输入: signature, compute_pattern, python_ref (来自 Phase 0)
+输入: signature, strategies, python_ref (来自 Phase 0)
 输出: joint_plan, knowledge_context
 
 用法:
@@ -75,7 +75,6 @@ def main(test_case: str = "hard"):
     run_state_dict = CANNIniterRunStateDict()
     run_state_dict.op_name = phase0_ctx["op_name"]
     run_state_dict.signature = phase0_ctx["signature"]
-    run_state_dict.compute_pattern = phase0_ctx["compute_pattern"]
     run_state_dict.strategies = phase0_ctx["strategies"]
 
     # Run Joint Branch Planning (Phase 1 + 2 only)
@@ -94,9 +93,29 @@ def main(test_case: str = "hard"):
     if joint_plan:
         print(f"  tiling_strategy: {joint_plan.get('tiling_strategy')}")
         print(f"  tiling_fields: {joint_plan.get('tiling_fields')}")
-        print(f"\n  kernel_pseudocode:\n{joint_plan.get('kernel_pseudocode', '(none)')[:500]}")
-        print(f"\n  tiling_execution:\n{joint_plan.get('tiling_execution', '(none)')[:500]}")
-        print(f"\n  retrieval_requests: {joint_plan.get('retrieval_requests', [])}")
+        print(f"  retrieval_requests: {joint_plan.get('retrieval_requests', [])}")
+
+        print("\n  --- Tiling Proposal (from Tiling Agent) ---")
+        tiling_proposal = joint_plan.get('tiling_proposal', '(none)')
+        if tiling_proposal and tiling_proposal != '(none)':
+            print(f"{tiling_proposal[:800]}{'...' if len(tiling_proposal) > 800 else ''}")
+        else:
+            print("  (none)")
+
+        print("\n  --- Kernel Design (from Kernel Agent) ---")
+        kernel_design = joint_plan.get('kernel_design', '(none)')
+        if kernel_design and kernel_design != '(none)':
+            print(f"{kernel_design[:800]}{'...' if len(kernel_design) > 800 else ''}")
+        else:
+            print("  (none)")
+
+        print("\n  --- Kernel Pseudocode ---")
+        kernel_pseudocode = joint_plan.get('kernel_pseudocode')
+        print(kernel_pseudocode[:500] if kernel_pseudocode else "(none)")
+
+        print("\n  --- Tiling Execution / Execution Flow ---")
+        tiling_execution = joint_plan.get('tiling_execution')
+        print(tiling_execution[:500] if tiling_execution else "(none)")
 
     print("\n--- Knowledge Context (first 500 chars) ---")
     if run_state_dict.knowledge_context:
