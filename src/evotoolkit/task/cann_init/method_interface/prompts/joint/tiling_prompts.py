@@ -81,9 +81,9 @@ Use for: **All other cases** (multiple inputs, shape changes, reductions, etc.)
 
 You design custom Tiling Fields and Execution Flow.
 
-**Paradigm Selection:**
-- **vector**: Element-wise, reduction, broadcast (uses Vector Unit)
-- **cube**: Matrix multiplication only (uses Cube Unit, tiles align to 16)
+**Background - Compute Paradigms (for reference):**
+- Most operators use **Vector Unit**: element-wise, reduction, broadcast
+- **Matrix multiplication** uses **Cube Unit**: tiles align to fractal block (16x16 for fp16, varies by dtype)
 
 ---
 
@@ -122,7 +122,6 @@ Strategy: <default | generate>
 (If generate, add:)
 
 ## Tiling Design
-- Paradigm: <vector | cube>
 - block_dim: <number of cores>
 
 ## Tiling Fields
@@ -160,7 +159,6 @@ Add has two tensor inputs, so not single-input. Use generate, but logic is simpl
 Strategy: generate
 
 ## Tiling Design
-- Paradigm: vector
 - block_dim: {core_count}
 
 ## Tiling Fields
@@ -186,7 +184,6 @@ Softmax needs full row for normalization (reduction along D). Same shape but req
 Strategy: generate
 
 ## Tiling Design
-- Paradigm: vector
 - block_dim: min({core_count}, B)
 
 ## Tiling Fields
@@ -203,25 +200,24 @@ for row in range(rowsPerCore):
 Note: Full row needed for softmax reduction along D.
 </response>
 
-### Example 4: MatMul (generate - cube)
+### Example 4: MatMul (matrix multiplication)
 Signature: A: float16[M,K], B: float16[K,N] → C: float16[M,N]
 <response>
 ## Reasoning
-MatMul has two inputs and output shape differs. Requires cube paradigm.
+MatMul has two inputs and output shape differs. Matrix multiplication needs tile alignment to fractal block.
 
 Strategy: generate
 
 ## Tiling Design
-- Paradigm: cube
 - block_dim: min({core_count}, M/tileM)
 
 ## Tiling Fields
 - M: uint32_t // rows of A/C
 - N: uint32_t // cols of B/C
 - K: uint32_t // reduction dim
-- tileM: uint32_t // aligned to 16
-- tileN: uint32_t // aligned to 16
-- tileK: uint32_t // aligned to 16
+- tileM: uint32_t // aligned to fractal block
+- tileN: uint32_t // aligned to fractal block
+- tileK: uint32_t // aligned to fractal block
 
 ## Execution Flow
 ```

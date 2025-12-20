@@ -94,14 +94,13 @@ Your task: Review the tiling proposal and design kernel implementation strategy.
 
 ## Review Focus
 
-1. **Paradigm**: vector (element-wise, reduction, broadcast) or cube (matmul)?
+1. **Alignment**: For matmul, tiles align to fractal block (16x16 for fp16, varies by dtype)
 2. **Multi-core**: Offset computed via `GetBlockIdx()`? (NOT in tiling fields)
 
 ---
 
 ## Common Mistakes
 
-- [X] **Don't accept wrong paradigm** -> matmul MUST use cube, not vector
 - [X] **Don't require block_offset** -> each core computes its own offset via GetBlockIdx()
 - [X] **Don't forget to confirm Tiling Fields** -> list what kernel actually needs
 
@@ -122,7 +121,6 @@ strategy: <default | generate>
 (If accepted=true, add:)
 
 ## Kernel Design
-- Paradigm: <vector | cube>
 - Pipeline: <double_buffer>
 - Operations: [op1, op2, ...]
 
@@ -168,7 +166,6 @@ accepted: true
 strategy: default
 
 ## Kernel Design
-- Paradigm: vector
 - Pipeline: double_buffer
 - Operations: [ReLU]
 
@@ -193,13 +190,12 @@ for (int i = 0; i < tileNum; i++) {{
 Tiling: generate (two inputs)
 <response>
 ## Reasoning
-Add has two inputs, needs generate strategy. Vector paradigm correct.
+Add has two inputs, needs generate strategy. Tiling proposal is correct.
 
 accepted: true
 strategy: generate
 
 ## Kernel Design
-- Paradigm: vector
 - Pipeline: double_buffer
 - Operations: [element-wise add]
 
@@ -234,7 +230,6 @@ accepted: true
 strategy: generate
 
 ## Kernel Design
-- Paradigm: vector
 - Pipeline: double_buffer
 - Operations: [ReduceMax, Sub, Exp, ReduceSum, Div]
 
@@ -259,20 +254,35 @@ for (int row = 0; row < rowsPerCore; row++) {{
 - Examples: [softmax_custom]
 </response>
 
-### Ex4: Reject wrong paradigm
-Tiling: generate, Paradigm: vector (wrong for matmul!)
+### Ex4: Accept MatMul (matrix multiplication)
+Tiling: generate (matmul with tile alignment)
 <response>
 ## Reasoning
-MatMul proposed with vector paradigm, but matmul requires cube.
+MatMul tiling proposal is correct. Tile sizes aligned to fractal block.
 
-accepted: false
+accepted: true
 strategy: generate
 
-## Issues
-1. Paradigm mismatch: matmul requires cube, not vector
+## Kernel Design
+- Pipeline: double_buffer
+- Operations: [matrix multiply-accumulate]
 
-## Suggestions
-Change paradigm to cube. Use tile sizes aligned to 16.
+## Kernel Pseudocode
+```cpp
+// Multi-core: GetBlockIdx() for M-tile assignment
+for m_tile, n_tile, k_tile:
+    CopyIn: A[m,k], B[k,n]
+    Compute: C += Mmad(A, B)
+    CopyOut: C[m,n]
+```
+
+## Tiling Fields Required
+- M, N, K: uint32_t // matrix dimensions
+- tileM, tileN, tileK: uint32_t // tile sizes (aligned to fractal block)
+
+## Useful References
+- APIs: [Mmad, MatMul]
+- Examples: [matmul_custom]
 </response>
 
 ---
@@ -399,7 +409,6 @@ accepted: true
 strategy: <default | generate>
 
 ## Kernel Design
-- Paradigm: <vector | cube>
 - Pipeline: <double_buffer>
 - Operations: [op1, op2, ...]
 
