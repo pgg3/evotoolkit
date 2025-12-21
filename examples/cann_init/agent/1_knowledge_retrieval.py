@@ -33,12 +33,19 @@ from evotoolkit.evo_method.cann_initer import (
 # =============================================================================
 
 FLASH_ATTENTION_CONTEXT = {
-    "operator_description": """
-FlashAttention operator:
-- Inputs: Q[B,S,D], K[B,S,D], V[B,S,D] (float16)
-- Output: O[B,S,D] (float16)
-- Computation: O = softmax(Q @ K^T / sqrt(D)) @ V
-""",
+    # operator_signature: 使用与 kernel_prompts.py 一致的格式
+    "operator_signature": {
+        "op_name": "FlashAttention",
+        "inputs": [
+            {"name": "q", "dtype": "float16", "is_tensor": True},
+            {"name": "k", "dtype": "float16", "is_tensor": True},
+            {"name": "v", "dtype": "float16", "is_tensor": True},
+        ],
+        "outputs": [
+            {"name": "o", "dtype": "float16", "is_tensor": True},
+        ],
+        "init_params": [],
+    },
     "kernel_pseudocode": """
 // FlashAttention kernel pseudocode
 for each batch b:
@@ -126,7 +133,7 @@ def main(build_index: bool = False):
 
     planner = RetrievalPlanner(kb, llm_client=llm_call)
     plan_result = planner.plan(
-        operator_description=FLASH_ATTENTION_CONTEXT["operator_description"],
+        operator_signature=FLASH_ATTENTION_CONTEXT["operator_signature"],
         kernel_pseudocode=FLASH_ATTENTION_CONTEXT["kernel_pseudocode"],
         tiling_execution=FLASH_ATTENTION_CONTEXT["tiling_execution"],
         tiling_fields=FLASH_ATTENTION_CONTEXT["tiling_fields"],

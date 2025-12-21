@@ -24,7 +24,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
 
 from _config import (
     get_llm, get_test_config, load_python_ref, ensure_output_dir,
-    get_phase0_context, get_joint_plan_context, get_knowledge_context
+    get_phase0_context, get_joint_plan_context, get_knowledge_context,
+    get_pybind_context
 )
 
 from evotoolkit.task.cann_init import CANNIniterInterface, CANNInitTask
@@ -55,6 +56,7 @@ def main(test_case: str = "hard"):
         return
 
     knowledge = get_knowledge_context(test_case)
+    pybind_ctx = get_pybind_context(test_case)
     op_name = phase0_ctx["op_name"]
     tiling_strategy = joint_plan.get("tiling_strategy", "default")
 
@@ -93,6 +95,8 @@ def main(test_case: str = "hard"):
         run_state_dict.strategies["tiling"] = joint_plan["tiling_strategy"]
     run_state_dict.joint_plan = joint_plan
     run_state_dict.knowledge_context = knowledge
+    # Load shape_inference_code from pybind context (for InferShape generation)
+    run_state_dict.shape_inference_code = pybind_ctx.get("shape_inference_code")
 
     # Run Implementation (Phase 3 only)
     print("\n[2] Running Joint Branch Implementation...")

@@ -11,8 +11,11 @@
 """
 
 import re
-from typing import TYPE_CHECKING, Callable, List
+from typing import TYPE_CHECKING, Any, Callable, List
 
+from evotoolkit.task.cann_init.method_interface.prompts.phase0 import (
+    _format_signature_for_kernel,
+)
 from .prompts import RETRIEVAL_PLANNER_PROMPT
 
 if TYPE_CHECKING:
@@ -26,7 +29,7 @@ class RetrievalPlanner:
     输出精确的检索请求列表。
 
     输入（轻量化）：
-    - operator_description: 算子描述
+    - operator_signature: 算子签名 (dict 或 Signature 对象)
     - kernel_pseudocode: kernel 伪代码
     - tiling_execution: tiling 执行伪代码
     - tiling_fields: tiling 字段列表
@@ -55,7 +58,7 @@ class RetrievalPlanner:
 
     def plan(
         self,
-        operator_description: str,
+        operator_signature: Any,
         kernel_pseudocode: str,
         tiling_execution: str,
         tiling_fields: List[dict],
@@ -64,7 +67,7 @@ class RetrievalPlanner:
         """规划精确的检索请求
 
         Args:
-            operator_description: 算子描述
+            operator_signature: 算子签名 (dict 或 Signature 对象)
             kernel_pseudocode: kernel 伪代码
             tiling_execution: tiling 执行伪代码
             tiling_fields: tiling 字段列表 [{"name", "type", "purpose"}, ...]
@@ -80,7 +83,7 @@ class RetrievalPlanner:
         """
         if self.llm_client:
             return self._plan_with_llm(
-                operator_description, kernel_pseudocode, tiling_execution,
+                operator_signature, kernel_pseudocode, tiling_execution,
                 tiling_fields, raw_requests
             )
         else:
@@ -88,13 +91,17 @@ class RetrievalPlanner:
 
     def _plan_with_llm(
         self,
-        operator_description: str,
+        operator_signature: Any,
         kernel_pseudocode: str,
         tiling_execution: str,
         tiling_fields: List[dict],
         raw_requests: List[dict],
     ) -> dict:
         """使用 LLM 进行智能规划"""
+        # 格式化 operator signature (与 kernel_prompts.py 一致)
+        formatted_sig = _format_signature_for_kernel(operator_signature) \
+            if operator_signature else "Not provided"
+
         # 格式化 tiling fields
         fields_str = "\n".join([
             f"- {f['name']}: {f.get('type', 'unknown')} // {f.get('purpose', '')}"
@@ -109,7 +116,7 @@ class RetrievalPlanner:
 
         # 构建 prompt
         prompt = RETRIEVAL_PLANNER_PROMPT.format(
-            operator_description=operator_description or "Not provided",
+            operator_signature=formatted_sig,
             kernel_pseudocode=kernel_pseudocode or "Not provided",
             tiling_execution=tiling_execution or "Not provided",
             tiling_fields=fields_str,
@@ -238,6 +245,17 @@ class RetrievalPlanner:
             return match.group(1).strip()
         return ""
 
+    # Kernel class method names - NOT system APIs
+    KERNEL_METHOD_BLACKLIST = {
+        # Lifecycle methods
+        "Init", "Process", "Compute", "Calculate",
+        # Data movement methods
+        "CopyIn", "CopyOut", "CopyInAndCast", "CastAndCopyOut",
+        "DataCopyIn", "DataCopyOut",
+        # Other common method names
+        "Run", "Execute", "Setup", "Cleanup",
+    }
+
     def _plan_with_rules(self, raw_requests: List[dict]) -> dict:
         """使用规则进行简单匹配（无 LLM 时的 fallback）"""
         api_requests = []
@@ -252,6 +270,15 @@ class RetrievalPlanner:
             name = req.get("name", "")
 
             if req_type == "api":
+                # Skip kernel class method names (not system APIs)
+                if name in self.KERNEL_METHOD_BLACKLIST:
+                    skipped.append({
+                        "original": name,
+                        "type": "api",
+                        "reason": "Kernel class method, not a system API"
+                    })
+                    continue
+
                 # 检查 API 是否存在
                 result = self.kb.search_api(name)
                 if result["status"] == "found":

@@ -11,18 +11,20 @@ Phase 0 Analyzer 独立测试
 
 输入: op_name, python_ref
 输出: signature, shape_inference, strategies, etc.
+      (保存到 contexts/{test_case}/phase0_context.json)
 
 用法:
     python 2_phase0.py [easy|medium|hard]
 """
 
+import json
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
 
 from _config import (
-    get_llm, get_test_config, load_python_ref, ensure_output_dir
+    get_llm, get_test_config, load_python_ref, ensure_output_dir, CONTEXTS_DIR
 )
 
 from evotoolkit.task.cann_init import CANNIniterInterface, CANNInitTask
@@ -84,19 +86,33 @@ def main(test_case: str = "hard"):
     for key, value in run_state_dict.strategies.items():
         print(f"  - {key}: {value}")
 
-    # Output context for _config.py
+    # Save context to contexts/ folder
     print("\n" + "=" * 70)
-    print(f"Copy this to _config.py PHASE0_CONTEXT['{test_case}']:")
+    print("Saving context to file...")
     print("=" * 70)
-    print(f'''
-    "{test_case}": {{
-        "op_name": "{op_name}",
-        "signature": {repr(run_state_dict.signature)},
-        "shape_inference": {repr(run_state_dict.shape_inference)},
-        "functionality": {repr(run_state_dict.functionality)},
-        "strategies": {repr(run_state_dict.strategies)},
-    }},
-''')
+
+    contexts_dir = CONTEXTS_DIR / test_case
+    contexts_dir.mkdir(parents=True, exist_ok=True)
+
+    # Convert signature to dict if needed
+    signature_dict = run_state_dict.signature
+    if hasattr(signature_dict, 'to_dict'):
+        signature_dict = signature_dict.to_dict()
+
+    phase0_context = {
+        "op_name": op_name,
+        "signature": signature_dict,
+        "shape_inference": run_state_dict.shape_inference,
+        "functionality": run_state_dict.functionality,
+        "strategies": run_state_dict.strategies,
+    }
+
+    context_file = contexts_dir / "phase0_context.json"
+    with open(context_file, "w", encoding="utf-8") as f:
+        json.dump(phase0_context, f, indent=2, ensure_ascii=False)
+    print(f"  Saved: {context_file}")
+
+    print(f"\nDone! Context saved to: {contexts_dir}")
 
 
 if __name__ == "__main__":

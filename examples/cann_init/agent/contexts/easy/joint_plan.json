@@ -1,0 +1,38 @@
+{
+  "tiling_proposal": "## Reasoning\nReLU is an element-wise activation (max(0, x)) on a single tensor with identical output shape. Single input, same output shape → default strategy applies.\n\nStrategy: default\n\n## Notes\nThe default template provides `{totalLength, tileNum}` which flattens all dimensions and divides the work evenly across cores. This is optimal for ReLU since:\n- Each element is processed independently (no inter-element dependencies)\n- No reduction or special access pattern required\n- Output shape matches input shape exactly\n- 1D contiguous tile processing maximizes memory bandwidth\n\nThe default implementation will:\n- Flatten [batch_size, dim] into totalLength elements\n- Divide work across 24 cores\n- Each core processes its assigned tiles sequentially\n- Double buffering automatically handled by default template",
+  "kernel_design": "## Reasoning\nReLU is element-wise single-input with identical output shape. Default strategy with flattened tiling (totalLength, tileNum) is correct and optimal for this pattern.\n\naccepted: true\nstrategy: default\n\n## Kernel Design\n- Pipeline: double_buffer\n\n## Kernel Pseudocode\n```cpp\n// Multi-core: GetBlockIdx() computes core-specific offset\nuint32_t coreIdx = GetBlockIdx();\nuint32_t elemsPerCore = totalLength / blockDim;\nuint32_t coreOffset = coreIdx * elemsPerCore;\n\nfor (int i = 0; i < tileNum; i++) {\n    uint32_t offset = coreOffset + i * tileLength;\n    uint32_t actualLength = min(tileLength, totalLength - offset);\n    \n    CopyIn: GM → UB, x[offset : offset + actualLength]\n    Compute: y = Relu(x)  // max(0, x) element-wise\n    CopyOut: UB → GM, y[offset : offset + actualLength]\n}\n```\n\n## Useful References\n- APIs: [Relu, DataCopy, SetTensor, GetBlockIdx]\n- Examples: [relu_custom, abs_custom, element_wise_template]\n\n## Tiling Fields Alignment\n- Match: [totalLength, tileNum]\n- Missing: none\n- Unused: none\n\n## Tiling Fields Required\n- totalLength: uint32_t // total elements (batch_size * dim flattened)\n- tileNum: uint32_t // number of tiles per core",
+  "tiling_strategy": "default",
+  "tiling_fields": [],
+  "kernel_pseudocode": "// Multi-core: GetBlockIdx() computes core-specific offset\nuint32_t coreIdx = GetBlockIdx();\nuint32_t elemsPerCore = totalLength / blockDim;\nuint32_t coreOffset = coreIdx * elemsPerCore;\n\nfor (int i = 0; i < tileNum; i++) {\n    uint32_t offset = coreOffset + i * tileLength;\n    uint32_t actualLength = min(tileLength, totalLength - offset);\n    \n    CopyIn: GM → UB, x[offset : offset + actualLength]\n    Compute: y = Relu(x)  // max(0, x) element-wise\n    CopyOut: UB → GM, y[offset : offset + actualLength]\n}",
+  "tiling_execution": null,
+  "retrieval_requests": [
+    {
+      "type": "api",
+      "name": "Relu"
+    },
+    {
+      "type": "api",
+      "name": "DataCopy"
+    },
+    {
+      "type": "api",
+      "name": "SetTensor"
+    },
+    {
+      "type": "api",
+      "name": "GetBlockIdx"
+    },
+    {
+      "type": "example",
+      "name": "relu_custom"
+    },
+    {
+      "type": "example",
+      "name": "abs_custom"
+    },
+    {
+      "type": "example",
+      "name": "element_wise_template"
+    }
+  ]
+}

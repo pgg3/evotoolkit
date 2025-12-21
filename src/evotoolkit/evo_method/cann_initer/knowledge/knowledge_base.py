@@ -13,7 +13,6 @@ API scanning from CANN SDK headers with categorization.
 import json
 import os
 import re
-import shutil
 import tarfile
 import tempfile
 import urllib.request
@@ -338,7 +337,11 @@ class KnowledgeIndexBuilder:
         cann_path = Path(self.config.cann_path)
 
         # Find interface headers directory
+        # Note: CANN SDK may have different directory structures across versions
         interface_dirs = [
+            # New structure (8.x+): compiler/ascendc/...
+            cann_path / "compiler" / "ascendc" / "include" / "basic_api" / "interface",
+            # Legacy structure: arch-specific
             cann_path / "aarch64-linux" / "ascendc" / "include" / "basic_api" / "interface",
             cann_path / "x86_64-linux" / "ascendc" / "include" / "basic_api" / "interface",
             cann_path / "include" / "ascendc" / "basic_api" / "interface",
@@ -389,8 +392,9 @@ class KnowledgeIndexBuilder:
 
         Returns list of (api_name, description) tuples
 
-        Strategy: Find comment blocks with @brief, then find the first function
-        declaration after each comment block. This ensures correct matching.
+        Strategy:
+        1. Find comment blocks with @brief, then find the function declaration after
+        2. Also find __aicore__ inline functions without comment blocks (e.g., GetBlockIdx)
         """
         apis = []
         seen: Set[str] = set()
@@ -400,20 +404,21 @@ class KnowledgeIndexBuilder:
         except Exception:
             return apis
 
-        # Pattern to match comment block followed by function declaration
+        # Pattern 1: Comment block followed by function declaration
         # This ensures the @brief belongs to the function that follows it
-        pattern = r"""
+        pattern_with_comment = r"""
             /\*[^*]*\*+(?:[^/*][^*]*\*+)*/           # Comment block /* ... */
             \s*                                      # Whitespace
             (?:template\s*<[^>]+>\s*)?               # Optional template
             __aicore__\s+inline\s+                   # __aicore__ inline
             (?:__inout_pipe__\([^)]+\)\s+)?          # Optional pipe annotation
-            (?:void|[A-Za-z_][A-Za-z0-9_]*)\s+       # Return type
+            (?:__out_pipe__\([^)]+\)\s+)?            # Optional out pipe annotation
+            (?:void|[A-Za-z_][A-Za-z0-9_:<>]*)\s+    # Return type
             ([A-Z][A-Za-z0-9]+)                      # Function name (PascalCase)
             \s*\(                                    # Opening paren
         """
 
-        for match in re.finditer(pattern, content, re.VERBOSE):
+        for match in re.finditer(pattern_with_comment, content, re.VERBOSE):
             api_name = match.group(1)
             if api_name not in seen:
                 seen.add(api_name)
@@ -421,6 +426,26 @@ class KnowledgeIndexBuilder:
                 comment_block = match.group(0)
                 desc = self._extract_description_from_comment(comment_block)
                 apis.append((api_name, desc))
+
+        # Pattern 2: Simple __aicore__ inline declarations without comment blocks
+        # e.g., __aicore__ inline int64_t GetBlockIdx();
+        pattern_simple = r"""
+            ^[ \t]*                                  # Start of line with optional indent
+            (?:template\s*<[^>]+>\s*)?               # Optional template
+            __aicore__\s+inline\s+                   # __aicore__ inline
+            (?:__inout_pipe__\([^)]+\)\s+)?          # Optional pipe annotation
+            (?:__in_pipe__\([^)]+\)\s+)?             # Optional in pipe annotation
+            (?:__out_pipe__\([^)]+\)\s+)?            # Optional out pipe annotation
+            (?:void|[A-Za-z_][A-Za-z0-9_:<>]*)\s+    # Return type
+            ([A-Z][A-Za-z0-9]+)                      # Function name (PascalCase)
+            \s*\(                                    # Opening paren
+        """
+
+        for match in re.finditer(pattern_simple, content, re.VERBOSE | re.MULTILINE):
+            api_name = match.group(1)
+            if api_name not in seen:
+                seen.add(api_name)
+                apis.append((api_name, ""))
 
         return apis
 
@@ -642,18 +667,32 @@ class RealKnowledgeBase(KnowledgeBase):
             "readme": None,
         }
 
-        # Load kernel code
+        # Load kernel code (.h files contain core implementation for Ascend C)
         if op_info["has_kernel"]:
             kernel_dir = op_path / "op_kernel"
+            # Read both .h and .cpp files - .h often contains the actual implementation
+            h_files = list(kernel_dir.glob("*.h"))
             cpp_files = list(kernel_dir.glob("*.cpp"))
-            if cpp_files:
-                result["kernel_code"] = cpp_files[0].read_text(errors="ignore")
+
+            code_parts = []
+            # .h files first (contain template class implementations)
+            for h_file in h_files:
+                code_parts.append(f"// === {h_file.name} ===\n")
+                code_parts.append(h_file.read_text(errors="ignore"))
+            # .cpp files (contain entry points)
+            for cpp_file in cpp_files:
+                code_parts.append(f"\n// === {cpp_file.name} ===\n")
+                code_parts.append(cpp_file.read_text(errors="ignore"))
+
+            if code_parts:
+                result["kernel_code"] = "\n".join(code_parts)
 
         # Load host/tiling code
         if op_info["has_host"]:
             host_dir = op_path / "op_host"
             cpp_files = list(host_dir.glob("*.cpp"))
-            tiling_files = [f for f in cpp_files if "tiling" in f.name.lower()]
+            h_files = list(host_dir.glob("*.h"))
+            tiling_files = [f for f in cpp_files + h_files if "tiling" in f.name.lower()]
             if tiling_files:
                 result["host_code"] = tiling_files[0].read_text(errors="ignore")
             elif cpp_files:
@@ -721,12 +760,32 @@ class RealKnowledgeBase(KnowledgeBase):
 
         return result
 
-    def get_operator_categories(self) -> Dict[str, List[str]]:
-        """Get operators grouped by category"""
-        return self.index.get("categories", {})
+    def get_operator_categories(self, with_kernel_only: bool = False) -> Dict[str, List[str]]:
+        """Get operators grouped by category
 
-    def get_available_knowledge_summary(self) -> str:
-        """Get complete knowledge summary for RetrievalPlanner
+        Args:
+            with_kernel_only: If True, only return operators that have kernel implementation
+        """
+        if not with_kernel_only:
+            return self.index.get("categories", {})
+
+        # Filter to only include operators with kernel implementation
+        operators = self.index.get("operators", {})
+        result = {}
+        for op_name, op_info in operators.items():
+            if op_info.get("has_kernel"):
+                category = op_info.get("category", "other")
+                if category not in result:
+                    result[category] = []
+                result[category].append(op_name)
+        return result
+
+    def get_available_knowledge_summary(self, include_stub_operators: bool = False) -> str:
+        """Get knowledge summary for RetrievalPlanner
+
+        Args:
+            include_stub_operators: If True, include operators without kernel implementation.
+                                   Default False to save tokens.
 
         Returns a structured overview with:
         - Complete API list (grouped by category)
@@ -746,13 +805,12 @@ class RealKnowledgeBase(KnowledgeBase):
         else:
             lines.append("- No APIs indexed")
 
-        # Operators section - names only
+        # Operators section - only those with kernel implementation by default
         lines.append("\n## Available Operator Examples")
-        op_cats = self.get_operator_categories()
+        op_cats = self.get_operator_categories(with_kernel_only=not include_stub_operators)
         if op_cats:
             for cat_name, ops in op_cats.items():
                 if ops:
-                    # Show all operator names
                     op_list = ", ".join(sorted(ops))
                     lines.append(f"- **{cat_name}**: {op_list}")
         else:

@@ -10,12 +10,13 @@ Joint Branch Planning 测试
 - Phase 2: Knowledge Retrieval
 
 输入: signature, strategies, python_ref (来自 Phase 0)
-输出: joint_plan, knowledge_context
+输出: joint_plan, knowledge_summary (保存到 contexts/ 子文件夹)
 
 用法:
     python 4_joint_planning.py [easy|medium|hard]
 """
 
+import json
 import sys
 from pathlib import Path
 
@@ -23,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
 
 from _config import (
     get_llm, get_knowledge_base, get_test_config, load_python_ref,
-    ensure_output_dir, get_phase0_context
+    ensure_output_dir, get_phase0_context, CONTEXTS_DIR
 )
 
 from evotoolkit.task.cann_init import CANNIniterInterface, CANNInitTask
@@ -117,22 +118,49 @@ def main(test_case: str = "hard"):
         tiling_execution = joint_plan.get('tiling_execution')
         print(tiling_execution[:500] if tiling_execution else "(none)")
 
-    print("\n--- Knowledge Context (first 500 chars) ---")
-    if run_state_dict.knowledge_context:
-        ctx = run_state_dict.knowledge_context
-        print(ctx[:500] + "..." if len(ctx) > 500 else ctx)
+    # Knowledge Summary
+    print("\n--- Knowledge Summary ---")
+    knowledge_summary = run_state_dict.knowledge_summary
+    if knowledge_summary:
+        api_summaries = knowledge_summary.get("api_summaries", [])
+        example_summaries = knowledge_summary.get("example_summaries", [])
+        print(f"  API summaries: {len(api_summaries)} items")
+        for api in api_summaries:
+            print(f"    - {api.get('name')}: {api.get('description', '')[:50]}...")
+        print(f"  Example summaries: {len(example_summaries)} items")
+        for ex in example_summaries:
+            print(f"    - {ex.get('name')}: {ex.get('purpose', '')[:50]}...")
     else:
-        print("(none)")
+        print("  (none)")
 
-    # Output context for _config.py
+    # Save to contexts/ folder
     print("\n" + "=" * 70)
-    print(f"Copy this to _config.py:")
+    print("Saving contexts to files...")
     print("=" * 70)
-    print(f'''
-JOINT_PLAN_CONTEXT["{test_case}"] = {repr(joint_plan)}
 
-KNOWLEDGE_CONTEXT["{test_case}"] = """{run_state_dict.knowledge_context[:2000] if run_state_dict.knowledge_context else ''}"""
-''')
+    contexts_dir = CONTEXTS_DIR / test_case
+    contexts_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save joint_plan.json
+    joint_plan_file = contexts_dir / "joint_plan.json"
+    with open(joint_plan_file, "w", encoding="utf-8") as f:
+        json.dump(joint_plan, f, indent=2, ensure_ascii=False)
+    print(f"  Saved: {joint_plan_file}")
+
+    # Save knowledge_summary.json (complete structured data)
+    knowledge_summary_file = contexts_dir / "knowledge_summary.json"
+    with open(knowledge_summary_file, "w", encoding="utf-8") as f:
+        # Save complete summary including combined_context
+        json.dump(knowledge_summary, f, indent=2, ensure_ascii=False)
+    print(f"  Saved: {knowledge_summary_file}")
+
+    # Save knowledge_context.md (formatted text for LLM)
+    knowledge_context_file = contexts_dir / "knowledge_context.md"
+    with open(knowledge_context_file, "w", encoding="utf-8") as f:
+        f.write(run_state_dict.knowledge_context or "")
+    print(f"  Saved: {knowledge_context_file}")
+
+    print(f"\nDone! Contexts saved to: {contexts_dir}")
 
 
 if __name__ == "__main__":

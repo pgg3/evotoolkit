@@ -534,7 +534,7 @@ class JointBranch:
 
         planner = RetrievalPlanner(self.config.knowledge_base, llm_client=llm_call)
         plan_result = planner.plan(
-            operator_description=self.run_state_dict.signature or "",
+            operator_signature=self.run_state_dict.signature,
             kernel_pseudocode=joint_plan.get("kernel_pseudocode", ""),
             tiling_execution=joint_plan.get("tiling_execution", ""),
             tiling_fields=joint_plan.get("tiling_fields", []),
@@ -570,7 +570,7 @@ class JointBranch:
 
         summarized = summarizer.summarize(
             task_context={
-                "operator_description": self.run_state_dict.signature or "",
+                "operator_signature": self.run_state_dict.signature,
                 "kernel_pseudocode": joint_plan.get("kernel_pseudocode", ""),
                 "tiling_execution": joint_plan.get("tiling_execution", ""),
                 "tiling_fields": joint_plan.get("tiling_fields", []),
@@ -583,6 +583,7 @@ class JointBranch:
 
         # Store results
         self.run_state_dict.knowledge = raw_knowledge
+        self.run_state_dict.knowledge_summary = summarized  # Full result: api_summaries, example_summaries, combined_context
         self.run_state_dict.knowledge_context = summarized.get("combined_context", "")
         self.run_state_dict.retrieval_plan = plan_result
 
@@ -717,11 +718,11 @@ class JointBranch:
         )
         response, _ = self.config.running_llm.get_response(kernel_prompt)
 
-        # 解析 9 个标签
+        # 解析 7 个标签 (flexible structure)
         kernel_tags = [
             "init_params", "init_body", "process_body",
-            "copyin_body", "compute_body", "copyout_body",
-            "member_vars", "global_func_params", "init_call_args"
+            "private_methods", "member_vars",
+            "global_func_params", "init_call_args"
         ]
         parsed = parse_multiple_tags(response, kernel_tags)
 
@@ -732,9 +733,7 @@ class JointBranch:
                 init_params=parsed["init_params"],
                 init_body=parsed["init_body"],
                 process_body=parsed["process_body"],
-                copyin_body=parsed["copyin_body"],
-                compute_body=parsed["compute_body"],
-                copyout_body=parsed["copyout_body"],
+                private_methods=parsed["private_methods"],
                 member_vars=parsed["member_vars"],
                 global_func_params=parsed["global_func_params"],
                 init_call_args=parsed["init_call_args"],

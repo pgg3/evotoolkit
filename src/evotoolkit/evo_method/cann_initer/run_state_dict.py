@@ -29,7 +29,9 @@ class CANNIniterRunStateDict:
         joint_plan: Optional[dict] = None,
         joint_conversation: Optional[List[dict]] = None,
         # Knowledge retrieval results
-        knowledge: Optional[dict] = None,
+        knowledge: Optional[dict] = None,  # Raw knowledge from retrieval
+        knowledge_summary: Optional[dict] = None,  # Full summarized result (api_summaries, example_summaries, combined_context)
+        knowledge_context: Optional[str] = None,  # Shortcut to combined_context for Impl Agent
         # Debug state
         debug_history: Optional[List[dict]] = None,
         current_iteration: int = 0,
@@ -58,6 +60,8 @@ class CANNIniterRunStateDict:
 
         # Knowledge retrieval
         self.knowledge = knowledge or {}
+        self.knowledge_summary = knowledge_summary or {}
+        self.knowledge_context = knowledge_context or ""
 
         # Debug
         self.debug_history = debug_history or []

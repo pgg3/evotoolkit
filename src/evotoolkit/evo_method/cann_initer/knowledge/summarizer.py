@@ -15,6 +15,9 @@ import re
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
+from evotoolkit.task.cann_init.method_interface.prompts.phase0 import (
+    _format_signature_for_kernel,
+)
 from .prompts import SUMMARIZER_PROMPT
 
 
@@ -52,7 +55,7 @@ class KnowledgeSummarizer:
 
         Args:
             task_context: {
-                "operator_description": str,
+                "operator_signature": dict or Signature object,
                 "kernel_pseudocode": str,
                 "tiling_execution": str,
                 "tiling_fields": list,
@@ -112,36 +115,75 @@ class KnowledgeSummarizer:
         return summaries
 
     def _get_api_signature(self, api_info: Dict[str, Any]) -> str:
-        """Get API signature from header file if available"""
+        """Get API signatures from header file - returns top 5 simplest overloads
+
+        Returns up to 5 overloaded versions, sorted by parameter count (simplest first).
+        Format: multi-line with numbered signatures.
+        """
+        MAX_SIGNATURES = 5  # 显示前 5 个最简单的重载
+
         api_name = api_info.get("name", "")
         header_name = api_info.get("header", "")
 
         if not header_name or not self.cann_path:
-            # Return basic signature
             return f"void {api_name}(LocalTensor<T>& dst, LocalTensor<T>& src, ...)"
 
-        # Try to read from header file
         header_path = self._find_header_path(header_name)
         if not header_path or not header_path.exists():
             return f"void {api_name}(LocalTensor<T>& dst, LocalTensor<T>& src, ...)"
 
         try:
             content = header_path.read_text(errors="ignore")
-            # Find function declaration
+
+            # Find ALL function declarations for this API
             pattern = rf"""
                 __aicore__\s+inline\s+          # __aicore__ inline
                 (?:__inout_pipe__\([^)]+\)\s+)? # Optional pipe annotation
                 (void|[A-Za-z_][A-Za-z0-9_<>]*)\s+  # Return type
                 {re.escape(api_name)}\s*        # Function name
-                \([^){{]*\)                     # Parameters (non-greedy, stop at ) or {{)
+                \([^){{]*\)                     # Parameters
             """
-            match = re.search(pattern, content, re.VERBOSE)
-            if match:
+            matches = re.findall(pattern, content, re.VERBOSE)
+
+            if not matches:
+                return f"void {api_name}(LocalTensor<T>& dst, LocalTensor<T>& src, ...)"
+
+            # Extract full signatures and clean them up
+            signatures = []
+            for match in re.finditer(pattern, content, re.VERBOSE):
                 sig = match.group(0)
-                # Clean up the signature
+                # Clean up
                 sig = re.sub(r"__aicore__\s+inline\s+", "", sig)
                 sig = re.sub(r"__inout_pipe__\([^)]+\)\s+", "", sig)
-                return sig.strip()
+                # Normalize whitespace (remove excessive spaces/newlines)
+                sig = re.sub(r'\s+', ' ', sig).strip()
+                # Count parameters (by counting commas + 1, roughly)
+                param_count = sig.count(',') + 1
+                signatures.append((param_count, sig))
+
+            # Remove duplicates and sort by parameter count (simplest first)
+            seen = set()
+            unique_sigs = []
+            for _, sig in sorted(signatures, key=lambda x: x[0]):
+                if sig not in seen:
+                    seen.add(sig)
+                    unique_sigs.append(sig)
+
+            total = len(unique_sigs)
+            if total == 1:
+                return unique_sigs[0]
+            elif total == 2:
+                # 2 个版本：简化 vs 完整
+                return f"(1) {unique_sigs[0]}\n(2) {unique_sigs[1]}"
+            else:
+                # 多个版本：显示前 MAX_SIGNATURES 个
+                result_lines = []
+                for i, sig in enumerate(unique_sigs[:MAX_SIGNATURES], 1):
+                    result_lines.append(f"({i}) {sig}")
+                if total > MAX_SIGNATURES:
+                    result_lines.append(f"... (共 {total} 个重载)")
+                return "\n".join(result_lines)
+
         except Exception:
             pass
 
@@ -154,6 +196,9 @@ class KnowledgeSummarizer:
 
         cann = Path(self.cann_path)
         candidates = [
+            # New structure (CANN 8.x+): compiler/ascendc/...
+            cann / "compiler" / "ascendc" / "include" / "basic_api" / "interface" / header_name,
+            # Legacy structure: arch-specific
             cann / "aarch64-linux" / "ascendc" / "include" / "basic_api" / "interface" / header_name,
             cann / "x86_64-linux" / "ascendc" / "include" / "basic_api" / "interface" / header_name,
             cann / "include" / "ascendc" / "basic_api" / "interface" / header_name,
@@ -230,6 +275,11 @@ class KnowledgeSummarizer:
         # Prepare examples content
         examples_content = self._format_examples_for_llm(examples)
 
+        # Format operator signature (与 kernel_prompts.py 一致)
+        operator_sig = task_context.get("operator_signature")
+        formatted_sig = _format_signature_for_kernel(operator_sig) \
+            if operator_sig else "Not provided"
+
         # Format tiling fields for display
         tiling_fields = task_context.get("tiling_fields", [])
         if isinstance(tiling_fields, list) and tiling_fields:
@@ -248,7 +298,7 @@ class KnowledgeSummarizer:
 
         # Build prompt
         prompt = SUMMARIZER_PROMPT.format(
-            operator_description=task_context.get("operator_description", ""),
+            operator_signature=formatted_sig,
             kernel_pseudocode=task_context.get("kernel_pseudocode", ""),
             tiling_execution=task_context.get("tiling_execution", ""),
             tiling_fields=tiling_fields_str,
@@ -272,38 +322,68 @@ class KnowledgeSummarizer:
     def _format_examples_for_llm(self, examples: Dict[str, Any]) -> str:
         """Format examples for LLM prompt
 
-        包含精简后的 kernel 和 tiling 代码
+        只包含有实际代码的 example，不包含 README（对实现没帮助）
+        限制最多 3 个高质量 example 以控制 token 数量
         """
+        MAX_EXAMPLES = 3
+        MIN_KERNEL_LINES = 5  # 至少 5 行才算有效代码（放宽限制）
+
         parts = []
+        example_count = 0
+
         for name, result in examples.items():
+            if example_count >= MAX_EXAMPLES:
+                break
+
             primary = result.get("primary")
             if not primary:
                 continue
 
-            readme = (primary.get("readme") or "")[:300]  # Truncate README
+            # Get raw kernel code first
+            raw_kernel = primary.get("kernel_code") or ""
 
             # Extract core logic only
-            kernel_core = self._extract_kernel_core(
-                primary.get("kernel_code") or "", max_lines=60
-            )
+            kernel_core = self._extract_kernel_core(raw_kernel, max_lines=100)
             tiling_core = self._extract_tiling_core(
-                primary.get("host_code") or "", max_lines=40
+                primary.get("host_code") or "", max_lines=60
             )
+
+            # Skip examples with insufficient kernel code
+            kernel_lines = len([l for l in kernel_core.split('\n') if l.strip()])
+            raw_lines = len([l for l in raw_kernel.split('\n') if l.strip()]) if raw_kernel else 0
+
+            if kernel_lines < MIN_KERNEL_LINES:
+                # Fallback: use raw kernel code if extraction failed
+                if raw_lines >= MIN_KERNEL_LINES:
+                    # Take first portion of raw kernel (skip includes at top)
+                    raw_lines_list = raw_kernel.split('\n')
+                    # Find first non-boilerplate line
+                    start_idx = 0
+                    for idx, line in enumerate(raw_lines_list):
+                        stripped = line.strip()
+                        if not self._is_boilerplate(stripped) and stripped:
+                            start_idx = max(0, idx - 2)  # Include 2 lines before
+                            break
+                    kernel_core = '\n'.join(raw_lines_list[start_idx:start_idx + 100])
+                else:
+                    print(f"[KnowledgeSummarizer] Skipping example '{name}': kernel_lines={kernel_lines}, raw_lines={raw_lines}")
+                    continue
 
             parts.append(f"""
 ### {name}
-**README**: {readme}
 
-**Kernel Code** (core logic):
+**Kernel Code**:
 ```cpp
 {kernel_core}
 ```
 
-**Tiling Code** (core logic):
+**Tiling Code**:
 ```cpp
 {tiling_core}
 ```
 """)
+            example_count += 1
+
         return "\n".join(parts)
 
     def _parse_example_summaries(self, response: str) -> List[Dict[str, Any]]:
@@ -332,13 +412,19 @@ class KnowledgeSummarizer:
             name = match.group(1)
             section = match.group(2)
 
+            # New format: extract complete code patterns
             summary = {
                 "name": name,
-                "purpose": self._extract_field(section, "Selection Reason"),
-                "mapping": self._extract_list_field(section, "Mapping to Current Task"),
-                "patterns": self._extract_list_field(section, "Implementation Patterns"),
-                "key_techniques": self._extract_list_field(section, "Key Techniques"),
-                "not_applicable": self._extract_list_field(section, "Not Applicable"),
+                "purpose": self._extract_field(section, "Why Selected"),
+                "adaptation_notes": self._extract_field(section, "Adaptation Notes"),
+                # Code patterns - extract complete code blocks
+                "init_pattern": self._extract_labeled_code_block(section, "Init Pattern"),
+                "process_pattern": self._extract_labeled_code_block(section, "Process Pattern"),
+                "compute_pattern": self._extract_labeled_code_block(section, "Compute Pattern"),
+                "copyinout_pattern": self._extract_labeled_code_block(section, "CopyIn/CopyOut Pattern"),
+                # Key API calls - critical for correct implementation
+                "key_api_calls": self._extract_labeled_code_block(section, "Key API Calls"),
+                # Legacy fields for backward compatibility
                 "kernel_snippet": self._extract_labeled_code_block(section, "Kernel"),
                 "tiling_snippet": self._extract_labeled_code_block(section, "Tiling"),
             }
@@ -380,21 +466,38 @@ class KnowledgeSummarizer:
         return ""
 
     def _extract_labeled_code_block(self, text: str, label: str) -> str:
-        """Extract code block with a specific label (e.g., Kernel, Tiling)
+        """Extract code block with a specific label (e.g., Kernel, Init Pattern)
 
         Looks for patterns like:
+        **Init Pattern** (buffer setup):
+        ```cpp
+        ...
+        ```
+
+        Or legacy format:
         **Kernel Reference Code**:
         ```cpp
         ...
         ```
         """
-        # Pattern: **Label ... Code**: followed by code block
-        pattern = rf"\*\*{label}[^*]*\*\*:\s*\n```(?:cpp)?\s*\n(.*?)```"
-        match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
+        # Pattern 1: **Label** (description): - new format
+        # e.g., **Init Pattern** (buffer setup):
+        pattern1 = rf"\*\*{label}\*\*[^:]*:\s*\n```(?:cpp)?\s*\n(.*?)```"
+        match = re.search(pattern1, text, re.DOTALL | re.IGNORECASE)
         if match:
             captured = match.group(1)
             if captured and isinstance(captured, str):
                 return captured.strip()
+
+        # Pattern 2: **Label ... Code**: - legacy format
+        # e.g., **Kernel Reference Code**:
+        pattern2 = rf"\*\*{label}[^*]*\*\*:\s*\n```(?:cpp)?\s*\n(.*?)```"
+        match = re.search(pattern2, text, re.DOTALL | re.IGNORECASE)
+        if match:
+            captured = match.group(1)
+            if captured and isinstance(captured, str):
+                return captured.strip()
+
         return ""
 
     def _extract_purpose_from_readme(self, readme: str) -> str:
@@ -418,14 +521,15 @@ class KnowledgeSummarizer:
     # Code Extraction (Core Logic Only)
     # =========================================================================
 
-    def _extract_kernel_core(self, kernel_code: str, max_lines: int = 60) -> str:
+    def _extract_kernel_core(self, kernel_code: str, max_lines: int = 100) -> str:
         """Extract core kernel logic, removing boilerplate
 
         精简规则:
         1. 删除 #include, using namespace 等样板代码
-        2. 删除类成员变量声明
+        2. 只提取函数定义（有实现的），跳过声明和调用
         3. 只保留核心函数: Init(), Process(), Compute(), CopyIn(), CopyOut()
-        4. 限制总行数
+        4. 每个函数只提取一次（优先类外定义 ClassName::Func）
+        5. 限制总行数
         """
         if not kernel_code:
             return ""
@@ -434,7 +538,14 @@ class KnowledgeSummarizer:
         result_lines = []
         in_target_func = False
         brace_depth = 0
-        target_funcs = ["Init", "Process", "Compute", "CopyIn", "CopyOut", "Calculate"]
+        extracted_funcs = set()  # Track which functions we've already extracted
+        # Include common variants: CopyInAndCast, CastAndCopyOut, etc.
+        target_funcs = [
+            "Init", "Process", "Compute", "Calculate",
+            "CopyIn", "CopyOut",
+            "CopyInAndCast", "CastAndCopyOut",  # Common variants
+            "DataCopyIn", "DataCopyOut",
+        ]
 
         i = 0
         while i < len(lines):
@@ -446,23 +557,59 @@ class KnowledgeSummarizer:
                 i += 1
                 continue
 
-            # Check if entering a target function
+            # Check if entering a target function DEFINITION (not call or declaration)
             if not in_target_func:
                 for func in target_funcs:
-                    # Match function definition: __aicore__ inline void Process(...) or void Process(...)
-                    if re.search(rf'\b{func}\s*\(', line) and '{' in line:
-                        in_target_func = True
-                        brace_depth = line.count('{') - line.count('}')
-                        result_lines.append(f"// === {func} ===")
-                        result_lines.append(line)
-                        break
-                    elif re.search(rf'\b{func}\s*\(', line):
-                        # Function signature on this line, { on next line
-                        in_target_func = True
-                        brace_depth = 0
-                        result_lines.append(f"// === {func} ===")
-                        result_lines.append(line)
-                        break
+                    # Skip if already extracted this function
+                    if func in extracted_funcs:
+                        continue
+
+                    # Pattern for function DEFINITION (not call):
+                    # - Must NOT start with obj.Func or obj->Func (that's a call)
+                    # - Must have return type or __aicore__ before function name
+                    # - Must have { on this line or next line
+
+                    # Skip function calls: xxx.Init( or xxx->Init(
+                    if re.search(rf'\.\s*{func}\s*\(', line) or re.search(rf'->\s*{func}\s*\(', line):
+                        continue
+
+                    # Skip single-line calls like: op.Init(...); op.Process();
+                    if re.search(rf'\b\w+\.\s*{func}\s*\([^)]*\)\s*;', line):
+                        continue
+
+                    # Match function definition patterns:
+                    # 1. ClassName::Func(...) {   (class-external definition)
+                    # 2. __aicore__ inline void Func(...) {   (inline definition)
+                    # 3. void Func(...) {   (simple definition)
+                    is_definition = False
+
+                    # Pattern 1: ClassName::Func(
+                    if re.search(rf'\w+::{func}\s*\(', line):
+                        is_definition = True
+                    # Pattern 2: __aicore__ ... Func(
+                    elif re.search(rf'__aicore__.*\b{func}\s*\(', line):
+                        is_definition = True
+                    # Pattern 3: return_type Func( - but NOT a call
+                    elif re.search(rf'\b(void|bool|int|auto)\s+{func}\s*\(', line):
+                        is_definition = True
+
+                    if is_definition:
+                        # Check for { on this line or next
+                        has_brace = '{' in line
+                        if not has_brace and i + 1 < len(lines) and '{' in lines[i + 1]:
+                            has_brace = True
+
+                        # Skip declarations (end with ; without {)
+                        if not has_brace and ';' in line:
+                            continue
+
+                        if has_brace:
+                            in_target_func = True
+                            brace_depth = line.count('{') - line.count('}')
+                            result_lines.append(f"// === {func} ===")
+                            result_lines.append(line)
+                            extracted_funcs.add(func)
+                            break
             else:
                 # Inside target function
                 brace_depth += line.count('{') - line.count('}')
@@ -481,12 +628,12 @@ class KnowledgeSummarizer:
 
         return "\n".join(result_lines)
 
-    def _extract_tiling_core(self, host_code: str, max_lines: int = 40) -> str:
+    def _extract_tiling_core(self, host_code: str, max_lines: int = 60) -> str:
         """Extract core tiling logic from host code
 
         精简规则:
         1. 删除 #include, namespace, 注册宏等样板
-        2. 只保留 TilingFunc 或 tiling 计算函数
+        2. 提取 tiling 函数实现（RunTiling, TilingFunc, TilingPrepare 等）
         3. 限制总行数
         """
         if not host_code:
@@ -496,6 +643,19 @@ class KnowledgeSummarizer:
         result_lines = []
         in_tiling_func = False
         brace_depth = 0
+        func_count = 0
+
+        # Target function patterns (order matters - more specific first)
+        # These are actual tiling computation functions
+        tiling_func_patterns = [
+            r'\bRunBigKernelTiling\s*\(',
+            r'\bRunTiling\s*\(',
+            r'\bTilingPrepare\s*\(',
+            r'\bTilingFunc\s*\(',
+            r'\bGetTiling\s*\(',
+            # Generic pattern for functions with "tiling" in name followed by implementation
+            r'\b\w*[Tt]iling\w*\s*\([^;{]*\)\s*\{',
+        ]
 
         i = 0
         while i < len(lines):
@@ -512,22 +672,37 @@ class KnowledgeSummarizer:
                 i += 1
                 continue
 
-            # Look for tiling function
+            # Skip constructor declarations (single line with ; at end)
+            if 'explicit' in line and ';' in line:
+                i += 1
+                continue
+
+            # Look for tiling function implementation
             if not in_tiling_func:
-                # Match: TilingFunc, xxxTilingFunc, or functions containing "Tiling"
-                if re.search(r'\bTilingFunc\b|\bTiling\w*\s*\(|tiling\w*\s*\(', line, re.IGNORECASE):
-                    if '{' in line or (i + 1 < len(lines) and '{' in lines[i + 1]):
-                        in_tiling_func = True
-                        brace_depth = line.count('{') - line.count('}')
-                        result_lines.append("// === Tiling ===")
-                        result_lines.append(line)
+                for pattern in tiling_func_patterns:
+                    if re.search(pattern, line):
+                        # Check if this is a function definition (has { nearby)
+                        has_brace = '{' in line
+                        if not has_brace and i + 1 < len(lines):
+                            has_brace = '{' in lines[i + 1]
+
+                        if has_brace:
+                            in_tiling_func = True
+                            brace_depth = line.count('{') - line.count('}')
+                            result_lines.append(f"// === Tiling Function {func_count + 1} ===")
+                            result_lines.append(line)
+                            break
             else:
                 brace_depth += line.count('{') - line.count('}')
                 result_lines.append(line)
 
                 if brace_depth <= 0:
                     in_tiling_func = False
-                    break  # Usually only need one tiling function
+                    func_count += 1
+                    result_lines.append("")
+                    # Continue to find more tiling functions (up to 2)
+                    if func_count >= 2:
+                        break
 
             i += 1
 
@@ -569,7 +744,10 @@ class KnowledgeSummarizer:
         api_summaries: List[Dict[str, Any]],
         example_summaries: List[Dict[str, Any]],
     ) -> str:
-        """Format combined context for Implementation Agent"""
+        """Format combined context for Implementation Agent
+
+        Outputs complete, reusable code patterns from examples.
+        """
         parts = []
 
         # API Reference section
@@ -582,57 +760,72 @@ class KnowledgeSummarizer:
                     parts.append(f"- **Description**: {api['description']}")
                 parts.append("")
 
-        # Example Reference section
+        # Example Reference section - now outputs complete code patterns
         if example_summaries:
             parts.append("## Example Reference\n")
             for ex in example_summaries:
                 parts.append(f"### {ex['name']}")
+
+                # Why this example was selected
                 if ex.get("purpose"):
-                    parts.append(f"**Purpose**: {ex['purpose']}\n")
+                    parts.append(f"**Why Selected**: {ex['purpose']}\n")
 
-                # Mapping to current task (new field)
-                if ex.get("mapping"):
-                    parts.append("**Mapping to Current Task**:")
-                    for item in ex["mapping"]:
-                        parts.append(f"- {item}")
-                    parts.append("")
+                # Adaptation notes for current task
+                if ex.get("adaptation_notes"):
+                    parts.append(f"**Adaptation Notes**: {ex['adaptation_notes']}\n")
 
-                # Implementation patterns (new field)
-                if ex.get("patterns"):
-                    parts.append("**Implementation Patterns**:")
-                    for pattern in ex["patterns"]:
-                        parts.append(f"- {pattern}")
-                    parts.append("")
-
-                # Key techniques
-                if ex.get("key_techniques"):
-                    parts.append("**Key Techniques**:")
-                    for tech in ex["key_techniques"]:
-                        parts.append(f"- {tech}")
-                    parts.append("")
-
-                # Not applicable (new field)
-                if ex.get("not_applicable"):
-                    parts.append("**Not Applicable**:")
-                    for item in ex["not_applicable"]:
-                        parts.append(f"- {item}")
-                    parts.append("")
-
-                # Kernel snippet
-                kernel_snippet = ex.get("kernel_snippet") or ex.get("code_snippet")
-                if kernel_snippet:
-                    parts.append("**Kernel Reference Code** (core logic):")
+                # Init Pattern (buffer setup)
+                if ex.get("init_pattern"):
+                    parts.append("**Init Pattern** (buffer setup):")
                     parts.append("```cpp")
-                    parts.append(kernel_snippet)
-                    parts.append("```")
+                    parts.append(ex["init_pattern"])
+                    parts.append("```\n")
 
-                # Tiling snippet
-                tiling_snippet = ex.get("tiling_snippet")
-                if tiling_snippet:
-                    parts.append("\n**Tiling Reference Code** (core logic):")
+                # Process Pattern (main loop)
+                if ex.get("process_pattern"):
+                    parts.append("**Process Pattern** (main loop):")
                     parts.append("```cpp")
-                    parts.append(tiling_snippet)
-                    parts.append("```")
+                    parts.append(ex["process_pattern"])
+                    parts.append("```\n")
+
+                # Compute Pattern (core computation)
+                if ex.get("compute_pattern"):
+                    parts.append("**Compute Pattern** (core computation):")
+                    parts.append("```cpp")
+                    parts.append(ex["compute_pattern"])
+                    parts.append("```\n")
+
+                # CopyIn/CopyOut Pattern (data movement)
+                if ex.get("copyinout_pattern"):
+                    parts.append("**CopyIn/CopyOut Pattern** (data movement):")
+                    parts.append("```cpp")
+                    parts.append(ex["copyinout_pattern"])
+                    parts.append("```\n")
+
+                # Key API Calls - critical for correct implementation
+                if ex.get("key_api_calls"):
+                    parts.append("**Key API Calls** (use these exact patterns):")
+                    parts.append("```cpp")
+                    parts.append(ex["key_api_calls"])
+                    parts.append("```\n")
+
+                # Legacy fallback: kernel_snippet and tiling_snippet
+                # (for backward compatibility with rule-based extraction)
+                if not any([ex.get("init_pattern"), ex.get("process_pattern"),
+                           ex.get("compute_pattern"), ex.get("copyinout_pattern")]):
+                    kernel_snippet = ex.get("kernel_snippet") or ex.get("code_snippet")
+                    if kernel_snippet:
+                        parts.append("**Kernel Reference Code**:")
+                        parts.append("```cpp")
+                        parts.append(kernel_snippet)
+                        parts.append("```\n")
+
+                    tiling_snippet = ex.get("tiling_snippet")
+                    if tiling_snippet:
+                        parts.append("**Tiling Reference Code**:")
+                        parts.append("```cpp")
+                        parts.append(tiling_snippet)
+                        parts.append("```\n")
 
                 parts.append("")
 

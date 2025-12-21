@@ -1,0 +1,4 @@
+{
+  "has_pybind_src": true,
+  "shape_inference_code": "auto output_shape = x.sizes();"
+}

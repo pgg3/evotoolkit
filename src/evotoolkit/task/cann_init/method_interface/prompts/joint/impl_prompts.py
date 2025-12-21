@@ -93,7 +93,7 @@ class ImplPromptsMixin:
 
     Stage 3: op_kernel.cpp
         - assemble_kernel_impl() + get_kernel_impl_prompt()
-        - Variable: Init/Process/CopyIn/Compute/CopyOut bodies, member variables
+        - Variable: Init/Process bodies, private methods (flexible), member variables
     """
 
     # =========================================================================
@@ -248,7 +248,6 @@ Now output the field definitions for `{op_name}`. Output ONLY the `<response>` b
         op_lower = op_name.lower()
         op_pascal = _to_pascal_case(op_name)
         op_class = f"{op_pascal}Custom"
-        tiling_class = f"{op_pascal}CustomTilingData"
 
         # Default InferShape: output shape = input shape
         if not infer_shape_body or not infer_shape_body.strip():
@@ -461,9 +460,7 @@ Now output the 2 parts for `{op_name}`:
         init_params: str,
         init_body: str,
         process_body: str,
-        copyin_body: str,
-        compute_body: str,
-        copyout_body: str,
+        private_methods: str,
         member_vars: str,
         global_func_params: str,
         init_call_args: str,
@@ -474,10 +471,8 @@ Now output the 2 parts for `{op_name}`:
             op_name: Operator name (e.g., "SDPA")
             init_params: Init function parameters
             init_body: Init function body
-            process_body: Process function body
-            copyin_body: CopyIn function body
-            compute_body: Compute function body
-            copyout_body: CopyOut function body
+            process_body: Process function body (main loop logic)
+            private_methods: Private helper methods (flexible - can be any methods)
             member_vars: Member variable declarations
             global_func_params: Parameters for the global function (before workspace, tiling)
             init_call_args: Arguments passed to op.Init()
@@ -504,15 +499,7 @@ public:
     }}
 
 private:
-    __aicore__ inline void CopyIn(int32_t progress) {{
-{copyin_body}
-    }}
-    __aicore__ inline void Compute(int32_t progress) {{
-{compute_body}
-    }}
-    __aicore__ inline void CopyOut(int32_t progress) {{
-{copyout_body}
-    }}
+{private_methods}
 
 private:
 {member_vars}
@@ -573,11 +560,26 @@ extern "C" __global__ __aicore__ void {op_lower}_custom(
 ```"""
         else:
             tiling_section = """### Tiling: Default
-Standard tiling parameters available via `GET_TILING_DATA`:
-- `totalLength`: total number of elements
-- `tileNum`: number of tiles
-- `tileLength`: elements per tile
-- `lasttileLength`: elements in last tile (may differ)"""
+Using default tiling template. Available fields via `GET_TILING_DATA(tilingData, tiling)`:
+- `tilingData.totalLength`: total number of elements (all dimensions flattened)
+- `tilingData.tileNum`: number of tiles = BLOCK_DIM (number of cores)
+
+Default tiling calculation (host side):
+```cpp
+auto shape = context->GetInputShape(0)->GetStorageShape();
+uint32_t totalLength = 1;
+for (size_t i = 0; i < shape.GetDimNum(); i++) {
+    totalLength *= shape.GetDim(i);
+}
+tiling.set_totalLength(totalLength);
+tiling.set_tileNum(BLOCK_DIM);  // BLOCK_DIM = 8
+```
+
+Kernel side calculation:
+```cpp
+uint32_t blockLength = tilingData.totalLength / AscendC::GetBlockNum();  // elements per core
+uint32_t tileLength = blockLength / tilingData.tileNum / BUFFER_NUM;     // elements per tile
+```"""
 
         # Show the template with placeholders
         template_code = self.assemble_kernel_impl(
@@ -585,9 +587,7 @@ Standard tiling parameters available via `GET_TILING_DATA`:
             "/* INIT_PARAMS */",
             "        // INIT_BODY",
             "        // PROCESS_BODY",
-            "        // COPYIN_BODY",
-            "        // COMPUTE_BODY",
-            "        // COPYOUT_BODY",
+            "    // PRIVATE_METHODS",
             "    // MEMBER_VARS",
             "/* GLOBAL_FUNC_PARAMS */ ",
             "/* INIT_CALL_ARGS */"
@@ -632,7 +632,7 @@ This describes the loop structure and data flow:
 
 ## Your Task
 
-Provide the following 9 parts:
+Provide the following 7 parts:
 
 ### 1. INIT_PARAMS
 Function parameters for Init (e.g., `GM_ADDR x, GM_ADDR y, uint32_t totalLength`)
@@ -644,25 +644,26 @@ The tiling struct is only accessible in the extern "C" function via GET_TILING_D
 Body of Init function (GlobalTensor setup, pipe initialization)
 
 ### 3. PROCESS_BODY
-Body of Process function (main loop calling CopyIn/Compute/CopyOut)
+Body of Process function (main processing loop)
+- Can call private helper methods you define
+- Can contain inline logic if simpler
+- Flexible structure based on operator needs
 
-### 4. COPYIN_BODY
-Body of CopyIn function (GM -> local memory)
+### 4. PRIVATE_METHODS
+**Flexible section** - define any helper methods you need:
+- Common patterns: `CopyIn()`, `Compute()`, `CopyOut()` for simple pipelines
+- Complex operators may need: `CopyInAndCast()`, `ComputeStage1()`, `ComputeStage2()`, etc.
+- Each method must have `__aicore__ inline` prefix
+- Parameters are flexible (not restricted to `int32_t progress`)
 
-### 5. COMPUTE_BODY
-Body of Compute function (actual computation)
-
-### 6. COPYOUT_BODY
-Body of CopyOut function (local -> GM memory)
-
-### 7. MEMBER_VARS
+### 5. MEMBER_VARS
 Private member variable declarations
 
-### 8. GLOBAL_FUNC_PARAMS
+### 6. GLOBAL_FUNC_PARAMS
 Parameters for extern "C" function (before `GM_ADDR workspace, GM_ADDR tiling`)
 
-### 9. INIT_CALL_ARGS
-Arguments passed to op.Init() call. Extract values from tiling_data (e.g., `x, y, z, tiling_data.totalLength, tiling_data.tileNum`)
+### 7. INIT_CALL_ARGS
+Arguments passed to op.Init() call. Extract values from tilingData (e.g., `x, y, z, tilingData.totalLength, tilingData.tileNum`)
 
 ## API Patterns
 
@@ -677,7 +678,7 @@ Arguments passed to op.Init() call. Extract values from tiling_data (e.g., `x, y
 | Compute | `AscendC::Op(dst, src, ...)` | `AscendC::Add(zLocal, xLocal, yLocal, tileLength);` |
 | DataCopy out | `AscendC::DataCopy(gm[offset], local, count)` | `AscendC::DataCopy(zGm[progress * tileLength], zLocal, tileLength);` |
 | FreeTensor | `queue.FreeTensor(tensor)` | `inQueue.FreeTensor(xLocal);` |
-| Get tiling | `tiling_data.<field>` | `tiling_data.totalLength` |
+| Get tiling | `tilingData.<field>` | `tilingData.totalLength` |
 | Get block info | `AscendC::GetBlockNum()`, `AscendC::GetBlockIdx()` | `blockLength = totalLength / AscendC::GetBlockNum();` |
 
 ## Member Variable Types
@@ -697,14 +698,13 @@ GM_ADDR x, GM_ADDR y, GM_ADDR z, uint32_t totalLength, uint32_t tileNum
 </init_params>
 
 <init_body>
-        // Each core processes blockLength elements
-        this->blockLength = totalLength / AscendC::GetBlockNum();
+        uint32_t blockLength = totalLength / AscendC::GetBlockNum();
         this->tileNum = tileNum;
-        this->tileLength = this->blockLength / tileNum / BUFFER_NUM;
+        this->tileLength = blockLength / tileNum / BUFFER_NUM;
 
-        xGm.SetGlobalBuffer((__gm__ float*)x + this->blockLength * AscendC::GetBlockIdx(), this->blockLength);
-        yGm.SetGlobalBuffer((__gm__ float*)y + this->blockLength * AscendC::GetBlockIdx(), this->blockLength);
-        zGm.SetGlobalBuffer((__gm__ float*)z + this->blockLength * AscendC::GetBlockIdx(), this->blockLength);
+        xGm.SetGlobalBuffer((__gm__ float*)x + blockLength * AscendC::GetBlockIdx(), blockLength);
+        yGm.SetGlobalBuffer((__gm__ float*)y + blockLength * AscendC::GetBlockIdx(), blockLength);
+        zGm.SetGlobalBuffer((__gm__ float*)z + blockLength * AscendC::GetBlockIdx(), blockLength);
 
         pipe.InitBuffer(inQueueX, BUFFER_NUM, this->tileLength * sizeof(float));
         pipe.InitBuffer(inQueueY, BUFFER_NUM, this->tileLength * sizeof(float));
@@ -720,16 +720,17 @@ GM_ADDR x, GM_ADDR y, GM_ADDR z, uint32_t totalLength, uint32_t tileNum
         }}
 </process_body>
 
-<copyin_body>
+<private_methods>
+    __aicore__ inline void CopyIn(int32_t progress) {{
         AscendC::LocalTensor<float> xLocal = inQueueX.AllocTensor<float>();
         AscendC::LocalTensor<float> yLocal = inQueueY.AllocTensor<float>();
         AscendC::DataCopy(xLocal, xGm[progress * this->tileLength], this->tileLength);
         AscendC::DataCopy(yLocal, yGm[progress * this->tileLength], this->tileLength);
         inQueueX.EnQue(xLocal);
         inQueueY.EnQue(yLocal);
-</copyin_body>
+    }}
 
-<compute_body>
+    __aicore__ inline void Compute(int32_t progress) {{
         AscendC::LocalTensor<float> xLocal = inQueueX.DeQue<float>();
         AscendC::LocalTensor<float> yLocal = inQueueY.DeQue<float>();
         AscendC::LocalTensor<float> zLocal = outQueueZ.AllocTensor<float>();
@@ -737,20 +738,20 @@ GM_ADDR x, GM_ADDR y, GM_ADDR z, uint32_t totalLength, uint32_t tileNum
         outQueueZ.EnQue<float>(zLocal);
         inQueueX.FreeTensor(xLocal);
         inQueueY.FreeTensor(yLocal);
-</compute_body>
+    }}
 
-<copyout_body>
+    __aicore__ inline void CopyOut(int32_t progress) {{
         AscendC::LocalTensor<float> zLocal = outQueueZ.DeQue<float>();
         AscendC::DataCopy(zGm[progress * this->tileLength], zLocal, this->tileLength);
         outQueueZ.FreeTensor(zLocal);
-</copyout_body>
+    }}
+</private_methods>
 
 <member_vars>
     AscendC::TPipe pipe;
     AscendC::TQue<AscendC::TPosition::VECIN, BUFFER_NUM> inQueueX, inQueueY;
     AscendC::TQue<AscendC::TPosition::VECOUT, BUFFER_NUM> outQueueZ;
     AscendC::GlobalTensor<float> xGm, yGm, zGm;
-    uint32_t blockLength;
     uint32_t tileNum;
     uint32_t tileLength;
 </member_vars>
@@ -760,10 +761,10 @@ GM_ADDR x, GM_ADDR y, GM_ADDR z,
 </global_func_params>
 
 <init_call_args>
-x, y, z, tiling_data.totalLength, tiling_data.tileNum
+x, y, z, tilingData.totalLength, tilingData.tileNum
 </init_call_args>
 
-Now output all 9 parts for `{op_name}`:
+Now output all 7 parts for `{op_name}`:
 """
 
     # =========================================================================

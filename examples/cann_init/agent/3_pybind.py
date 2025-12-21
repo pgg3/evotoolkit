@@ -9,12 +9,15 @@ Pybind Branch 独立测试
 - 根据 signature 生成 pybind 绑定代码
 
 输入: signature (来自 Phase 0)
-输出: pybind_src
+输出:
+  - contexts/{test_case}/pybind_context.json (context for pipeline)
+  - output/pybind_{test_case}/pybind_src.cpp (generated code)
 
 用法:
     python 3_pybind.py [easy|medium|hard]
 """
 
+import json
 import sys
 from pathlib import Path
 
@@ -22,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
 
 from _config import (
     get_llm, get_test_config, load_python_ref, ensure_output_dir,
-    get_phase0_context
+    get_phase0_context, CONTEXTS_DIR
 )
 
 from evotoolkit.task.cann_init import CANNIniterInterface, CANNInitTask
@@ -86,19 +89,39 @@ def main(test_case: str = "hard"):
 
     print("\n--- Generated pybind_src ---")
     if run_state_dict.pybind_src:
-        print(run_state_dict.pybind_src)
+        # Show first 500 chars
+        src = run_state_dict.pybind_src
+        print(src[:500] + "..." if len(src) > 500 else src)
     else:
         print("(None - using default template)")
 
-    # Save output to both pybind_xxx and impl_xxx directories
+    # Save context to contexts/ folder
+    print("\n" + "=" * 70)
+    print("Saving outputs...")
+    print("=" * 70)
+
+    contexts_dir = CONTEXTS_DIR / test_case
+    contexts_dir.mkdir(parents=True, exist_ok=True)
+
+    # Save pybind context (metadata)
+    pybind_context = {
+        "has_pybind_src": bool(run_state_dict.pybind_src),
+        "shape_inference_code": getattr(run_state_dict, 'shape_inference_code', None),
+    }
+    context_file = contexts_dir / "pybind_context.json"
+    with open(context_file, "w", encoding="utf-8") as f:
+        json.dump(pybind_context, f, indent=2, ensure_ascii=False)
+    print(f"  Context: {context_file}")
+
+    # Save generated code to output/ folder
     output_dir = ensure_output_dir(f"pybind_{test_case}")
-    impl_dir = ensure_output_dir(f"impl_{test_case}")
 
     if run_state_dict.pybind_src:
-        (output_dir / "pybind_src.cpp").write_text(run_state_dict.pybind_src)
-        (impl_dir / "pybind_src.cpp").write_text(run_state_dict.pybind_src)
-        print(f"\n[Saved to {output_dir / 'pybind_src.cpp'}]")
-        print(f"[Saved to {impl_dir / 'pybind_src.cpp'}]")
+        code_file = output_dir / "pybind_src.cpp"
+        code_file.write_text(run_state_dict.pybind_src)
+        print(f"  Code: {code_file}")
+
+    print(f"\nDone!")
 
 
 if __name__ == "__main__":

@@ -67,62 +67,114 @@ class KernelPromptsMixin:
         hw_spec: str,
     ) -> str:
         """Generate full prompt for first round review (with examples)."""
-        return f"""## Role
+        return f"""## 1. Role
+
 You are the **Kernel Agent** in a multi-agent Ascend C code generation pipeline.
 
-Your task: Review the tiling proposal and design kernel implementation strategy.
+**Your responsibilities**:
+1. **Review** the Tiling Agent's proposal for correctness
+2. **Design** the kernel implementation strategy (if accepted)
 
-**This is the conceptual design phase.** You will NOT write actual code.
+This is the conceptual design phase. You will NOT write actual code.
 
 ---
 
-## Hardware
-{hw_spec}
+## 2. Background
 
-## Operator Signature
+### Ascend C Architecture
+
+| Component | Role |
+|-----------|------|
+| **Host (CPU)** | Computes tiling parameters, launches kernel |
+| **Kernel (NPU)** | Executes computation on tiles |
+| **TilingData** | Struct that passes parameters from Host to Kernel |
+
+### Kernel Design Elements
+
+| Element | Description |
+|---------|-------------|
+| **Pipeline** | Always use `double_buffer` (overlap compute with data transfer) |
+| **Pseudocode** | High-level kernel logic (CopyIn → Compute → CopyOut) |
+| **Tiling Fields** | Parameters defined in TilingData, directly accessible in kernel |
+
+### About Useful References
+
+At the end of your output, list APIs/examples for **knowledge retrieval**:
+- **APIs**: Include both kernel APIs (compute operations) and tiling APIs (data movement)
+- **Examples**: Similar operators to reference (e.g., "attention" → flash_attention)
+
+Note: Conceptual names OK. A downstream planner will map to actual KB entries.
+
+---
+
+## 3. Your Task
+
+Review this tiling proposal and design the kernel strategy.
+
+### Operator Signature
+
 {formatted_sig}
 
-## Python Reference
+### Python Reference
+
 ```python
 {python_ref}
 ```
 
-## Tiling Proposal
+### Hardware
+
+{hw_spec}
+
+### Tiling Proposal (from Tiling Agent)
+
 {current_plan}
 
 ---
 
-## Review Focus
+## 4. Review Flow
 
-1. **Alignment**: For matmul, tiles align to fractal block (16x16 for fp16, varies by dtype)
-2. **Multi-core**: Offset computed via `GetBlockIdx()`? (NOT in tiling fields)
+### Step 1: Review Tiling Proposal
+
+Check each item:
+- [ ] **Memory**: Tile fits in UB? (see Memory Check)
+- [ ] **Attrs**: All scalar parameters included in Tiling Fields?
+- [ ] **Multi-core**: No per-core values in Tiling Fields? (computed via `GetBlockIdx()`)
+- [ ] **Block dim**: ≤ core count?
+
+### Step 2: Design Kernel (if accept)
+
+1. Write Kernel Pseudocode (CopyIn → Compute → CopyOut)
+2. Confirm/adjust Tiling Fields
+3. List Useful References (APIs and Examples for knowledge retrieval)
 
 ---
 
-## Common Mistakes
+## 5. Guidelines
 
-- [X] **Don't require block_offset** -> each core computes its own offset via GetBlockIdx()
-- [X] **Don't forget to confirm Tiling Fields** -> list what kernel actually needs
+### Common Mistakes
+
+- ✗ Requiring `blockOffset` in Tiling Fields → each core computes via `GetBlockIdx()`
+- ✗ Forgetting to list required Tiling Fields → kernel needs these to compile
+
+### Edge Case
+
+- If data doesn't divide evenly, last tile handles remainder (kernel uses `min(tileLength, remaining)`)
 
 ---
 
-## Output Format
+## 6. Output Format
 
 <response>
 ## Reasoning
-<1-2 sentences: Is the tiling proposal correct? What's the kernel strategy?>
+<1-2 sentences: Is proposal correct? What's the kernel strategy?>
 
 accepted: <true | false>
 strategy: <default | generate>
 
-(If strategy=default: use default template, NO custom tiling fields needed)
-(If strategy=generate: you MUST provide Tiling Fields Required below)
-
-(If accepted=true, add:)
+(If accepted=true:)
 
 ## Kernel Design
-- Pipeline: <double_buffer>
-- Operations: [op1, op2, ...]
+- Pipeline: double_buffer
 
 ## Kernel Pseudocode
 ```cpp
@@ -130,20 +182,25 @@ strategy: <default | generate>
 for (...) {{
     CopyIn: <load data>
     Compute: <operations>
-    CopyOut: <store data>
+    CopyOut: <store result>
 }}
 ```
 
-(If strategy=generate, add:)
+## Useful References
+- APIs: [<API names for implementation>]
+- Examples: [<similar operators>]
+
+(If strategy=generate:)
+
+## Tiling Fields Alignment
+- Match: [<fields matching proposal>]
+- Missing: [<fields needed but not in proposal>] (or "none")
+- Unused: [<fields in proposal but not needed>] (or "none")
 
 ## Tiling Fields Required
 - <field>: <type> // <purpose>
 
-## Useful References
-- APIs: [<API names for doc lookup>]
-- Examples: [<similar operators>]
-
-(If accepted=false, add:)
+(If accepted=false:)
 
 ## Issues
 1. <what's wrong>
@@ -154,30 +211,28 @@ for (...) {{
 
 ---
 
-## Examples
+## 7. Examples
 
-### Ex1: Accept ReLU (default strategy)
-Tiling: default (single input, same output shape)
+### Ex1: Accept ReLU (default)
+Tiling proposal: Strategy: default (single input, same shape)
+
 <response>
 ## Reasoning
-ReLU is single-input element-wise. Default template is appropriate.
+ReLU is single-input element-wise. Default template is correct.
 
 accepted: true
 strategy: default
 
 ## Kernel Design
 - Pipeline: double_buffer
-- Operations: [ReLU]
 
 ## Kernel Pseudocode
 ```cpp
-// Default template: totalLength, tileNum from TilingData
 // Multi-core: GetBlockIdx() for core offset
 for (int i = 0; i < tileNum; i++) {{
-    offset = GetBlockIdx() * tilesPerCore + i
-    CopyIn: x[offset * tileLength : (offset+1) * tileLength]
+    CopyIn: x[offset : offset + tileLength]
     Compute: y = Relu(x)
-    CopyOut: y[offset * tileLength : (offset+1) * tileLength]
+    CopyOut: y[offset : offset + tileLength]
 }}
 ```
 
@@ -186,103 +241,103 @@ for (int i = 0; i < tileNum; i++) {{
 - Examples: [relu_custom]
 </response>
 
-### Ex2: Accept Add (generate strategy)
-Tiling: generate (two inputs)
+### Ex2: Accept Add (generate)
+Tiling proposal: Strategy: generate, Tiling Fields: [totalLength, tileNum, tileLength]
+
 <response>
 ## Reasoning
-Add has two inputs, needs generate strategy. Tiling proposal is correct.
+Add has two inputs, needs generate. Proposal is correct.
 
 accepted: true
 strategy: generate
 
 ## Kernel Design
 - Pipeline: double_buffer
-- Operations: [element-wise add]
 
 ## Kernel Pseudocode
 ```cpp
 // Multi-core: GetBlockIdx() for core offset
 for (int i = 0; i < tileNum; i++) {{
-    globalIdx = GetBlockIdx() * tileNum + i
-    CopyIn: x[globalIdx * tileLength], y[globalIdx * tileLength]
+    CopyIn: x[idx], y[idx]
     Compute: z = Add(x, y)
-    CopyOut: z[globalIdx * tileLength]
+    CopyOut: z[idx]
 }}
 ```
+
+## Useful References
+- APIs: [Add, DataCopy]
+- Examples: [add_custom]
+
+## Tiling Fields Alignment
+- Match: [totalLength, tileNum, tileLength]
+- Missing: none
+- Unused: none
 
 ## Tiling Fields Required
 - totalLength: uint32_t // total elements
 - tileNum: uint32_t // tiles per core
 - tileLength: uint32_t // elements per tile
-
-## Useful References
-- APIs: [Add]
-- Examples: [add_custom]
 </response>
 
-### Ex3: Accept Softmax (generate strategy)
-Tiling: generate (row-wise reduction)
+### Ex3: Accept Softmax (generate - reduction)
+Tiling proposal: Strategy: generate, row-wise reduction
+
 <response>
 ## Reasoning
-Softmax needs row-wise reduction. Generate strategy required.
+Softmax needs row-wise reduction. Proposal is correct.
 
 accepted: true
 strategy: generate
 
 ## Kernel Design
 - Pipeline: double_buffer
-- Operations: [ReduceMax, Sub, Exp, ReduceSum, Div]
 
 ## Kernel Pseudocode
 ```cpp
-// Multi-core: GetBlockIdx() for core offset
+// Multi-core: GetBlockIdx() for row offset
 for (int row = 0; row < rowsPerCore; row++) {{
-    globalRow = GetBlockIdx() * rowsPerCore + row
-    CopyIn: x[globalRow * featureDim : (globalRow+1) * featureDim]
-    Compute: max -> sub -> exp -> sum -> div
-    CopyOut: y[globalRow * featureDim : (globalRow+1) * featureDim]
+    CopyIn: x[row, :]
+    Compute: max = ReduceMax(x)
+             x = Sub(x, max)
+             x = Exp(x)
+             sum = ReduceSum(x)
+             y = Div(x, sum)
+    CopyOut: y[row, :]
 }}
 ```
+
+## Useful References
+- APIs: [ReduceMax, ReduceSum, Exp, Sub, Div, DataCopy]
+- Examples: [softmax_custom]
+
+## Tiling Fields Alignment
+- Match: [batchSize, featureDim, rowsPerCore]
+- Missing: none
+- Unused: none
 
 ## Tiling Fields Required
 - batchSize: uint32_t // total rows
 - featureDim: uint32_t // row length
 - rowsPerCore: uint32_t // rows per core
-
-## Useful References
-- APIs: [ReduceMax, ReduceSum, Exp, Sub, Div]
-- Examples: [softmax_custom]
 </response>
 
-### Ex4: Accept MatMul (matrix multiplication)
-Tiling: generate (matmul with tile alignment)
+### Ex4: Reject - Missing Attrs
+Tiling proposal: Strategy: generate for Clamp(x, min_val, max_val), but Tiling Fields only has [totalLength, tileNum, tileLength]
+
 <response>
 ## Reasoning
-MatMul tiling proposal is correct. Tile sizes aligned to fractal block.
+Clamp has Attrs (min_val, max_val) but they're missing from Tiling Fields. Kernel cannot compile without these values.
 
-accepted: true
+accepted: false
 strategy: generate
 
-## Kernel Design
-- Pipeline: double_buffer
-- Operations: [matrix multiply-accumulate]
+## Issues
+1. Missing Attrs: min_val and max_val not in Tiling Fields
 
-## Kernel Pseudocode
-```cpp
-// Multi-core: GetBlockIdx() for M-tile assignment
-for m_tile, n_tile, k_tile:
-    CopyIn: A[m,k], B[k,n]
-    Compute: C += Mmad(A, B)
-    CopyOut: C[m,n]
-```
-
-## Tiling Fields Required
-- M, N, K: uint32_t // matrix dimensions
-- tileM, tileN, tileK: uint32_t // tile sizes (aligned to fractal block)
-
-## Useful References
-- APIs: [Mmad, MatMul]
-- Examples: [matmul_custom]
+## Suggestions
+Add to Tiling Fields:
+- minVal: float // clamp lower bound
+- maxVal: float // clamp upper bound
 </response>
 
 ---
@@ -299,35 +354,48 @@ Now review the tiling proposal:
     ) -> str:
         """Generate concise prompt for re-reviewing revised tiling proposal."""
         return f"""## Role
+
 You are the **Kernel Agent**. Re-review the revised tiling proposal.
 
-## Operator Signature
-{formatted_sig}
+---
 
-## Python Reference
+## Context
+
+**Operator**: {formatted_sig}
+
 ```python
 {python_ref}
 ```
 
+---
+
 ## Revised Tiling Proposal
+
 {current_plan}
 
+---
+
 ## Your Previous Feedback
+
 {previous_feedback}
 
+---
+
 ## Task
-Check if the revised proposal addresses your feedback. Use the **same format**:
+
+Check if the revision addresses your feedback. Output format:
 
 <response>
 ## Reasoning
-<Does the revision address your feedback? Any remaining issues?>
+<Does revision address your feedback? Any remaining issues?>
 
 accepted: <true | false>
 strategy: <default | generate>
 
 (If accepted=true:)
+
 ## Kernel Design
-...
+- Pipeline: double_buffer
 
 ## Kernel Pseudocode
 ```cpp
@@ -335,14 +403,22 @@ strategy: <default | generate>
 ...
 ```
 
-(If strategy=generate:)
-## Tiling Fields Required
-...
-
 ## Useful References
-...
+- APIs: [...]
+- Examples: [...]
+
+(If strategy=generate:)
+
+## Tiling Fields Alignment
+- Match: [...]
+- Missing: [...] (or "none")
+- Unused: [...] (or "none")
+
+## Tiling Fields Required
+- <field>: <type> // <purpose>
 
 (If accepted=false:)
+
 ## Issues
 ...
 
@@ -363,54 +439,66 @@ strategy: <default | generate>
         feedback_section = ""
         if previous_feedback:
             feedback_section = f"""## Your Previous Feedback
+
 {previous_feedback}
-
-"""
-        return f"""## Role
-You are the **Kernel Agent**. This is the **FINAL ROUND**.
-
-## CRITICAL: You MUST produce an implementable design now.
-
-You cannot reject. Either:
-1. Accept if workable, OR
-2. Accept with modifications - fix issues yourself
-
-**Do NOT output "accepted: false"**
 
 ---
 
-## Hardware
-{hw_spec}
+"""
+        return f"""## Role
 
-## Operator Signature
-{formatted_sig}
+You are the **Kernel Agent**. This is the **FINAL ROUND**.
 
-## Python Reference
+---
+
+## CRITICAL
+
+You **MUST** produce an implementable design now. You cannot reject.
+
+Either:
+1. Accept if proposal is workable, OR
+2. Accept with modifications - fix issues yourself and note in `## Assumptions Made`
+
+**Do NOT output `accepted: false`**
+
+---
+
+## Context
+
+**Operator**: {formatted_sig}
+
 ```python
 {python_ref}
 ```
 
-## Current Tiling Proposal
-{current_plan}
-
-{feedback_section}## Reminder
-- Each core computes offset via `GetBlockIdx()` (NOT in tiling fields)
-- Choose strategy: default (single input, same output shape) or generate (all other cases)
+**Hardware**: {hw_spec}
 
 ---
 
-## Output Format
+## Current Tiling Proposal
+
+{current_plan}
+
+---
+
+{feedback_section}## Output Format
+
+**IMPORTANT**: You MUST include `## Tiling Execution` section (this marks final round).
 
 <response>
 ## Reasoning
-<Any assumptions or workarounds needed? If none, write "Proposal is correct.">
+<Brief assessment. If you made modifications, explain what and why.>
 
 accepted: true
 strategy: <default | generate>
 
+(If you made modifications:)
+## Assumptions Made
+- <what you modified from original proposal>
+- <e.g., "Added lastTileLength for remainder handling">
+
 ## Kernel Design
-- Pipeline: <double_buffer>
-- Operations: [op1, op2, ...]
+- Pipeline: double_buffer
 
 ## Kernel Pseudocode
 ```cpp
@@ -425,18 +513,24 @@ for (...) {{
 ## Tiling Execution
 ```
 for <loop>:
-    CopyIn: <data>
-    Compute: <ops>
-    CopyOut: <data>
+    CopyIn: <data with index>
+    CopyOut: <data with index>
 ```
-
-(If strategy=generate:)
-## Tiling Fields Required
-- <field>: <type> // <purpose>
+Note: <why this pattern>
 
 ## Useful References
 - APIs: [...]
 - Examples: [...]
+
+(If strategy=generate:)
+
+## Tiling Fields Alignment
+- Match: [...]
+- Missing: [...] (or "none")
+- Unused: [...] (or "none")
+
+## Tiling Fields Required
+- <field>: <type> // <purpose>
 </response>
 
 This design will be used for code generation. Make it complete!

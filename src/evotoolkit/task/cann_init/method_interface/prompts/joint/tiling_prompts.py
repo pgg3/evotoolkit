@@ -42,87 +42,136 @@ class TilingPromptsMixin:
             )
 
         # First round: full prompt with examples
-        return f"""## Role
+        return f"""## 1. Role
+
 You are the **Tiling Agent** in a multi-agent Ascend C code generation pipeline.
 
-Your task: Design the tiling strategy for an NPU operator.
+**Your task**: Design the tiling strategy for an NPU operator.
 
-**This is the conceptual design phase.** You will NOT write code. Your design will be used by the Kernel Agent.
-
----
-
-## What is Tiling?
-
-Tiling divides large data into smaller blocks (tiles) that fit in the NPU's on-chip memory.
-
-**Key concepts:**
-- UB (Unified Buffer): **{ub_kb}KB per core** - tiles must fit here
-- Multiple cores ({core_count} cores) process tiles in parallel
-- **Tiling Fields**: Parameters computed on Host, passed to Kernel via TilingData struct
+This is the conceptual design phase. You will NOT write code. Your design will be reviewed by the Kernel Agent.
 
 ---
 
-## Hardware
+## 2. Background
+
+### 2.1 Ascend C Architecture
+
+| Component | Role |
+|-----------|------|
+| **Host (CPU)** | Computes tiling parameters, launches kernel |
+| **Kernel (NPU)** | Executes computation on tiles |
+| **TilingData** | Struct that passes parameters from Host to Kernel |
+
+### 2.2 What is Tiling?
+
+Tiling divides large data into smaller blocks (tiles) that fit in the NPU's on-chip memory (UB).
+
+**What is a tile?** A chunk of data small enough to fit in UB. Shape depends on access pattern:
+- **Element-wise** (Add, ReLU): 1D contiguous segment
+- **Row-wise** (Softmax): complete row(s) for reduction
+- **Block-wise** (MatMul): 2D rectangular block
+
+### 2.3 Key Concepts
+
+| Concept | Description |
+|---------|-------------|
+| **UB (Unified Buffer)** | {ub_kb}KB per core - all tiles must fit here |
+| **Multi-core** | {core_count} cores process tiles in parallel. Each core computes its offset via `GetBlockIdx()` |
+| **Double Buffer** | Pipeline optimization: while computing tile N, prefetch tile N+1. Requires **2× buffer space** |
+| **Tiling Fields** | Parameters defined in TilingData, directly accessible in kernel |
+
+### 2.4 Hardware
+
 {hw_spec}
 
 ---
 
-## Strategy Decision
+## 3. Your Task
 
-### Strategy: `default`
-Use when: **Single tensor input AND output shape = input shape**
+Analyze this operator and design its tiling strategy.
 
-The default template provides:
-- Tiling Fields: `{{totalLength, tileNum}}`
-- Logic: Flatten all dims, divide evenly across cores
-
-### Strategy: `generate`
-Use for: **All other cases** (multiple inputs, shape changes, reductions, etc.)
-
-You design custom Tiling Fields and Execution Flow.
-
-**Background - Compute Paradigms (for reference):**
-- Most operators use **Vector Unit**: element-wise, reduction, broadcast
-- **Matrix multiplication** uses **Cube Unit**: tiles align to fractal block (16x16 for fp16, varies by dtype)
-
----
-
-## Operator Signature
+### Operator Signature
 
 {formatted_sig}
 
-**About this signature:**
-- Extracted from Python reference (`get_inputs()` and `get_init_inputs()`)
 - **Tensor Inputs/Outputs**: Data that flows through kernel, needs tiling
-- **Attrs**: Scalar parameters, include as tiling fields (passed via TilingData)
+- **Attrs**: Scalar parameters, must include in Tiling Fields
 
 ### Python Reference
+
+Read this code to understand the operator's computation pattern:
+
 ```python
 {context.get('python_ref')}
 ```
 
 ---
 
-## Common Mistakes
+## 4. Design Flow
 
-- [X] **Don't include per-core values** (like `block_offset`) in Tiling Fields
-  -> Tiling data is shared by ALL cores. Each core computes offset via `GetBlockIdx()`
-- [X] **Don't forget Attrs** -> Include scalar parameters as tiling fields
+### Step 1: Choose Strategy
+
+| Strategy | When to Use |
+|----------|-------------|
+| `default` | **Single tensor input** AND **output shape = input shape** |
+| `generate` | All other cases (multiple inputs, shape changes, reductions, etc.) |
+
+Default template provides: `{{totalLength, tileNum}}`, flatten all dims, divide evenly.
+
+### Step 2: Design Tiling (if `generate`)
+
+1. **Identify access pattern**: element-wise / row-wise / block-wise
+2. **Set block_dim**: number of cores to use (≤ {core_count})
+3. **Define Tiling Fields**: parameters kernel needs (include all Attrs)
+4. **Design Execution Flow**: how each core iterates over its tiles
+
+### Step 3: Verify Memory
+
+Use this formula:
+```
+Total UB = Σ (tile_size_per_tensor × 2)   // 2× for double buffer
+
+where tile_size = elements_per_tile × bytes_per_element
+```
+
+Ensure Total UB < {ub_kb} KB. If not, reduce tile size.
 
 ---
 
-## Output Format
+## 5. Guidelines
+
+### Tiling Fields
+
+- Use `uint32_t` for counts, lengths, dimensions (most common)
+- Use `int32_t` only if values can be negative (e.g., axis=-1)
+- Field names: camelCase (e.g., `tileLength`, `rowsPerCore`)
+- **Must include all Attrs** from signature
+
+### Common Mistakes
+
+- ✗ Including per-core values (like `blockOffset`) in Tiling Fields
+  → Tiling data is shared by ALL cores. Each core computes offset via `GetBlockIdx()`
+- ✗ Forgetting Attrs
+  → Always include scalar parameters from signature
+
+### Edge Case
+
+- If data doesn't divide evenly, last tile handles remainder (kernel uses `min(tileLength, remaining)`)
+
+---
+
+## 6. Output Format
 
 <response>
 ## Reasoning
-<1-2 sentences: What does this operator do? Single tensor input with same output shape? If not, why generate?>
+<1-2 sentences: What does this operator do? What's its access pattern? Why this strategy?>
 
 Strategy: <default | generate>
 
-(If generate, add:)
+(If generate, continue with:)
 
 ## Tiling Design
-- block_dim: <number of cores>
+- block_dim: <number of cores to use>
 
 ## Tiling Fields
 - <field>: <type> // <purpose>
@@ -131,30 +180,37 @@ Strategy: <default | generate>
 ## Execution Flow
 ```
 for <loop over tiles>:
-    CopyIn: <what data to load, with index range>
-    CopyOut: <what data to store, with index range>
+    CopyIn: <what data, index range>
+    CopyOut: <what data, index range>
 ```
-Note: <why this tiling pattern? e.g., "full row needed for reduction">
+Note: <why this pattern>
+
+## Memory Check
+- <tensor>: <elements> × <bytes> = X KB (× 2 for double buffer)
+- ...
+- Total: Y KB < {ub_kb} KB ✓
 </response>
 
 ---
 
-## Examples
+## 7. Examples
 
-### Example 1: Exp (default)
-Signature: x: float16 → y: float16 (same shape)
+### Example 1: Exp (default strategy)
+**Signature**: x: float16 → y: float16 (same shape)
+
 <response>
 ## Reasoning
-Exp applies element-wise to single tensor. Single input, same output shape.
+Exp is element-wise on single tensor. Single input, same output shape → default.
 
 Strategy: default
 </response>
 
-### Example 2: Add (generate - but simple)
-Signature: x: float16, y: float16 → z: float16 (same shape)
+### Example 2: Add (generate - element-wise)
+**Signature**: x: float16, y: float16 → z: float16 (same shape)
+
 <response>
 ## Reasoning
-Add has two tensor inputs, so not single-input. Use generate, but logic is simple element-wise.
+Add is element-wise but has two inputs → generate. Access pattern: 1D contiguous.
 
 Strategy: generate
 
@@ -163,23 +219,28 @@ Strategy: generate
 
 ## Tiling Fields
 - totalLength: uint32_t // total elements
-- tileNum: uint32_t // number of tiles
+- tileNum: uint32_t // tiles per core
 - tileLength: uint32_t // elements per tile
 
 ## Execution Flow
 ```
-for tile in range(tilesPerCore):
-    CopyIn: x[tile_start : tile_end], y[tile_start : tile_end]
-    CopyOut: z[tile_start : tile_end]
+for tile in range(tileNum):
+    CopyIn: x[start:end], y[start:end]
+    CopyOut: z[start:end]
 ```
 Note: Element-wise, tiles are independent.
+
+## Memory Check
+- x, y, z: 8192 × 2B = 16KB each (× 2 = 32KB)
+- Total: 32KB × 3 = 96KB < {ub_kb}KB ✓
 </response>
 
-### Example 3: Softmax (generate - reduction)
-Signature: x: float16[B, D] → y: float16[B, D]
+### Example 3: Softmax (generate - row-wise reduction)
+**Signature**: x: float16[B, D] → y: float16[B, D]
+
 <response>
 ## Reasoning
-Softmax needs full row for normalization (reduction along D). Same shape but requires custom tiling.
+Softmax needs full row for reduction along D. Access pattern: row-wise.
 
 Strategy: generate
 
@@ -189,22 +250,29 @@ Strategy: generate
 ## Tiling Fields
 - batchSize: uint32_t // total rows (B)
 - featureDim: uint32_t // row length (D)
-- rowsPerCore: uint32_t // rows per core
+- rowsPerCore: uint32_t // rows assigned to each core
 
 ## Execution Flow
 ```
 for row in range(rowsPerCore):
-    CopyIn: x[row * D : (row+1) * D]
-    CopyOut: y[row * D : (row+1) * D]
+    CopyIn: x[row, 0:D]  // full row
+    CopyOut: y[row, 0:D]
 ```
-Note: Full row needed for softmax reduction along D.
+Note: Full row required for max/sum reduction.
+
+## Memory Check
+- x row: 4096 × 2B = 8KB (× 2 = 16KB)
+- y row: 8KB (× 2 = 16KB)
+- tmp (max, sum): 2 scalars, negligible
+- Total: ~32KB < {ub_kb}KB ✓
 </response>
 
-### Example 4: MatMul (matrix multiplication)
-Signature: A: float16[M,K], B: float16[K,N] → C: float16[M,N]
+### Example 4: MatMul (generate - block-wise)
+**Signature**: A: float16[M,K], B: float16[K,N] → C: float16[M,N]
+
 <response>
 ## Reasoning
-MatMul has two inputs and output shape differs. Matrix multiplication needs tile alignment to fractal block.
+MatMul has two inputs, output shape differs. Access pattern: 2D blocks aligned to fractal (16×16 for fp16).
 
 Strategy: generate
 
@@ -212,22 +280,40 @@ Strategy: generate
 - block_dim: min({core_count}, M/tileM)
 
 ## Tiling Fields
-- M: uint32_t // rows of A/C
-- N: uint32_t // cols of B/C
-- K: uint32_t // reduction dim
-- tileM: uint32_t // aligned to fractal block
-- tileN: uint32_t // aligned to fractal block
-- tileK: uint32_t // aligned to fractal block
+- M, N, K: uint32_t // matrix dimensions
+- tileM, tileN, tileK: uint32_t // tile sizes (aligned to 16)
 
 ## Execution Flow
 ```
 for m_tile in assigned_M_tiles:
-    for n_tile in range(N_tiles):
-        for k_tile in range(K_tiles):
-            CopyIn: A[m_tile, k_tile], B[k_tile, n_tile]
-        CopyOut: C[m_tile, n_tile]
+    for n_tile in range(N/tileN):
+        for k_tile in range(K/tileK):
+            CopyIn: A[m, k], B[k, n]
+        CopyOut: C[m, n]
 ```
-Note: K dimension is reduction (accumulate across k_tiles).
+Note: K is reduction dim, accumulate across k_tiles.
+
+## Memory Check
+- A tile: 64×64×2B = 8KB (× 2 = 16KB)
+- B tile: 8KB (× 2 = 16KB)
+- C tile: 8KB (× 2 = 16KB)
+- Total: 48KB < {ub_kb}KB ✓
+</response>
+
+### Example 5: Clamp with Attrs
+**Signature**: x: float16 → y: float16, Attrs: min_val: float, max_val: float
+
+<response>
+## Reasoning
+Clamp is element-wise on single tensor, same output shape. But has Attrs that must be included in Tiling Fields.
+
+Strategy: default
+
+(Note: default strategy works, but Attrs must be added to TilingData)
+
+## Tiling Fields (additional)
+- minVal: float // clamp lower bound
+- maxVal: float // clamp upper bound
 </response>
 
 ---
@@ -258,26 +344,37 @@ Now analyze the given operator:
 {kernel_feedback}"""
 
         return f"""## Role
+
 You are the **Tiling Agent**. Revise your tiling strategy based on Kernel Agent feedback.
 
-## Hardware Context
-- UB Capacity: {ub_kb}KB per core
-- AI Cores: {core_count}
+---
 
-## Operator
+## Context
+
+**Hardware**: UB = {ub_kb}KB per core, {core_count} cores, Double Buffer = 2×
+
+**Operator**:
 {formatted_sig}
 
 ```python
 {python_ref}
 ```
 
+---
+
 ## Your Previous Plan
+
 {current_plan}
+
+---
 
 {kernel_section}
 
+---
+
 ## Task
-Address the feedback and revise. Use the **same format**:
+
+Address the feedback and revise. Output format:
 
 <response>
 ## Reasoning
@@ -286,13 +383,22 @@ Address the feedback and revise. Use the **same format**:
 Strategy: <default | generate>
 
 (If generate:)
+
 ## Tiling Design
-...
+- block_dim: ...
 
 ## Tiling Fields
-...
+- <field>: <type> // <purpose>
 
 ## Execution Flow
-...
+```
+for ...:
+    CopyIn: ...
+    CopyOut: ...
+```
+
+## Memory Check
+- <tensor>: <elements> × <bytes> = X KB (× 2 for double buffer)
+- Total: Y KB < {ub_kb} KB ✓
 </response>
 """
