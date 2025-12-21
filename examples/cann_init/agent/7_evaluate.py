@@ -31,10 +31,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent / "src"))
 
 from _config import (
-    get_test_config, load_python_ref, ensure_output_dir
+    get_test_config, load_python_ref, ensure_output_dir,
+    get_phase0_context, get_pybind_context
 )
 
-from evotoolkit.task.cann_init import CANNInitTask, CANNSolutionConfig
+from evotoolkit.task.cann_init import CANNInitTask, CANNSolutionConfig, CANNIniterInterface
 from evotoolkit.core import Solution
 
 
@@ -44,7 +45,7 @@ def load_generated_code(test_case: str) -> dict:
 
     Sources:
     - kernel_src, tiling_src, operator_src: impl_{test_case}/
-    - pybind_src: pybind_{test_case}/
+    - pybind_src: pybind_{test_case}/ 或从 context 生成
 
     Returns:
         dict with keys: kernel_src, tiling_src, operator_src, pybind_src
@@ -72,10 +73,23 @@ def load_generated_code(test_case: str) -> dict:
     if operator_file.exists():
         code["operator_src"] = operator_file.read_text()
 
-    # Load pybind_src from pybind_dir
+    # Load pybind_src: try file first, then assemble from context
     pybind_file = pybind_dir / "pybind_src.cpp"
     if pybind_file.exists():
         code["pybind_src"] = pybind_file.read_text()
+    else:
+        # File not found - assemble from pybind_context + phase0_context
+        try:
+            phase0_ctx = get_phase0_context(test_case)
+            pybind_ctx = get_pybind_context(test_case)
+            shape_inference_code = pybind_ctx.get("shape_inference_code", "auto output_shape = x.sizes();")
+            interface = CANNIniterInterface()
+            code["pybind_src"] = interface.assemble_pybind_code(
+                phase0_ctx["signature"],
+                shape_inference_code
+            )
+        except (ValueError, FileNotFoundError):
+            pass  # Context not available
 
     return code
 
@@ -169,8 +183,8 @@ def main(test_case: str = "hard", npu_type: str = "Ascend910B2"):
     for key, val in code.items():
         if val:
             print(f"    - {key}: {len(val)} chars")
-        elif key in ("tiling_src", "operator_src"):
-            print(f"    - {key}: (None - using default)")
+        elif key in ("tiling_src", "operator_src", "pybind_src"):
+            print(f"    - {key}: (None - will use default template)")
         else:
             print(f"    - {key}: (not found)")
 
