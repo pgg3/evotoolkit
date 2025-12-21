@@ -6,13 +6,18 @@
 Agent 生成代码评估测试
 
 使用 Evaluator 验证 Agent 生成的代码:
-- 读取 impl_{test_case}/ 目录下的生成文件
+- 读取 impl_{test_case}/ 目录下的 kernel/tiling/operator 文件
+- 读取 pybind_{test_case}/ 目录下的 pybind_src.cpp
 - 通过 CANNInitTask 编译和运行测试
 - 输出正确性结果
 
+支持两种模式:
+1. Default tiling: 只需 kernel_src + pybind_src (tiling/operator 使用默认模板)
+2. Custom tiling: 需要全部 4 个文件
+
 前置条件:
 - 运行 3_pybind.py 生成 pybind_src.cpp
-- 运行 5_joint_impl.py 生成 tiling.h, op_host.cpp, op_kernel.cpp
+- 运行 5_joint_impl.py 生成 op_kernel.cpp (+ 可选的 tiling.h, op_host.cpp)
 
 用法:
     python 7_evaluate.py [easy|medium|hard]
@@ -35,12 +40,17 @@ from evotoolkit.core import Solution
 
 def load_generated_code(test_case: str) -> dict:
     """
-    从 impl_{test_case}/ 目录加载生成的代码文件。
+    加载生成的代码文件。
+
+    Sources:
+    - kernel_src, tiling_src, operator_src: impl_{test_case}/
+    - pybind_src: pybind_{test_case}/
 
     Returns:
         dict with keys: kernel_src, tiling_src, operator_src, pybind_src
     """
     impl_dir = ensure_output_dir(f"impl_{test_case}")
+    pybind_dir = ensure_output_dir(f"pybind_{test_case}")
 
     code = {
         "kernel_src": None,
@@ -49,7 +59,7 @@ def load_generated_code(test_case: str) -> dict:
         "pybind_src": None,
     }
 
-    # Load files if they exist
+    # Load kernel/tiling/operator from impl_dir
     kernel_file = impl_dir / "op_kernel.cpp"
     if kernel_file.exists():
         code["kernel_src"] = kernel_file.read_text()
@@ -62,32 +72,43 @@ def load_generated_code(test_case: str) -> dict:
     if operator_file.exists():
         code["operator_src"] = operator_file.read_text()
 
-    pybind_file = impl_dir / "pybind_src.cpp"
+    # Load pybind_src from pybind_dir
+    pybind_file = pybind_dir / "pybind_src.cpp"
     if pybind_file.exists():
         code["pybind_src"] = pybind_file.read_text()
 
     return code
 
 
-def evaluate_full_mode(task, code: dict, output_dir: Path):
+def evaluate_generated_code(task, code: dict, output_dir: Path):
     """
-    Full LLM mode: kernel + tiling + host + pybind
-    必须提供所有组件，不使用默认模板。
+    评估生成的代码。
+
+    支持两种模式：
+    1. Default tiling: kernel + pybind (tiling_src 和 operator_src 为 None)
+    2. Custom tiling: kernel + tiling + host + pybind (全部提供)
     """
+    # Determine mode
+    is_default_tiling = code["tiling_src"] is None and code["operator_src"] is None
+    mode_name = "Default Tiling" if is_default_tiling else "Custom Tiling"
+
     print("\n" + "-" * 50)
-    print("Full Mode Evaluation (kernel + tiling + host + pybind)")
+    print(f"Evaluation Mode: {mode_name}")
     print("-" * 50)
 
-    # Check all required components
+    # Check required components
     missing = []
     if not code["kernel_src"]:
         missing.append("kernel_src (op_kernel.cpp)")
-    if not code["tiling_src"]:
-        missing.append("tiling_src (tiling.h)")
-    if not code["operator_src"]:
-        missing.append("operator_src (op_host.cpp)")
     if not code["pybind_src"]:
         missing.append("pybind_src (pybind_src.cpp)")
+
+    # For custom tiling, also require tiling and operator
+    if not is_default_tiling:
+        if not code["tiling_src"]:
+            missing.append("tiling_src (tiling.h)")
+        if not code["operator_src"]:
+            missing.append("operator_src (op_host.cpp)")
 
     if missing:
         print(f"[ERROR] Missing required files:")
@@ -96,8 +117,8 @@ def evaluate_full_mode(task, code: dict, output_dir: Path):
         return None
 
     print(f"  kernel_src: {len(code['kernel_src'])} chars")
-    print(f"  tiling_src: {len(code['tiling_src'])} chars")
-    print(f"  operator_src: {len(code['operator_src'])} chars")
+    print(f"  tiling_src: {len(code['tiling_src']) if code['tiling_src'] else 'None (default)'}")
+    print(f"  operator_src: {len(code['operator_src']) if code['operator_src'] else 'None (default)'}")
     print(f"  pybind_src: {len(code['pybind_src'])} chars")
 
     config = CANNSolutionConfig(
@@ -140,11 +161,16 @@ def main(test_case: str = "hard", npu_type: str = "Ascend910B2"):
     code = load_generated_code(test_case)
 
     impl_dir = ensure_output_dir(f"impl_{test_case}")
-    print(f"    Source: {impl_dir}/")
+    pybind_dir = ensure_output_dir(f"pybind_{test_case}")
+    print(f"    Sources:")
+    print(f"      - kernel/tiling/operator: {impl_dir}/")
+    print(f"      - pybind: {pybind_dir}/")
 
     for key, val in code.items():
         if val:
             print(f"    - {key}: {len(val)} chars")
+        elif key in ("tiling_src", "operator_src"):
+            print(f"    - {key}: (None - using default)")
         else:
             print(f"    - {key}: (not found)")
 
@@ -162,9 +188,9 @@ def main(test_case: str = "hard", npu_type: str = "Ascend910B2"):
     print(f"    Op: {op_name}")
     print(f"    NPU: {npu_type}")
 
-    # Evaluate (Full mode only)
+    # Evaluate
     print("\n[3] Running evaluation...")
-    result = evaluate_full_mode(task, code, output_dir)
+    result = evaluate_generated_code(task, code, output_dir)
 
     # Summary
     print("\n" + "=" * 60)
