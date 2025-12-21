@@ -651,9 +651,25 @@ Implement the kernel based on the pseudocode and available knowledge.
 
 ## Important Notes
 
-- **BUFFER_NUM = 2**: Fixed double-buffer mode, no other options.
+- **BUFFER_NUM = 2**: Fixed double-buffer mode (ping-pong buffering).
+- **Parameter Passing**: Init receives parameters (GM_ADDR, uint32_t, etc.), NOT struct references. **Parameters used in Process() MUST be saved as member variables in Init()** (e.g., `this->tileNum = tileNum;`).
 - **Data Type**: Do NOT add Cast operations unless the operator specifically requires type conversion. Keep the same precision as input.
 - **Multi-core Safety**: Check `if (GetBlockIdx() >= activeBlockNum) return;` if not all cores are used.
+
+### Pattern Selection
+
+Choose ONE pattern based on operator type:
+
+**Pattern A: TQue (Recommended for Vector Operations)**
+- Use for: element-wise ops (Relu, Add, Mul), reductions (Softmax, ReduceSum)
+- Pros: Simple, automatic synchronization via queue EnQue/DeQue
+- Structure: `TQue<VECIN>` + `TQue<VECOUT>` + `AllocTensor/FreeTensor`
+- If knowledge examples use TBuf for simple Vector ops, **adapt to TQue**
+
+**Pattern B: TBuf + Event (For Complex/Cube Operations)**
+- Use for: MatMul (Cube unit), complex multi-stage pipelines, operations needing manual sync
+- Structure: `TBuf` + `SetFlag/WaitFlag` for manual synchronization
+- Follow knowledge examples exactly for Cube operations
 
 ## Fixed Code Structure
 
@@ -712,13 +728,22 @@ Output each part in XML tags:
 <init_call_args>...</init_call_args>
 ```
 
-## Example (for reference only, adapt to your operator)
+## Examples
+
+### Pattern A: TQue (for Vector Operations like Relu, Add, Softmax)
+
+**Why this pattern works:**
+- `tileNum` is saved in Init (`this->tileNum = tileNum`) so Process() can use it
+- TQue handles synchronization automatically: EnQue signals data ready, DeQue waits for it
+- BUFFER_NUM=2 enables ping-pong: while one buffer computes, another loads data
 
 ```cpp
-// init_params: GM_ADDR x, GM_ADDR y, uint32_t totalLength, uint32_t tileNum
+// init_params:
+GM_ADDR x, GM_ADDR y, uint32_t totalLength, uint32_t tileNum
 
 // init_body:
 uint32_t blockLength = totalLength / GetBlockNum();
+this->tileNum = tileNum;  // IMPORTANT: Save for Process()
 this->tileLength = blockLength / tileNum / BUFFER_NUM;
 xGm.SetGlobalBuffer((__gm__ float*)x + blockLength * GetBlockIdx(), blockLength);
 yGm.SetGlobalBuffer((__gm__ float*)y + blockLength * GetBlockIdx(), blockLength);
@@ -727,16 +752,123 @@ pipe.InitBuffer(outQueue, BUFFER_NUM, tileLength * sizeof(float));
 
 // process_body:
 for (int32_t i = 0; i < tileNum * BUFFER_NUM; i++) {{
-    CopyIn(i); Compute(i); CopyOut(i);
+    CopyIn(i);
+    Compute(i);
+    CopyOut(i);
 }}
 
-// private_methods: CopyIn/Compute/CopyOut with __aicore__ inline prefix
+// private_methods:
+    __aicore__ inline void CopyIn(int32_t progress) {{
+        LocalTensor<float> xLocal = inQueue.AllocTensor<float>();
+        DataCopy(xLocal, xGm[progress * tileLength], tileLength);
+        inQueue.EnQue(xLocal);  // Signal: data ready for Compute
+    }}
+    __aicore__ inline void Compute(int32_t progress) {{
+        LocalTensor<float> xLocal = inQueue.DeQue<float>();  // Wait for CopyIn
+        LocalTensor<float> yLocal = outQueue.AllocTensor<float>();
+        Relu(yLocal, xLocal, tileLength);  // Your operation here
+        outQueue.EnQue(yLocal);  // Signal: result ready for CopyOut
+        inQueue.FreeTensor(xLocal);
+    }}
+    __aicore__ inline void CopyOut(int32_t progress) {{
+        LocalTensor<float> yLocal = outQueue.DeQue<float>();  // Wait for Compute
+        DataCopy(yGm[progress * tileLength], yLocal, tileLength);
+        outQueue.FreeTensor(yLocal);
+    }}
 
-// member_vars: TPipe, TQue, GlobalTensor, tileLength, etc.
+// member_vars:
+    TPipe pipe;
+    TQue<TPosition::VECIN, BUFFER_NUM> inQueue;
+    TQue<TPosition::VECOUT, BUFFER_NUM> outQueue;
+    GlobalTensor<float> xGm;
+    GlobalTensor<float> yGm;
+    uint32_t tileNum;      // Saved from Init param
+    uint32_t tileLength;   // Calculated in Init
 
-// global_func_params: GM_ADDR x, GM_ADDR y,
+// global_func_params:
+GM_ADDR x, GM_ADDR y,
 
-// init_call_args: x, y, tilingData.totalLength, tilingData.tileNum
+// init_call_args:
+x, y, tilingData.totalLength, tilingData.tileNum
+```
+
+### Pattern B: TBuf + Event (for Cube/Complex Operations)
+
+**Why this pattern works:**
+- TBuf provides raw buffer access without queue abstraction
+- SetFlag/WaitFlag manually synchronize between pipeline stages (MTE2→V→MTE3)
+- Ping-pong via offset: `tmpTensor[0]` vs `tmpTensor[MAX_UB_SIZE/2]`
+
+```cpp
+// init_params:
+GM_ADDR x, GM_ADDR y, uint32_t elementNum, uint32_t needCoreNum
+
+// init_body:
+this->elementNum = elementNum;
+this->needCoreNum = needCoreNum;
+this->blockIdx = GetBlockIdx();
+xGm.SetGlobalBuffer((__gm__ float*)x);
+yGm.SetGlobalBuffer((__gm__ float*)y);
+pipe.InitBuffer(ubTBuf, MAX_UB_SIZE);
+tmpTensor = ubTBuf.Get<uint8_t>();
+
+// process_body:
+if (blockIdx >= needCoreNum) return;
+// Calculate per-core work distribution...
+pingPongFlag = 0;
+SetFlag<HardEvent::MTE3_MTE2>(EVENT_ID0);
+SetFlag<HardEvent::MTE3_MTE2>(EVENT_ID1);
+for (int64_t i = 0; i < loopNum; i++) {{
+    eventId = pingPongFlag ? EVENT_ID1 : EVENT_ID0;
+    CopyIn(offset, count);
+    Compute(count);
+    CopyOut(offset, count);
+    pingPongFlag = 1 - pingPongFlag;
+}}
+WaitFlag<HardEvent::MTE3_MTE2>(EVENT_ID0);
+WaitFlag<HardEvent::MTE3_MTE2>(EVENT_ID1);
+
+// private_methods:
+    __aicore__ inline void CopyIn(int64_t offset, int64_t count) {{
+        xLocal = pingPongFlag ?
+            tmpTensor[MAX_UB_SIZE / 2].ReinterpretCast<float>() :
+            tmpTensor[0].ReinterpretCast<float>();
+        WaitFlag<HardEvent::MTE3_MTE2>(eventId);  // Wait for prev CopyOut
+        DataCopyExtParams params{{1, static_cast<uint32_t>(count * sizeof(float)), 0, 0, 0}};
+        DataCopyPad(xLocal, xGm[offset], params, DataCopyPadExtParams<float>{{false, 0, 0, 0}});
+        SetFlag<HardEvent::MTE2_V>(eventId);  // Signal: ready for Compute
+    }}
+    __aicore__ inline void Compute(int64_t count) {{
+        WaitFlag<HardEvent::MTE2_V>(eventId);  // Wait for CopyIn
+        Relu(xLocal, xLocal, count);  // Your operation here
+        PipeBarrier<PIPE_V>();
+        SetFlag<HardEvent::V_MTE3>(eventId);  // Signal: ready for CopyOut
+    }}
+    __aicore__ inline void CopyOut(int64_t offset, int64_t count) {{
+        WaitFlag<HardEvent::V_MTE3>(eventId);  // Wait for Compute
+        DataCopyExtParams params{{1, static_cast<uint32_t>(count * sizeof(float)), 0, 0, 0}};
+        DataCopyPad(yGm[offset], xLocal, params);
+        SetFlag<HardEvent::MTE3_MTE2>(eventId);  // Signal: buffer free for next CopyIn
+    }}
+
+// member_vars:
+    TPipe pipe;
+    TBuf<TPosition::VECCALC> ubTBuf;
+    LocalTensor<uint8_t> tmpTensor;
+    LocalTensor<float> xLocal;
+    GlobalTensor<float> xGm;
+    GlobalTensor<float> yGm;
+    uint32_t elementNum;
+    uint32_t needCoreNum;
+    uint32_t blockIdx;
+    uint32_t pingPongFlag;
+    pipe_t eventId;
+
+// global_func_params:
+GM_ADDR x, GM_ADDR y,
+
+// init_call_args:
+x, y, tilingData.elementNum, tilingData.needCoreNum
 ```
 
 Now output all 7 parts for `{op_name}`:
