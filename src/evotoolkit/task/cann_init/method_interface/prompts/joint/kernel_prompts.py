@@ -164,12 +164,18 @@ Check each item:
 
 ## 6. Output Format
 
+**IMPORTANT about `strategy` field**:
+- `strategy` MUST match the Tiling Agent's strategy
+- If Tiling Agent proposed `generate` with Tiling Fields → you output `strategy: generate`
+- If Tiling Agent proposed `default` → you output `strategy: default`
+- This is NOT your choice to make - it reflects the tiling approach
+
 <response>
 ## Reasoning
 <1-2 sentences: Is proposal correct? What's the kernel strategy?>
 
 accepted: <true | false>
-strategy: <default | generate>
+strategy: <default | generate>  // MUST match Tiling Agent's strategy
 
 (If accepted=true:)
 
@@ -385,12 +391,14 @@ You are the **Kernel Agent**. Re-review the revised tiling proposal.
 
 Check if the revision addresses your feedback. Output format:
 
+**IMPORTANT**: `strategy` MUST match the Tiling Agent's strategy (generate/default).
+
 <response>
 ## Reasoning
 <Does revision address your feedback? Any remaining issues?>
 
 accepted: <true | false>
-strategy: <default | generate>
+strategy: <default | generate>  // MUST match Tiling Agent's strategy
 
 (If accepted=true:)
 
@@ -483,14 +491,16 @@ Either:
 
 {feedback_section}## Output Format
 
-**IMPORTANT**: You MUST include `## Tiling Execution` section (this marks final round).
+**IMPORTANT**:
+1. You MUST include `## Tiling Execution` section (this marks final round)
+2. `strategy` MUST match the Tiling Agent's strategy - if they proposed `generate`, you output `generate`
 
 <response>
 ## Reasoning
 <Brief assessment. If you made modifications, explain what and why.>
 
 accepted: true
-strategy: <default | generate>
+strategy: <default | generate>  // MUST match Tiling Agent's strategy
 
 (If you made modifications:)
 ## Assumptions Made

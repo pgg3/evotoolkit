@@ -198,10 +198,26 @@ class JointBranch:
         is_final_round = kernel_design and '## tiling execution' in kernel_design.lower()
 
         # 解析 tiling 策略（优先从 Kernel Agent 输出）
-        tiling_strategy = self._parse_kernel_strategy(kernel_design) if kernel_design else None
-        if not tiling_strategy:
-            # 回退：从 Tiling Agent 输出解析
-            tiling_strategy = self._parse_tiling_strategy(tiling_proposal)
+        kernel_strategy = self._parse_kernel_strategy(kernel_design) if kernel_design else None
+        tiling_strategy_from_proposal = self._parse_tiling_strategy(tiling_proposal)
+
+        # 策略一致性检查和启发式规则
+        # 1. 如果 Kernel Agent 有 Tiling Fields Required，强制使用 generate
+        has_tiling_fields_section = kernel_design and (
+            '## tiling fields required' in kernel_design.lower() or
+            '## tiling fields' in kernel_design.lower()
+        )
+        # 2. 如果 Tiling Agent 提议 generate 但 Kernel 说 default，使用 generate
+        if has_tiling_fields_section and kernel_strategy == "default":
+            self._verbose("[Joint] Warning: Kernel Agent said 'default' but has Tiling Fields section - using 'generate'")
+            tiling_strategy = "generate"
+        elif tiling_strategy_from_proposal == "generate" and kernel_strategy == "default":
+            self._verbose("[Joint] Warning: Strategy mismatch (Tiling: generate, Kernel: default) - using 'generate'")
+            tiling_strategy = "generate"
+        elif kernel_strategy:
+            tiling_strategy = kernel_strategy
+        else:
+            tiling_strategy = tiling_strategy_from_proposal
 
         # 根据策略提取 tiling fields
         tiling_fields = []

@@ -21,6 +21,157 @@ from evotoolkit.task.cann_init.method_interface.prompts.phase0 import (
 )
 
 
+# =============================================================================
+# Host-side C++ header dependency detection
+# =============================================================================
+
+# Map: header -> list of patterns that require this header
+_HOST_HEADER_DEPENDENCIES = {
+    '<cmath>': [
+        # sqrt family
+        'std::sqrt', 'sqrt(', 'sqrtf(', 'sqrtl(',
+        # pow family
+        'std::pow', 'pow(', 'powf(', 'powl(',
+        # exp/log family
+        'std::exp', 'exp(', 'expf(', 'expl(',
+        'std::log', 'log(', 'logf(', 'logl(',
+        'std::log2', 'log2(', 'log2f(',
+        'std::log10', 'log10(', 'log10f(',
+        # abs (floating point)
+        'std::fabs', 'fabs(', 'fabsf(', 'fabsl(',
+        # rounding
+        'std::ceil', 'ceil(', 'ceilf(', 'ceill(',
+        'std::floor', 'floor(', 'floorf(', 'floorl(',
+        'std::round', 'round(', 'roundf(', 'roundl(',
+        'std::trunc', 'trunc(', 'truncf(',
+        # trigonometric
+        'std::sin', 'sin(', 'sinf(',
+        'std::cos', 'cos(', 'cosf(',
+        'std::tan', 'tan(', 'tanf(',
+        'std::asin', 'asin(', 'asinf(',
+        'std::acos', 'acos(', 'acosf(',
+        'std::atan', 'atan(', 'atanf(',
+        'std::atan2', 'atan2(', 'atan2f(',
+        # hyperbolic
+        'std::sinh', 'sinh(', 'sinhf(',
+        'std::cosh', 'cosh(', 'coshf(',
+        'std::tanh', 'tanh(', 'tanhf(',
+        # other
+        'std::hypot', 'hypot(', 'hypotf(',
+        'std::fmod', 'fmod(', 'fmodf(',
+        'std::remainder', 'remainder(',
+        'std::copysign', 'copysign(',
+        'std::isnan', 'isnan(', 'std::isinf', 'isinf(',
+        'std::isfinite', 'isfinite(',
+    ],
+    '<algorithm>': [
+        # min/max
+        'std::min(', 'std::max(',
+        'std::min_element', 'std::max_element',
+        'std::minmax', 'std::clamp(',
+        # sorting
+        'std::sort(', 'std::stable_sort(',
+        'std::partial_sort', 'std::nth_element(',
+        # searching
+        'std::find(', 'std::find_if(',
+        'std::binary_search', 'std::lower_bound', 'std::upper_bound',
+        'std::count(', 'std::count_if(',
+        # modifying
+        'std::copy(', 'std::copy_if(',
+        'std::fill(', 'std::fill_n(',
+        'std::transform(', 'std::replace(',
+        'std::swap(', 'std::reverse(',
+        'std::rotate(', 'std::shuffle(',
+        # set operations
+        'std::unique(', 'std::remove(',
+        'std::merge(', 'std::set_union(',
+        # comparison
+        'std::equal(', 'std::mismatch(',
+        'std::lexicographical_compare',
+        # heap
+        'std::make_heap', 'std::push_heap', 'std::pop_heap',
+        # permutation
+        'std::next_permutation', 'std::prev_permutation',
+        # other
+        'std::for_each(', 'std::all_of(', 'std::any_of(', 'std::none_of(',
+        'std::accumulate(',  # actually <numeric>, but often used together
+    ],
+    '<cstdlib>': [
+        # abs (integer)
+        'std::abs(', 'abs(',  # Note: may conflict with <cmath>, but both work
+        'std::llabs', 'llabs(',
+        # div
+        'std::div(', 'div(',
+        # random (legacy)
+        'std::rand(', 'rand(', 'std::srand', 'srand(',
+        # memory (legacy)
+        'std::malloc', 'malloc(', 'std::free', 'free(',
+        'std::calloc', 'calloc(', 'std::realloc', 'realloc(',
+        # conversion
+        'std::atoi', 'atoi(', 'std::atol', 'atol(',
+        'std::atof', 'atof(', 'std::strtol', 'strtol(',
+        'std::strtod', 'strtod(',
+        # environment
+        'std::getenv', 'getenv(', 'std::system', 'system(',
+        # exit
+        'std::exit', 'exit(', 'std::abort', 'abort(',
+    ],
+    '<cstring>': [
+        'std::memcpy', 'memcpy(',
+        'std::memset', 'memset(',
+        'std::memmove', 'memmove(',
+        'std::memcmp', 'memcmp(',
+        'std::strlen', 'strlen(',
+        'std::strcpy', 'strcpy(',
+        'std::strcat', 'strcat(',
+        'std::strcmp', 'strcmp(',
+        'std::strncpy', 'strncpy(',
+        'std::strncat', 'strncat(',
+        'std::strncmp', 'strncmp(',
+    ],
+    '<numeric>': [
+        'std::accumulate(',
+        'std::inner_product(',
+        'std::partial_sum(',
+        'std::adjacent_difference(',
+        'std::iota(',
+        'std::reduce(',
+        'std::transform_reduce(',
+    ],
+    '<limits>': [
+        'std::numeric_limits',
+    ],
+    '<utility>': [
+        'std::pair<', 'std::make_pair(',
+        'std::move(', 'std::forward(',
+        'std::swap(',  # also in <algorithm>
+    ],
+}
+
+
+def _detect_required_headers(code: str) -> list:
+    """Detect required C++ standard library headers from code content.
+
+    Args:
+        code: The generated C++ code to analyze
+
+    Returns:
+        List of header strings like ['<cmath>', '<algorithm>']
+    """
+    if not code:
+        return []
+
+    required = set()
+    for header, patterns in _HOST_HEADER_DEPENDENCIES.items():
+        for pattern in patterns:
+            if pattern in code:
+                required.add(header)
+                break  # Found one pattern, no need to check more for this header
+
+    # Sort for consistent output
+    return sorted(required)
+
+
 def _to_pascal_case(name: str) -> str:
     """Convert operator name to PascalCase.
 
@@ -255,8 +406,15 @@ Now output the field definitions for `{op_name}`. Output ONLY the `<response>` b
     gert::Shape* y_shape = context->GetOutputShape(0);
     *y_shape = *x1_shape;"""
 
+        # Auto-detect required C++ standard library headers from generated code
+        all_code = f"{tiling_func_body}\n{input_output_defs}\n{infer_shape_body}"
+        detected_headers = _detect_required_headers(all_code)
+        extra_includes = '\n'.join(f'#include {h}' for h in detected_headers)
+        if extra_includes:
+            extra_includes = '\n' + extra_includes  # Add leading newline for separation
+
         return f"""#include "{op_lower}_custom_tiling.h"
-#include "register/op_def_registry.h"
+#include "register/op_def_registry.h"{extra_includes}
 
 namespace optiling {{
 
@@ -640,13 +798,17 @@ Implement the kernel based on the pseudocode and available knowledge.
 | Alloc/Free | `queue.AllocTensor<T>()` / `queue.FreeTensor(tensor)` |
 | DataCopy | `DataCopy(dst, src[offset], count)` |
 | EnQue/DeQue | `queue.EnQue(tensor)` / `queue.DeQue<T>()` |
-| Compute | `Op(dst, src, count)` - e.g., `Relu`, `Add`, `Mul` |
+| Vector Op | `Op(dst, src, count)` - e.g., `Relu`, `Add`, `Mul`, `Exp` |
+| Scalar Mul | `Muls(dst, src, 0.5f, count)` - scalar must be literal/variable, NOT tensor[0] |
+| MatMul | **Gemm is DEPRECATED** - use MatmulImpl class or built-in operators |
+| Negative Inf | `constexpr float NEG_INF = -3.402823466e+38f;` - INFINITY not available |
 
 | Type | Declaration |
 |------|-------------|
 | Pipe | `TPipe pipe;` |
 | Input Queue | `TQue<TPosition::VECIN, BUFFER_NUM> inQueue;` |
 | Output Queue | `TQue<TPosition::VECOUT, BUFFER_NUM> outQueue;` |
+| Calc Queue | `TQue<TPosition::VECCALC, BUFFER_NUM> calcQueue;` |
 | GlobalTensor | `GlobalTensor<T> xGm;` (naming: signature name + "Gm", e.g., `x` → `xGm`) |
 
 ## Important Notes
@@ -655,6 +817,97 @@ Implement the kernel based on the pseudocode and available knowledge.
 - **Parameter Passing**: Init receives parameters (GM_ADDR, uint32_t, etc.), NOT struct references. **Parameters used in Process() MUST be saved as member variables in Init()** (e.g., `this->tileNum = tileNum;`).
 - **Data Type**: Do NOT add Cast operations unless the operator specifically requires type conversion. Keep the same precision as input.
 - **Multi-core Safety**: Check `if (GetBlockIdx() >= activeBlockNum) return;` if not all cores are used.
+
+## CRITICAL: Forbidden Patterns (WILL CAUSE COMPILE ERROR)
+
+### 1. No Standard Library Constants
+```cpp
+// ❌ FORBIDDEN: INFINITY, NAN are NOT available in AscendC kernel
+float max_val = -INFINITY;       // ERROR: undeclared identifier
+
+// ✓ CORRECT: Use explicit large float value
+constexpr float NEG_INF = -3.402823466e+38f;  // Max negative float
+float max_val = NEG_INF;
+```
+
+### 2. No Scalar Indexing of LocalTensor
+```cpp
+// ❌ FORBIDDEN: tensor[idx] returns SymbolOverride, NOT float
+float val = tensor[i];           // ERROR: no viable conversion
+tensor[i] = someFloat;           // ERROR: no viable overloaded '='
+sum += tensor[i] * tensor[j];    // ERROR: invalid operands
+
+// ❌ FORBIDDEN: Even tensor[0] for scalar extraction
+float scalar = tensor[0];        // ERROR: returns SymbolOverride
+Muls(dst, src, tensor[0], n);    // ERROR: tensor[0] is NOT a scalar
+
+// ❌ FORBIDDEN: Scalar loop for element-wise operations
+for (int i = 0; i < n; i++) {{
+    dst[i] = src0[i] + src1[i];  // COMPILE ERROR
+}}
+
+// ✓ CORRECT: Use vectorized APIs
+Add(dstLocal, src0Local, src1Local, count);
+Muls(dstLocal, srcLocal, 0.5f, count);  // Pass actual float literal
+```
+
+### 3. Matrix Multiplication (Gemm is DEPRECATED)
+
+**The simple `Gemm` API is DEPRECATED and will be removed. Do NOT use it.**
+
+```cpp
+// ❌ DEPRECATED: Gemm API will be removed in future versions
+Gemm(dstLocal, src0Local, src1Local, M, K, N, gemmTiling);  // DO NOT USE
+```
+
+**For matrix multiplication in custom operators, use ONE of these approaches:**
+
+**Option A: Use High-Level Matmul Class (Recommended for Cube operations)**
+```cpp
+#include "aclnn/matmul.h"
+// Use MatmulImpl with proper MatmulType configuration
+// This requires complex setup - refer to mat_mul_v3 examples in knowledge base
+```
+
+**Option B: Use Built-in Operators (Simpler, allowed for correctness)**
+```cpp
+// For SDPA-like operators, consider calling built-in attention/matmul operators
+// via aclnn APIs if direct Cube implementation is too complex
+```
+
+**Option C: Vector-based Matrix Multiply (For small matrices only)**
+```cpp
+// For very small matrices (e.g., 1xK @ KxN where K,N < 64),
+// you CAN implement using Vector operations:
+// - Use Mul + ReduceSum pattern for dot products
+// - Process row-by-row with vectorized APIs
+// WARNING: This is slower than Cube but works for any precision including float32
+```
+
+**When to use which:**
+- Complex attention/matmul operators → Option A or B
+- Simple element-wise with occasional small dot products → Option C
+
+### 4. Correct Vectorized API Usage
+
+**ALWAYS use vectorized APIs**:
+
+```cpp
+// ✓ CORRECT: Vectorized operations
+Add(dstLocal, src0Local, src1Local, count);      // Element-wise add
+Mul(dstLocal, src0Local, src1Local, count);      // Element-wise multiply
+Sub(dstLocal, src0Local, src1Local, count);      // Element-wise subtract
+Div(dstLocal, src0Local, src1Local, count);      // Element-wise divide
+Exp(dstLocal, srcLocal, count);                  // Element-wise exp
+ReduceMax(dstLocal, srcLocal, workLocal, count); // Reduce max
+ReduceSum(dstLocal, srcLocal, workLocal, count); // Reduce sum
+Duplicate(dstLocal, scalarValue, count);         // Fill with scalar
+Muls(dstLocal, srcLocal, 2.0f, count);           // Multiply by LITERAL scalar
+```
+
+**For scalar values in computation**: Store intermediate scalars in single-element LocalTensors, then use vectorized operations to broadcast/apply them.
+
+**For row-wise operations** (e.g., softmax), process one row at a time using vector APIs on row slices, NOT element-by-element loops.
 
 ### Pattern Selection
 
