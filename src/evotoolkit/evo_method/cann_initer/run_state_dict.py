@@ -1,7 +1,10 @@
 # Copyright (c) 2025 Ping Guo
 # Licensed under the MIT License
-
-"""CANNIniter run state for inter-phase data passing."""
+# 位置： evotoolkit-master\src\evotoolkit\evo_method\cann_initer
+"""
+CANNIniter run state for inter-phase data passing.
+添加了 latest_analysis
+"""
 
 import pickle
 from pathlib import Path
@@ -37,6 +40,8 @@ class CANNIniterRunStateDict:
         current_iteration: int = 0,
         is_done: bool = False,
         success: bool = False,
+        # [Fix] 修正这里
+        latest_analysis: Optional[dict] = None,
     ):
         # Basic info
         self.task_info = task_info or {}
@@ -68,6 +73,8 @@ class CANNIniterRunStateDict:
         self.current_iteration = current_iteration
         self.is_done = is_done
         self.success = success
+        # [Fix] 修正这里
+        self.latest_analysis = latest_analysis
 
     def to_pickle(self, file_path: str) -> None:
         """Save state to pickle file."""

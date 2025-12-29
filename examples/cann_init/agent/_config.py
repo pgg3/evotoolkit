@@ -1,6 +1,6 @@
 # Copyright (c) 2025 Ping Guo
 # Licensed under the MIT License
-
+# evotoolkit-master\examples\cann_init\agent\_config.py
 """
 Agent 测试共享配置
 
@@ -21,6 +21,7 @@ load_dotenv(Path(__file__).parent / ".env")
 # Directories
 TEST_CASES_DIR = Path(__file__).parent / "test_cases"
 OUTPUT_DIR = Path(__file__).parent / "output"
+KNOWLEDGE_CANDIDATES_DIR = OUTPUT_DIR / "knowledge_candidates"
 
 
 # =============================================================================
@@ -33,7 +34,7 @@ TEST_CASES = {
         "op_name": "Relu",
         "file": "easy_relu.py",
         "description": "Element-wise operation, uses default tiling",
-        "max_debug_iterations": 3,
+        "max_debug_iterations": 8,
         "max_joint_turns": 2,
     },
     "medium": {
@@ -41,7 +42,7 @@ TEST_CASES = {
         "op_name": "Softmax",
         "file": "medium_softmax.py",
         "description": "Reduce + element-wise, needs shape inference",
-        "max_debug_iterations": 5,
+        "max_debug_iterations": 8,
         "max_joint_turns": 3,
     },
     "hard": {
@@ -91,7 +92,7 @@ def get_llm():
             "  MODEL=claude-sonnet-4-5-20250929"
         )
 
-    return HttpsApi(api_url=api_url, key=api_key, model=model, timeout=300)
+    return HttpsApi(api_url=api_url, key=api_key, model=model, timeout=600)
 
 
 def get_knowledge_base():

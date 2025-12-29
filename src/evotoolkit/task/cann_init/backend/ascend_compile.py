@@ -285,7 +285,8 @@ def ascend_build(
 
         try:
             subprocess.run(
-                ["./custom_opp_ubuntu_aarch64.run"],
+                # ["./custom_opp_ubuntu_aarch64.run"]改成了custom_opp_openEuler_aarch64.run
+                ["./custom_opp_openEuler_aarch64.run"],
                 check=True,
                 capture_output=True,
                 text=True,

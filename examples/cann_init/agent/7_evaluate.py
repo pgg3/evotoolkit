@@ -36,6 +36,13 @@ from evotoolkit.core import Solution
 def load_generated_code(test_case: str) -> dict:
     """
     从 impl_{test_case}/ 目录加载生成的代码文件。
+    修改了文件匹配逻辑以符合您的自定义命名。
+
+    Mapping:
+    - kernel_src.cpp        -> kernel_src
+    - host_tiling_src.h     -> tiling_src
+    - host_operator_src.cpp -> operator_src
+    - python_bind_src.cpp   -> pybind_src
 
     Returns:
         dict with keys: kernel_src, tiling_src, operator_src, pybind_src
@@ -49,22 +56,31 @@ def load_generated_code(test_case: str) -> dict:
         "pybind_src": None,
     }
 
-    # Load files if they exist
-    kernel_file = impl_dir / "op_kernel.cpp"
-    if kernel_file.exists():
-        code["kernel_src"] = kernel_file.read_text()
+    # 定义代码键值与磁盘文件名的映射关系
+    # "kernel_src": "kernel_src.cpp"
+    file_mapping = {
+        "kernel_src": "kernel_src.cpp",          # 对应 op_kernel.cpp 的逻辑
+        "tiling_src": "host_tiling_src.h",       # 对应 tiling.h 的逻辑
+        "operator_src": "host_operator_src.cpp", # 对应 op_host.cpp 的逻辑
+        "pybind_src": "python_bind_src.cpp"      # 对应 pybind_src.cpp 的逻辑
+    }
 
-    tiling_file = impl_dir / "tiling.h"
-    if tiling_file.exists():
-        code["tiling_src"] = tiling_file.read_text()
-
-    operator_file = impl_dir / "op_host.cpp"
-    if operator_file.exists():
-        code["operator_src"] = operator_file.read_text()
-
-    pybind_file = impl_dir / "pybind_src.cpp"
-    if pybind_file.exists():
-        code["pybind_src"] = pybind_file.read_text()
+    for key, filename in file_mapping.items():
+        file_path = impl_dir / filename
+        if file_path.exists():
+            code[key] = file_path.read_text()
+        else:
+            # 可选：如果找不到新文件名，尝试回退查找旧文件名（增加鲁棒性）
+            fallback_names = {
+                "kernel_src": "op_kernel.cpp",
+                "tiling_src": "tiling.h",
+                "operator_src": "op_host.cpp",
+                "pybind_src": "pybind_src.cpp"
+            }
+            fallback_path = impl_dir / fallback_names[key]
+            if fallback_path.exists():
+                code[key] = fallback_path.read_text()
+                print(f"[WARN] Used fallback file for {key}: {fallback_names[key]}")
 
     return code
 
@@ -182,7 +198,7 @@ def main(test_case: str = "hard", npu_type: str = "Ascend910B2"):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate agent-generated CANN code")
-    parser.add_argument("test_case", nargs="?", default="hard",
+    parser.add_argument("test_case", nargs="?", default="easy",
                        choices=["easy", "medium", "hard"],
                        help="Test case to evaluate")
     parser.add_argument("--npu", default="Ascend910B2",
