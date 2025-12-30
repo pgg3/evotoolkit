@@ -1,0 +1,79 @@
+[
+  {
+    "title": "Host/Device 边界隔离违例 (Host-Device Boundary Violation)",
+    "feature": "报错含 `reference to [host] function`, `undeclared identifier` (针对宏), `GetTilingData` 相关错误, `unknown type name` (针对ACL API类型如aclnnStatus、aclTensor、aclOpExecutor、aclrtStream等)，或宏展开时引入 host 侧依赖（如 GET_TILING_DATA, get_block_num 等）",
+    "reason": "Ascend C内核运行在AI Core (Device侧)，只能访问设备内存和Ascend C API。Host侧的ACL API、标准库函数、宏定义等运行在CPU上，两者属于不同的编译和执行环境。在标记为__aicore__的Device侧代码中引用Host侧符号会导致编译器无法解析，因为Device侧编译环境不包含Host侧的头文件和符号表。",
+    "fix": "严格分离Host/Device代码：1) Ascend C内核文件只包含纯Device侧实现，使用AscendC命名空间的API；2) ACL适配层、Host侧逻辑放在独立的.cpp文件中；3) 避免在内核中使用GET_TILING_DATA等Host侧宏，改用直接的tiling参数传递；4) 使用原生指针类型而非Host侧的智能指针或容器类型。",
+    "type": "HOST_DEVICE_BOUNDARY"
+  },
+  {
+    "title": "头文件污染 (Header Poisoning)",
+    "feature": "报错涉及 `/usr/include/c++`, `std::`命名空间（如std::min、std::max、std::sort等算法函数），`noinline`, `shared_ptr`, 或自动生成的 `_tiling.h`。典型错误信息：'no member named 'min' in namespace 'std''",
+    "reason": "Ascend C的AI Core运行环境采用严格隔离架构，Device侧编译器无法访问Host侧的标准C++库(STL)。AI Core专用编译器只支持基础C++语法和AscendC API，任何std命名空间的函数调用都会导致符号解析失败。",
+    "fix": "完全避免在Device侧代码中使用std命名空间。将STL函数替换为原生实现：std::min/max用三元运算符 `(a < b) ? a : b`，std::sort用手工循环，std::shared_ptr用原始指针。确保所有Device侧代码只依赖AscendC API和基础C++语法。",
+    "type": "REMOVE_HEADER"
+  },
+  {
+    "title": "UB 显存溢出 (UB Buffer Overflow)",
+    "feature": "运行时 `EZ9999` 错误，`vector core exception`，`aivec error exception`，明确提示 `ub address out of bounds`（UB地址越界），`CCU instruction address check error`，NPU函数错误码如507035配合`AclrtSynchronizeDeviceWithTimeout`，或编译时 `AllocTensor` 失败。常见于同时申请多个大尺寸buffer或参数化尺寸（如tileSize）导致累积UB占用超过硬件限制（典型为192KB-256KB）。",
+    "reason": "Ascend AI Core的Unified Buffer（UB）是片上高速缓存，物理容量有限（通常192KB-256KB）。当Kernel中LocalTensor申请的总内存超过UB容量时，硬件无法分配足够空间，导致地址越界访问。多队列、多缓冲区架构中，总内存使用量为各个buffer尺寸之和，参数化的tileSize等配置项容易在运行时动态超出安全阈值。",
+    "fix": "1. 实施防御性参数钳位：在Init函数中对关键尺寸参数进行上限约束，如`this->tileSize = min(tileSize, 8192)`；2. 精确计算总UB占用：统计所有LocalTensor的累积内存需求，确保不超过硬件容量的80%作为安全裕量；3. 采用分块处理策略：将大数据分割为适合UB容量的小块进行流水线处理；4. 使用编译时静态检查：通过constexpr计算验证buffer配置的合法性。",
+    "type": "CLAMP_TILE_SIZE"
+  },
+  {
+    "title": "类型定义冲突 (Type Redefinition)",
+    "feature": "编译错误含 `error: redefinition of 'StructName'`、`previous definition is here`，特别是涉及TilingData结构体名（如SwishCustomTilingData、SoftsignCustomTilingData等）；或出现 `casting '__gm__ uint8_t *' to type 'CustomStruct *' is not allowed in aicore function`。常伴随GET_TILING_DATA宏使用，因为手动TilingData定义通常与该宏配套使用。典型场景：在op_kernel源文件中手动定义了与编译系统自动生成的TilingData同名结构体，且在 `__global__ __aicore__` kernel函数中尝试将GM地址强转为该自定义结构体指针类型。",
+    "reason": "Ascend C编译系统会根据Tiling函数自动生成TilingData结构体定义。当开发者在op_kernel源文件中手动定义同名结构体时，会与编译器自动生成的符号发生冲突。这违反了Ascend C的编译架构设计：Tiling参数应通过原始指针方式访问，而非自定义结构体封装。AI Core执行环境要求严格的内存布局控制，自动生成的结构体已经过优化，手动定义会破坏这种优化。",
+    "fix": "删除op_kernel源文件中手动定义的TilingData结构体。使用原始指针数组索引方式访问tiling参数：通过 `__gm__ uint32_t* tilingPtr` 强转和 `tilingPtr[0]`、`tilingPtr[1]` 等数组索引直接访问。避免使用GET_TILING_DATA宏或自定义结构体封装。保持与Ascend C编译系统生成的内存布局一致。",
+    "type": "USE_RAW_POINTER"
+  },
+  {
+    "title": "标量广播失败 (Scalar Broadcasting Failure)",
+    "feature": "报错 `no matching function for call to 'Add(..., float)'` 或二元运算参数类型不匹配。",
+    "reason": "Ascend C 的大多数向量指令 (Vector Intrinsics) 不支持 `Vector op Scalar` 的直接调用。标量必须先广播 (Broadcast) 到一个辅助向量中才能参与运算。",
+    "fix": "**手动广播**。1. 申请一个辅助 LocalTensor (如 `workLocal`)。2. 使用 `Duplicate(workLocal, scalarVal, ...)` 将标量填满向量。3. 使用 `Add(dst, src, workLocal, ...)` 进行全向量运算。",
+    "type": "FIX_LOGIC"
+  },
+  {
+    "title": "流水线依赖断裂 (Pipeline Hazard / Race Condition)",
+    "feature": "无报错但结果全 0，结果随机错误，或 `aclError:507014` 或 `AclrtSynchronizeDeviceWithTimeout`。",
+    "reason": "复杂算子公式中，如果数据的 `生产(Compute)` 和 `消费(Compute/CopyOut)` 之间缺乏同步，或者 MTE/Vector 任务队列的 `EnQue`/`DeQue` 不配对，会导致读到旧数据或死锁。或者使用基础API手动进行同步时没有处理好SetFlag/WaitFlag配对使用问题，导致核异常。",
+    "fix": "**同步审查**。1. 检查每一条 `DeQue` 之后是否紧跟了依赖该数据的指令。2. 检查多步计算之间是否需要 `PipeBarrier` (通常同一个 Queue 内不需要，但跨 Queue 需要)。3. 确保 Buffer 依赖链完整。4. 确保SetFlag/WaitFlag正确配对使用。",
+    "type": "FIX_LOGIC"
+  },
+  {
+    "title": "地址空间修饰符缺失 (Address Space Qualifier Missing)",
+    "feature": "`reinterpret_cast` 报错，提示无法从 `__gm__` 转换到无修饰符指针。",
+    "reason": "Ascend C 区分 `__gm__` (Global Memory) 和 `__ub__` (Unified Buffer)。C++ 标准转换会丢弃这些属性，被编译器拦截。",
+    "fix": "**显式修饰**。转换目标必须包含 `__gm__`。例: `reinterpret_cast<__gm__ float*>(ptr)`。",
+    "type": "FIX_POINTER_CAST"
+  },
+  {
+    "title": "Kernel函数初始化语法违例 (Kernel Function Initialization Syntax Violation)",
+    "feature": "报错含 `illegal initializer (only variables can be initialized)`，结合GM指针数组索引操作（如tilingPtr[0]），发生在__global__ __aicore__ kernel函数体内的变量声明初始化。编译器拒绝在kernel函数作用域内直接通过GM地址解引用进行变量初始化。",
+    "reason": "Device侧编译器对kernel函数(__global__ __aicore__)施加严格的语法约束：GM地址空间的指针解引用操作不能直接用于变量初始化表达式。这是因为kernel函数运行在AI Core上，编译器需要确保所有GM访问都通过受控的API路径，而不是在函数顶层作用域进行裸指针操作。即使使用了正确的__gm__类型转换，在kernel函数体直接进行数组索引初始化仍违反编译器的语法规则。",
+    "fix": "将所有GM指针解引用操作从kernel函数体移入Kernel类的成员方法内：1)修改Kernel类的Init函数签名，添加GM_ADDR类型的tiling参数；2)在Init方法内部进行__gm__ uint32_t*强转和数组索引读取；3)kernel函数体中删除tiling解析代码，改为直接调用op.Init(x, output, tiling)传递GM地址。这样确保GM访问在类方法作用域内执行，符合编译器要求。",
+    "type": "FIX_SYNTAX"
+  },
+  {
+    "title": "API 版本兼容性 (API Version Compatibility)",
+    "feature": "Host侧Tiling代码报错 `no member named 'MethodName'` 涉及gert命名空间类（如gert::TilingContext、gert::Tensor、gert::Shape等），典型错误包括 `'class gert::TilingContext' has no member named 'SetWorkspaceSize'`、`no matching function for call to 'gert::Tensor::GetData() const'`，或其他gert API方法不存在的编译错误。",
+    "reason": "CANN版本升级过程中，Host侧Tiling相关的gert命名空间API会发生重构、废弃或移除。旧版本代码中使用的API方法在新版本中可能已不存在或签名发生变化，导致编译时找不到对应的成员函数或方法重载。这是框架演进的必然结果，需要适配新版本API规范。",
+    "fix": "1. 查阅CANN对应版本的API文档，确认废弃API的替代方案；2. 对于SetWorkspaceSize类似的workspace设置，改为通过TilingData结构体返回workspace大小；3. 对于数据访问类API，使用新版本推荐的访问方法；4. 如无直接替代且功能非必需（如hard_sigmoid算子无需额外workspace），可直接移除相关调用；5. 保持Host侧Tiling逻辑简洁，只进行必要的参数计算和通过TilingData返回结果。",
+    "type": "FIX_API"
+  },
+  {
+    "title": "LocalTensor构造方法违例 (LocalTensor Construction Method Violation)",
+    "feature": "编译错误含 `no matching constructor for initialization of 'AscendC::LocalTensor'`，尝试直接用大小参数构造LocalTensor（如 `LocalTensor<float> tensor(size)`），或其他不支持的LocalTensor构造方式。典型场景：在kernel函数中直接声明并初始化LocalTensor变量，而非通过队列分配机制。",
+    "reason": "LocalTensor在Ascend C中采用严格的内存管理约束。UB(Unified Buffer)是有限的高速内存空间，需要通过队列机制进行精确的分配和释放管理。直接构造绕过了队列式内存管理系统，违反了以下架构要求：内存生命周期跟踪、防止内存泄漏、确保与计算流水线的正确同步、硬件资源管理。Ascend C API设计上禁止直接构造，强制使用分配器模式。",
+    "fix": "始终使用队列式分配替代直接构造：将 `LocalTensor<T> tensor(size)` 改为 `auto tensor = queue.AllocTensor<T>()`；每个AllocTensor必须配对FreeTensor调用；通过队列管理遵循RAII原则；重新设计算法流程以减少中间tensor需求，或复用已分配的tensor空间。",
+    "type": "FIX_API"
+  },
+  {
+    "title": "队列操作不平衡 (Queue Operation Imbalance)",
+    "feature": "运行时错误码507035配合`vector core exception`和`aivec error exception`，明确提示`MPU address access invalid`（MPU地址访问无效），伴随`AclrtSynchronizeDeviceWithTimeout`失败。错误根源为流水线各阶段EnQue/DeQue操作数量不匹配，如CopyIn阶段EnQue一次但Compute阶段DeQue两次，导致队列下溢和访问无效内存地址。典型场景：在Compute函数中对同一队列进行多次DeQue操作获取不同用途的数据（如原始值和处理值），但上游只进行了单次EnQue。",
+    "reason": "AI Core流水线架构要求严格的队列操作平衡性。每个EnQue操作必须有对应的DeQue操作来维护内存一致性。当DeQue操作超过EnQue操作时，会发生队列下溢，导致访问未初始化或无效的内存地址，触发MPU（Memory Protection Unit）保护机制并产生vector core异常。这是硬件级别的内存安全保护，确保AI Core不会访问越界内存。",
+    "fix": "确保每个流水线阶段的EnQue/DeQue操作严格配对。审计所有队列操作：1）统计每个阶段的EnQue和DeQue调用次数；2）如需多个数据副本，在单次DeQue后通过LocalTensor复制操作创建；3）重构计算逻辑避免重复DeQue，如先复制原始数据到输出tensor，再对输入tensor进行就地修改；4）使用队列大小参数验证操作平衡性。遵循'一次EnQue对应一次DeQue'的基本原则。",
+    "type": "FIX_LOGIC"
+  }
+]
