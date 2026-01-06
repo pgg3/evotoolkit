@@ -46,7 +46,7 @@ def _verify_correctness_worker(
         exec(python_reference, context)
 
         # Import and run correctness check
-        from evotoolkit.task.cann_init.backend.correctness import execute_correctness_check
+        from evotoolkit.task.cann_init.utils.backend.correctness import execute_correctness_check
 
         passed, error_msg, info = execute_correctness_check(
             context=context,
@@ -98,7 +98,7 @@ def _measure_performance_worker(
         exec(python_reference, context)
 
         # Import and run performance measurement
-        from evotoolkit.task.cann_init.backend.performance import measure_performance
+        from evotoolkit.task.cann_init.utils.backend.performance import measure_performance
 
         result = measure_performance(
             context=context,
@@ -143,7 +143,7 @@ def _full_evaluate_worker(
         device = torch.device(device_str)
 
         # Import backend functions
-        from evotoolkit.task.cann_init.backend import (
+        from evotoolkit.task.cann_init.utils.backend import (
             ascend_compile,
             execute_correctness_check,
             measure_performance,
