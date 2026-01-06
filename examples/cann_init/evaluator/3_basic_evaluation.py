@@ -7,10 +7,10 @@ from evotoolkit.task.cann_init import CANNInitTask, CANNSolutionConfig
 from evotoolkit.core import Solution
 from _config import (
     KERNEL_SRC,
-    BLOCK_DIM,
     TILING_FIELDS,
     TILING_FUNC_BODY,
-    PYTHON_BIND_SRC,
+    INFER_SHAPE_BODY,
+    INFER_DTYPE_BODY,
     get_task_data,
     ensure_output_dir,
 )
@@ -37,10 +37,10 @@ def main():
 
     config = CANNSolutionConfig(
         project_path=str(output_dir),
-        block_dim=BLOCK_DIM,
         tiling_fields=TILING_FIELDS,
         tiling_func_body=TILING_FUNC_BODY,
-        python_bind_src=PYTHON_BIND_SRC,
+        infer_shape_body=INFER_SHAPE_BODY,
+        infer_dtype_body=INFER_DTYPE_BODY,
     )
     solution = Solution(sol_string=KERNEL_SRC, other_info=config.to_dict())
 

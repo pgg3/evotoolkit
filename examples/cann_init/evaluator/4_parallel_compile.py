@@ -10,11 +10,37 @@ from evotoolkit.core import Solution
 from _config import (
     KERNEL_SRC,
     TILING_FIELDS,
-    TILING_FUNC_BODY,
-    PYTHON_BIND_SRC,
+    INFER_SHAPE_BODY,
+    INFER_DTYPE_BODY,
     get_task_data,
     ensure_output_dir,
 )
+
+
+def make_tiling_func_body(block_dim: int) -> str:
+    return f"""    AddCustomTilingData tiling;
+
+    auto shape = context->GetInputShape(0)->GetStorageShape();
+    uint32_t totalLength = 1;
+    for (size_t i = 0; i < shape.GetDimNum(); i++) {{
+        totalLength *= shape.GetDim(i);
+    }}
+
+    constexpr uint32_t BLOCK_DIM = {block_dim};
+    uint32_t tileNum = BLOCK_DIM;
+
+    tiling.set_totalLength(totalLength);
+    tiling.set_tileNum(tileNum);
+
+    tiling.SaveToBuffer(context->GetRawTilingData()->GetData(),
+                        context->GetRawTilingData()->GetCapacity());
+    context->GetRawTilingData()->SetDataSize(tiling.GetDataSize());
+    context->SetBlockDim(BLOCK_DIM);
+
+    size_t *currentWorkspace = context->GetWorkspaceSizes(1);
+    currentWorkspace[0] = 0;
+
+    return ge::GRAPH_SUCCESS;"""
 
 
 def build_with_delay(task, sol, delay_seconds):
@@ -45,10 +71,10 @@ def main():
     for i, block_dim in enumerate(block_dims):
         config = CANNSolutionConfig(
             project_path=str(output_dir / f"sol_{i:03d}"),
-            block_dim=block_dim,
             tiling_fields=TILING_FIELDS,
-            tiling_func_body=TILING_FUNC_BODY,
-            python_bind_src=PYTHON_BIND_SRC,
+            tiling_func_body=make_tiling_func_body(block_dim),
+            infer_shape_body=INFER_SHAPE_BODY,
+            infer_dtype_body=INFER_DTYPE_BODY,
             compile_only=True,
             save_compile_to=str(output_dir / f"sol_{i:03d}"),
         )
