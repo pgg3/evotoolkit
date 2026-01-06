@@ -21,7 +21,6 @@ from _config import (
     TILING_FIELDS,
     TILING_FUNC_BODY,
     INFER_SHAPE_BODY,
-    INFER_DTYPE_BODY,
     get_task_data,
     ensure_output_dir,
 )
@@ -39,7 +38,6 @@ def run_single(task, output_dir):
         tiling_fields=TILING_FIELDS,
         tiling_func_body=TILING_FUNC_BODY,
         infer_shape_body=INFER_SHAPE_BODY,
-        infer_dtype_body=INFER_DTYPE_BODY,
     )
     solution = Solution(sol_string=KERNEL_SRC, other_info=config.to_dict())
 
@@ -66,7 +64,6 @@ def run_parallel(task, output_dir, num_solutions, delay):
             tiling_fields=TILING_FIELDS,
             tiling_func_body=TILING_FUNC_BODY,
             infer_shape_body=INFER_SHAPE_BODY,
-            infer_dtype_body=INFER_DTYPE_BODY,
             compile_only=True,
             save_compile_to=str(output_dir / f"sol_{i:03d}"),
         )

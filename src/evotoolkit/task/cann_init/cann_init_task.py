@@ -162,7 +162,6 @@ Python Reference:
                 tiling_func_body=config.tiling_func_body,
                 infer_shape_body=config.infer_shape_body,
                 project_path=project_path,
-                infer_dtype_body=config.infer_dtype_body,
                 output_alloc_code=config.output_alloc_code,
             )
 

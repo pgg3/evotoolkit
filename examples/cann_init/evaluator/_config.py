@@ -46,8 +46,6 @@ INFER_SHAPE_BODY = """    const gert::Shape* x1_shape = context->GetInputShape(0
     *y_shape = *x1_shape;
     return GRAPH_SUCCESS;"""
 
-INFER_DTYPE_BODY = None
-
 
 def ensure_output_dir(subdir: str = "") -> Path:
     path = OUTPUT_DIR / subdir if subdir else OUTPUT_DIR

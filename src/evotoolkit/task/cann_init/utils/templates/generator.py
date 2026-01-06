@@ -26,7 +26,6 @@ class AscendCTemplateGenerator:
         tiling_func_body: str,
         infer_shape_body: str,
         project_path: str,
-        infer_dtype_body: Optional[str] = None,
         output_alloc_code: Optional[str] = None,
         soc_versions: Optional[List[str]] = None,
     ) -> Dict[str, str]:
@@ -34,7 +33,6 @@ class AscendCTemplateGenerator:
         host_operator_src = self._host_operator_gen.generate(
             tiling_func_body=tiling_func_body,
             infer_shape_body=infer_shape_body,
-            infer_dtype_body=infer_dtype_body,
             soc_versions=soc_versions,
         )
         python_bind_src = self._python_bind_gen.generate(output_alloc_code)

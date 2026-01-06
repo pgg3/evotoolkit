@@ -12,7 +12,6 @@ class HostOperatorGenerator(TemplateBase):
         self,
         tiling_func_body: str,
         infer_shape_body: str,
-        infer_dtype_body: Optional[str] = None,
         soc_versions: Optional[List[str]] = None,
     ) -> str:
         inputs = self.signature.get("inputs", [])
@@ -42,9 +41,6 @@ class HostOperatorGenerator(TemplateBase):
                 ge_dtype = self._dtype_to_ge_datatype(out.get("dtype", "float"))
                 output_defs += f'        this->Output("{out["name"]}").ParamType(REQUIRED).DataType({{{ge_dtype}}}).Format({{ge::FORMAT_ND}});\n'
 
-        if infer_dtype_body is None:
-            infer_dtype_body = self._default_infer_dtype_body()
-
         if soc_versions is None:
             soc_versions = ["ascend910b"]
         aicore_configs = "\n".join(
@@ -56,6 +52,16 @@ class HostOperatorGenerator(TemplateBase):
 
 namespace optiling {{
 
+/**
+ * TilingFunc - Compute tiling parameters for the operator.
+ *
+ * Steps:
+ *   1. Get input shape from context
+ *   2. Compute tiling parameters (totalLength, tileNum, etc.)
+ *   3. Set blockDim via context->SetBlockDim()
+ *   4. Serialize TilingData to buffer
+ *   5. (Optional) Set workspace size
+ */
 static ge::graphStatus TilingFunc(gert::TilingContext* context)
 {{
 {tiling_func_body}
@@ -65,14 +71,12 @@ static ge::graphStatus TilingFunc(gert::TilingContext* context)
 
 namespace ge {{
 
+/**
+ * InferShape - Infer output shape from input shapes.
+ */
 static ge::graphStatus InferShape(gert::InferShapeContext* context)
 {{
 {infer_shape_body}
-}}
-
-static ge::graphStatus InferDataType(gert::InferDataTypeContext* context)
-{{
-{infer_dtype_body}
 }}
 
 }}
@@ -84,7 +88,7 @@ public:
     explicit {self.op_custom_capital}(const char* name) : OpDef(name)
     {{
 {input_defs}{output_defs}{attr_defs}
-        this->SetInferShape(ge::InferShape).SetInferDataType(ge::InferDataType);
+        this->SetInferShape(ge::InferShape);
         this->AICore().SetTiling(optiling::TilingFunc);
 {aicore_configs}
     }}
@@ -94,11 +98,6 @@ OP_ADD({self.op_custom_capital});
 
 }}
 '''
-
-    def _default_infer_dtype_body(self) -> str:
-        return """    const ge::DataType input_dtype = context->GetInputDataType(0);
-    context->SetOutputDataType(0, input_dtype);
-    return GRAPH_SUCCESS;"""
 
     def _gen_attr_def(self, param: Dict[str, Any]) -> str:
         name = param["name"]

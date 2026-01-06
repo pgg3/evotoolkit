@@ -73,7 +73,6 @@ class CANNSolutionConfig:
     # LLM outputs - Function bodies (new design: all logic in function body)
     tiling_func_body: Optional[str] = None      # TilingFunc complete body
     infer_shape_body: Optional[str] = None      # InferShape complete body
-    infer_dtype_body: Optional[str] = None      # InferDataType body (optional)
 
     # LLM outputs - Full source (alternative: LLM generates complete file)
     host_operator_src: Optional[str] = None
@@ -102,7 +101,6 @@ class CANNSolutionConfig:
             tiling_fields=d.get("tiling_fields"),
             tiling_func_body=d.get("tiling_func_body"),
             infer_shape_body=d.get("infer_shape_body"),
-            infer_dtype_body=d.get("infer_dtype_body"),
             host_operator_src=d.get("host_operator_src"),
             kernel_src=d.get("kernel_src"),
             python_bind_src=d.get("python_bind_src"),
@@ -127,8 +125,6 @@ class CANNSolutionConfig:
             result["tiling_func_body"] = self.tiling_func_body
         if self.infer_shape_body is not None:
             result["infer_shape_body"] = self.infer_shape_body
-        if self.infer_dtype_body is not None:
-            result["infer_dtype_body"] = self.infer_dtype_body
         if self.host_operator_src is not None:
             result["host_operator_src"] = self.host_operator_src
         if self.kernel_src is not None:
