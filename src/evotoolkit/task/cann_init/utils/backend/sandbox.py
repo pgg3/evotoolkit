@@ -25,13 +25,26 @@ def _verify_correctness_worker(
     device_str: str,
     num_trials: int,
     seed: int,
+    project_path: Optional[str],
     return_dict: dict,
     timing_dict: dict,
 ):
     """Worker for correctness verification in subprocess."""
     try:
+        import os
         import torch
         import torch_npu
+
+        # Set up environment for compiled operator (must be done before loading)
+        if project_path:
+            from pathlib import Path
+            opp_path = Path(project_path) / "opp"
+            if opp_path.exists():
+                os.environ["ASCEND_CUSTOM_OPP_PATH"] = str(opp_path)
+            extension_build = Path(project_path) / "CppExtension" / "build"
+            if extension_build.exists():
+                lib_path = os.environ.get("LD_LIBRARY_PATH", "")
+                os.environ["LD_LIBRARY_PATH"] = f"{extension_build}:{lib_path}"
 
         device = torch.device(device_str)
 
@@ -77,13 +90,26 @@ def _measure_performance_worker(
     device_str: str,
     num_warmup: int,
     num_trials: int,
+    project_path: Optional[str],
     return_dict: dict,
     timing_dict: dict,
 ):
     """Worker for performance measurement in subprocess."""
     try:
+        import os
         import torch
         import torch_npu
+
+        # Set up environment for compiled operator (must be done before loading)
+        if project_path:
+            from pathlib import Path
+            opp_path = Path(project_path) / "opp"
+            if opp_path.exists():
+                os.environ["ASCEND_CUSTOM_OPP_PATH"] = str(opp_path)
+            extension_build = Path(project_path) / "CppExtension" / "build"
+            if extension_build.exists():
+                lib_path = os.environ.get("LD_LIBRARY_PATH", "")
+                os.environ["LD_LIBRARY_PATH"] = f"{extension_build}:{lib_path}"
 
         device = torch.device(device_str)
 
@@ -366,6 +392,7 @@ class CANNSandboxExecutor:
         device: str = "npu:0",
         num_trials: int = 5,
         seed: int = 1024,
+        project_path: Optional[str] = None,
         timeout: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
@@ -377,6 +404,7 @@ class CANNSandboxExecutor:
             device: NPU device string
             num_trials: Number of verification trials
             seed: Random seed
+            project_path: Path to compiled operator project (for environment setup)
             timeout: Timeout in seconds (uses default if None)
 
         Returns:
@@ -384,7 +412,7 @@ class CANNSandboxExecutor:
         """
         return self._execute_in_sandbox(
             worker_func=_verify_correctness_worker,
-            worker_args=(python_reference, context_data, device, num_trials, seed),
+            worker_args=(python_reference, context_data, device, num_trials, seed, project_path),
             timeout=timeout or self.default_timeout,
             default_error={"pass": False, "error": "Unknown error"},
         )
@@ -396,6 +424,7 @@ class CANNSandboxExecutor:
         device: str = "npu:0",
         num_warmup: int = 3,
         num_trials: int = 100,
+        project_path: Optional[str] = None,
         timeout: Optional[int] = None,
     ) -> Dict[str, Any]:
         """
@@ -407,6 +436,7 @@ class CANNSandboxExecutor:
             device: NPU device string
             num_warmup: Number of warmup iterations
             num_trials: Number of measurement trials
+            project_path: Path to compiled operator project (for environment setup)
             timeout: Timeout in seconds (uses default if None)
 
         Returns:
@@ -414,7 +444,7 @@ class CANNSandboxExecutor:
         """
         return self._execute_in_sandbox(
             worker_func=_measure_performance_worker,
-            worker_args=(context_data, python_reference, device, num_warmup, num_trials),
+            worker_args=(context_data, python_reference, device, num_warmup, num_trials, project_path),
             timeout=timeout or self.default_timeout,
             default_error={"runtime": None, "error": "Unknown error"},
         )

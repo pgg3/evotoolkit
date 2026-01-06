@@ -227,6 +227,7 @@ class AscendCEvaluator:
             device="npu:0",
             num_trials=self.num_correctness_trials,
             seed=self.seed,
+            project_path=self.project_path,
             timeout=self.sandbox_timeout,
         )
 
@@ -262,6 +263,7 @@ class AscendCEvaluator:
             device="npu:0",
             num_warmup=self.num_warmup,
             num_trials=self.num_perf_trials,
+            project_path=self.project_path,
             timeout=self.sandbox_timeout,
         )
 
