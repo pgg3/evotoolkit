@@ -32,12 +32,11 @@ def _verify_correctness_worker(
     """Worker for correctness verification in subprocess."""
     try:
         import os
-        import torch
-        import torch_npu
+        from pathlib import Path
 
-        # Set up environment for compiled operator (must be done before loading)
+        # CRITICAL: Set up environment BEFORE importing torch_npu!
+        # torch_npu reads ASCEND_CUSTOM_OPP_PATH during import.
         if project_path:
-            from pathlib import Path
             opp_path = Path(project_path) / "opp"
             if opp_path.exists():
                 os.environ["ASCEND_CUSTOM_OPP_PATH"] = str(opp_path)
@@ -45,6 +44,10 @@ def _verify_correctness_worker(
             if extension_build.exists():
                 lib_path = os.environ.get("LD_LIBRARY_PATH", "")
                 os.environ["LD_LIBRARY_PATH"] = f"{extension_build}:{lib_path}"
+
+        # Now safe to import torch_npu
+        import torch
+        import torch_npu
 
         device = torch.device(device_str)
 
@@ -97,12 +100,11 @@ def _measure_performance_worker(
     """Worker for performance measurement in subprocess."""
     try:
         import os
-        import torch
-        import torch_npu
+        from pathlib import Path
 
-        # Set up environment for compiled operator (must be done before loading)
+        # CRITICAL: Set up environment BEFORE importing torch_npu!
+        # torch_npu reads ASCEND_CUSTOM_OPP_PATH during import.
         if project_path:
-            from pathlib import Path
             opp_path = Path(project_path) / "opp"
             if opp_path.exists():
                 os.environ["ASCEND_CUSTOM_OPP_PATH"] = str(opp_path)
@@ -110,6 +112,10 @@ def _measure_performance_worker(
             if extension_build.exists():
                 lib_path = os.environ.get("LD_LIBRARY_PATH", "")
                 os.environ["LD_LIBRARY_PATH"] = f"{extension_build}:{lib_path}"
+
+        # Now safe to import torch_npu
+        import torch
+        import torch_npu
 
         device = torch.device(device_str)
 
