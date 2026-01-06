@@ -36,14 +36,22 @@ def _verify_correctness_worker(
 
         # CRITICAL: Set up environment BEFORE importing torch_npu!
         # torch_npu reads ASCEND_CUSTOM_OPP_PATH during import.
+        # Path must match ascend_compile.py: {project_path}/opp/vendors/customize
         if project_path:
-            opp_path = Path(project_path) / "opp"
-            if opp_path.exists():
-                os.environ["ASCEND_CUSTOM_OPP_PATH"] = str(opp_path)
+            custom_opp_path = Path(project_path) / "opp" / "vendors" / "customize"
+            if custom_opp_path.exists():
+                os.environ["ASCEND_CUSTOM_OPP_PATH"] = str(custom_opp_path)
+                # Also set LD_LIBRARY_PATH for libopapi.so
+                lib_path = custom_opp_path / "op_api" / "lib"
+                if lib_path.exists():
+                    existing = os.environ.get("LD_LIBRARY_PATH", "")
+                    os.environ["LD_LIBRARY_PATH"] = f"{lib_path}:{existing}"
+
             extension_build = Path(project_path) / "CppExtension" / "build"
             if extension_build.exists():
-                lib_path = os.environ.get("LD_LIBRARY_PATH", "")
-                os.environ["LD_LIBRARY_PATH"] = f"{extension_build}:{lib_path}"
+                existing = os.environ.get("LD_LIBRARY_PATH", "")
+                if str(extension_build) not in existing:
+                    os.environ["LD_LIBRARY_PATH"] = f"{extension_build}:{existing}"
 
         # Now safe to import torch_npu
         import torch
@@ -104,14 +112,22 @@ def _measure_performance_worker(
 
         # CRITICAL: Set up environment BEFORE importing torch_npu!
         # torch_npu reads ASCEND_CUSTOM_OPP_PATH during import.
+        # Path must match ascend_compile.py: {project_path}/opp/vendors/customize
         if project_path:
-            opp_path = Path(project_path) / "opp"
-            if opp_path.exists():
-                os.environ["ASCEND_CUSTOM_OPP_PATH"] = str(opp_path)
+            custom_opp_path = Path(project_path) / "opp" / "vendors" / "customize"
+            if custom_opp_path.exists():
+                os.environ["ASCEND_CUSTOM_OPP_PATH"] = str(custom_opp_path)
+                # Also set LD_LIBRARY_PATH for libopapi.so
+                lib_path = custom_opp_path / "op_api" / "lib"
+                if lib_path.exists():
+                    existing = os.environ.get("LD_LIBRARY_PATH", "")
+                    os.environ["LD_LIBRARY_PATH"] = f"{lib_path}:{existing}"
+
             extension_build = Path(project_path) / "CppExtension" / "build"
             if extension_build.exists():
-                lib_path = os.environ.get("LD_LIBRARY_PATH", "")
-                os.environ["LD_LIBRARY_PATH"] = f"{extension_build}:{lib_path}"
+                existing = os.environ.get("LD_LIBRARY_PATH", "")
+                if str(extension_build) not in existing:
+                    os.environ["LD_LIBRARY_PATH"] = f"{extension_build}:{existing}"
 
         # Now safe to import torch_npu
         import torch
