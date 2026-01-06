@@ -17,7 +17,7 @@ import subprocess
 import shutil
 from typing import Dict, Any, List
 
-from ..pybind_templates import setup_pybind_directory
+from ..templates.pybind_templates import setup_pybind_directory
 
 
 def underscore_to_pascalcase(underscore_str: str) -> str:

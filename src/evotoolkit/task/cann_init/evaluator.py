@@ -17,8 +17,8 @@ Design:
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from .backend import ascend_compile
-from .backend.sandbox import CANNSandboxExecutor
+from .utils.backend import ascend_compile
+from .utils.backend.sandbox import CANNSandboxExecutor
 from .data_structures import CompileResult
 
 
