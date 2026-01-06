@@ -57,6 +57,15 @@ Python Reference:
 ```
 """
 
+    def evaluate_code(self, candidate_code: str) -> EvaluationResult:
+        return EvaluationResult(
+            valid=False,
+            score=None,
+            additional_info={
+                "error": "CANNInitTask requires evaluate_solution() with other_info containing tiling_fields, tiling_func_body, infer_shape_body",
+            },
+        )
+
     def evaluate_solution(self, solution: Solution) -> EvaluationResult:
         config = CANNSolutionConfig.from_dict(solution.other_info)
         kernel_src = solution.sol_string
