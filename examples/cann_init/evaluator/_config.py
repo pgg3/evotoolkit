@@ -12,6 +12,8 @@ OUTPUT_DIR = Path(__file__).parent / "output"
 PYTHON_REFERENCE = (SRC_DIR / "python_reference.py").read_text()
 KERNEL_SRC = (SRC_DIR / "kernel_src.cpp").read_text()
 
+BLOCK_DIM = 8
+
 TILING_FIELDS = [
     {"name": "totalLength", "type": "uint32_t"},
     {"name": "tileNum", "type": "uint32_t"},
