@@ -82,6 +82,60 @@ Python Reference:
                 )
                 return self._evaluate_from_loaded(evaluator, config)
 
+            if config.build_only:
+                from .backend import ascend_build
+
+                full_code = self._load_full_code(project_path)
+                if full_code is None:
+                    return EvaluationResult(
+                        valid=False,
+                        score=None,
+                        additional_info={
+                            "stage": "build",
+                            "error": "No full_code found. Run setup_only first.",
+                            "project_path": project_path,
+                        },
+                    )
+
+                build_result = ascend_build(
+                    op_name=self.op_name,
+                    project_path=project_path,
+                    full_code=full_code,
+                )
+
+                if not build_result["success"]:
+                    return EvaluationResult(
+                        valid=False,
+                        score=None,
+                        additional_info={
+                            "stage": "build",
+                            "error": build_result["error"],
+                            "project_path": project_path,
+                            "kernel_src": full_code.get("kernel_src", ""),
+                        },
+                    )
+
+                if config.save_compile_to:
+                    compile_result = CompileResult(
+                        success=True,
+                        project_path=project_path,
+                        op_name=self.op_name,
+                        context=build_result.get("context", {}),
+                        kernel_src=full_code.get("kernel_src", ""),
+                        full_code=full_code,
+                    )
+                    compile_result.save(config.save_compile_to)
+
+                return EvaluationResult(
+                    valid=True,
+                    score=None,
+                    additional_info={
+                        "stage": "build_only",
+                        "project_path": project_path,
+                        "kernel_src": full_code.get("kernel_src", ""),
+                    },
+                )
+
             if config.tiling_fields is None or config.tiling_func_body is None or config.infer_shape_body is None:
                 return EvaluationResult(
                     valid=False,
@@ -170,60 +224,6 @@ Python Reference:
                         "project_path": project_path,
                         "kernel_src": kernel_src,
                         "target_directory": setup_result.get("target_directory"),
-                    },
-                )
-
-            if config.build_only:
-                from .backend import ascend_build
-
-                full_code = self._load_full_code(project_path)
-                if full_code is None:
-                    return EvaluationResult(
-                        valid=False,
-                        score=None,
-                        additional_info={
-                            "stage": "build",
-                            "error": "No full_code found. Run setup_only first.",
-                            "project_path": project_path,
-                        },
-                    )
-
-                build_result = ascend_build(
-                    op_name=self.op_name,
-                    project_path=project_path,
-                    full_code=full_code,
-                )
-
-                if not build_result["success"]:
-                    return EvaluationResult(
-                        valid=False,
-                        score=None,
-                        additional_info={
-                            "stage": "build",
-                            "error": build_result["error"],
-                            "project_path": project_path,
-                            "kernel_src": full_code.get("kernel_src", ""),
-                        },
-                    )
-
-                if config.save_compile_to:
-                    compile_result = CompileResult(
-                        success=True,
-                        project_path=project_path,
-                        op_name=self.op_name,
-                        context=build_result.get("context", {}),
-                        kernel_src=full_code.get("kernel_src", ""),
-                        full_code=full_code,
-                    )
-                    compile_result.save(config.save_compile_to)
-
-                return EvaluationResult(
-                    valid=True,
-                    score=None,
-                    additional_info={
-                        "stage": "build_only",
-                        "project_path": project_path,
-                        "kernel_src": full_code.get("kernel_src", ""),
                     },
                 )
 
