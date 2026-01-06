@@ -3,6 +3,7 @@
 
 """CANNInit task method interfaces"""
 
-from .cann_initer_interface import CANNIniterInterface
+from .cann_initer import CANNIniterInterface
+from .evoengineer import EvoEngineerCANNInterface
 
-__all__ = ["CANNIniterInterface"]
+__all__ = ["CANNIniterInterface", "EvoEngineerCANNInterface"]

@@ -6,6 +6,7 @@ from abc import abstractmethod
 from typing import List
 
 from ..base_task import BaseTask
+from ..evaluation_result import EvaluationResult
 from ..operator import Operator
 from ..solution import Solution
 from .base_method_interface import BaseMethodInterface
@@ -23,6 +24,10 @@ class EvoEngineerInterface(BaseMethodInterface):
         other_info = {"name": "Baseline", "thought": "Baseline"}
         init_sol.other_info = other_info
         return init_sol
+
+    def evaluate(self, solution: Solution) -> EvaluationResult:
+        """Evaluate a solution. Override for tasks requiring evaluate_solution."""
+        return self.task.evaluate_code(solution.sol_string)
 
     @abstractmethod
     def get_init_operators(self) -> List[Operator]:

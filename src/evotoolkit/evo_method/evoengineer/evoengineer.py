@@ -200,7 +200,7 @@ class EvoEngineer(Method):
                     # Immediately submit for evaluation without waiting
                     if solution.sol_string.strip():
                         eval_future = executor.submit(
-                            self.config.task.evaluate_code, solution.sol_string
+                            self.config.interface.evaluate, solution
                         )
                         eval_futures.append((eval_future, solution, operator_name))
                     else:

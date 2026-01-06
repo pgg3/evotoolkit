@@ -8,12 +8,13 @@ from .evaluator import AscendCEvaluator
 from .utils.templates import AscendCTemplateGenerator
 from .signature_parser import OperatorSignatureParser
 from .data_structures import CompileResult, CANNSolutionConfig
-from .method_interface import CANNIniterInterface
+from .method_interface import CANNIniterInterface, EvoEngineerCANNInterface
 from .utils.backend import ascend_compile, execute_correctness_check, measure_performance
 
 __all__ = [
     "CANNInitTask",
     "CANNIniterInterface",
+    "EvoEngineerCANNInterface",
     "AscendCEvaluator",
     "AscendCTemplateGenerator",
     "OperatorSignatureParser",
