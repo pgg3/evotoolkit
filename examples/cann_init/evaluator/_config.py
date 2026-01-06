@@ -1,62 +1,88 @@
 # Copyright (c) 2025 Ping Guo
 # Licensed under the MIT License
 
-"""
-Shared configuration for CANN Init examples.
-
-All example scripts import test data and utilities from here.
-Loads environment variables from .env file automatically.
-"""
-
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load .env from current directory
 load_dotenv(Path(__file__).parent / ".env")
 
-# Directories
 SRC_DIR = Path(__file__).parent / "0_test_task_src"
 OUTPUT_DIR = Path(__file__).parent / "output"
 
-# ============================================================================
-# Test Data Constants - for scripts 1-4 (Add operator example)
-# ============================================================================
-
-# Load from source files
 PYTHON_REFERENCE = (SRC_DIR / "python_reference.py").read_text()
 KERNEL_SRC = (SRC_DIR / "kernel_src.cpp").read_text()
 
-# Default mode config
-BLOCK_DIM = 8
+TILING_FIELDS = [
+    {"name": "totalLength", "type": "uint32_t"},
+    {"name": "tileNum", "type": "uint32_t"},
+]
 
-# Full LLM mode config - load from tiling_config.py
-_tiling_config_path = SRC_DIR / "tiling_config.py"
-_tiling_vars = {}
-exec(_tiling_config_path.read_text(), _tiling_vars)
+# Complete TilingFunc body (includes all logic)
+TILING_FUNC_BODY = """    AddCustomTilingData tiling;
 
-HOST_TILING_SRC = _tiling_vars["HOST_TILING_SRC"]
-HOST_OPERATOR_SRC = _tiling_vars["HOST_OPERATOR_SRC"]
-PYTHON_BIND_SRC = _tiling_vars["PYTHON_BIND_SRC"]
+    // Get input shape and calculate total length
+    auto shape = context->GetInputShape(0)->GetStorageShape();
+    uint32_t totalLength = 1;
+    for (size_t i = 0; i < shape.GetDimNum(); i++) {
+        totalLength *= shape.GetDim(i);
+    }
 
-# ============================================================================
-# Utility Functions
-# ============================================================================
+    // Calculate block_dim dynamically
+    constexpr uint32_t BLOCK_DIM = 8;
+    uint32_t tileNum = BLOCK_DIM;
+
+    // Fill TilingData
+    tiling.set_totalLength(totalLength);
+    tiling.set_tileNum(tileNum);
+
+    // Save tiling data
+    tiling.SaveToBuffer(context->GetRawTilingData()->GetData(),
+                        context->GetRawTilingData()->GetCapacity());
+    context->GetRawTilingData()->SetDataSize(tiling.GetDataSize());
+
+    // Set block dim
+    context->SetBlockDim(BLOCK_DIM);
+
+    // Set workspace (0 for simple element-wise ops)
+    size_t *currentWorkspace = context->GetWorkspaceSizes(1);
+    currentWorkspace[0] = 0;
+
+    return ge::GRAPH_SUCCESS;"""
+
+# Complete InferShape body
+INFER_SHAPE_BODY = """    // For element-wise ops: output shape = input shape
+    const gert::Shape* x1_shape = context->GetInputShape(0);
+    gert::Shape* y_shape = context->GetOutputShape(0);
+    *y_shape = *x1_shape;
+    return GRAPH_SUCCESS;"""
+
+# InferDataType body (optional, use default if None)
+INFER_DTYPE_BODY = None  # Will use default: output dtype = input dtype
+
+PYTHON_BIND_SRC = """#include <torch/library.h>
+#include <torch/csrc/autograd/custom_function.h>
+#include "pytorch_npu_helper.hpp"
+#include <torch/extension.h>
+
+at::Tensor add_custom_impl_npu(const at::Tensor& x, const at::Tensor& y) {
+    at::Tensor result = at::empty_like(x);
+    EXEC_NPU_CMD(aclnnAddCustom, x, y, result);
+    return result;
+}
+
+PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+    m.def("add_custom", &add_custom_impl_npu, "add operator");
+}
+"""
 
 
 def ensure_output_dir(subdir: str = "") -> Path:
-    """Ensure output directory exists and return path."""
     path = OUTPUT_DIR / subdir if subdir else OUTPUT_DIR
     path.mkdir(parents=True, exist_ok=True)
     return path
 
 
 def get_task_data(op_name: str = "add", npu_type: str = "Ascend910B") -> dict:
-    """
-    Get task data dict for CANNInitTask (scripts 3-4).
-
-    Returns:
-        dict with op_name, npu_type, python_reference
-    """
     return {
         "op_name": op_name,
         "npu_type": npu_type,
