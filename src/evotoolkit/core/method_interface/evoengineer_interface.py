@@ -6,9 +6,8 @@ from abc import abstractmethod
 from typing import List
 
 from ..base_task import BaseTask
-from ..evaluation_result import EvaluationResult
+from ..solution import EvaluationResult, Solution
 from ..operator import Operator
-from ..solution import Solution
 from .base_method_interface import BaseMethodInterface
 
 

@@ -11,7 +11,7 @@ This module contains all prompts for the Kernel Specialist agent:
 
 from typing import List
 
-from evotoolkit.task.cann_init.method_interface.prompts.phase0 import _format_signature_for_kernel
+from evotoolkit.task.cann_init.method_interface.cann_initer.prompts.phase0 import _format_signature_for_kernel
 from .chip_specs import DEFAULT_CHIP, format_chip_spec
 from .utils import extract_current_plan
 

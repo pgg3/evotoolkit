@@ -41,15 +41,23 @@ class ParserMixin:
         if not kernel_src:
             kernel_src = self._extract_any_code_block(content)
 
+        # Assign project path if projects_dir is set
+        other_info = {
+            "name": name or "generated",
+            "thought": thought or "",
+            "tiling_fields": tiling_fields or [],
+            "tiling_func_body": tiling_func_body or "",
+            "infer_shape_body": infer_shape_body or "",
+        }
+
+        if self.projects_dir:
+            self.solution_counter += 1
+            project_path = self.projects_dir / f"solution_{self.solution_counter:04d}"
+            other_info["project_path"] = str(project_path)
+
         return Solution(
             sol_string=kernel_src,
-            other_info={
-                "name": name or "generated",
-                "thought": thought or "",
-                "tiling_fields": tiling_fields or [],
-                "tiling_func_body": tiling_func_body or "",
-                "infer_shape_body": infer_shape_body or "",
-            },
+            other_info=other_info,
         )
 
     def _extract_field(self, content: str, pattern: str) -> str:

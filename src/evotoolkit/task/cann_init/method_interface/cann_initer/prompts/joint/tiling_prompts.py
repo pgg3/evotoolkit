@@ -10,7 +10,7 @@ This module contains all prompts for the Tiling Specialist agent:
 
 from typing import List
 
-from evotoolkit.task.cann_init.method_interface.prompts.phase0 import _format_signature_for_kernel
+from evotoolkit.task.cann_init.method_interface.cann_initer.prompts.phase0 import _format_signature_for_kernel
 from .chip_specs import DEFAULT_CHIP, get_chip_spec, format_chip_spec
 from .utils import extract_current_plan, extract_kernel_feedback, extract_kernel_design
 

@@ -15,7 +15,7 @@ import re
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
-from evotoolkit.task.cann_init.method_interface.prompts.phase0 import (
+from evotoolkit.task.cann_init.method_interface.cann_initer.prompts.phase0 import (
     _format_signature_for_kernel,
 )
 from .prompts import SUMMARIZER_PROMPT

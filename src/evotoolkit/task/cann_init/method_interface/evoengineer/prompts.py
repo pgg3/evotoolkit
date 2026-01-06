@@ -12,6 +12,13 @@ from evotoolkit.core import Solution
 class PromptMixin:
     """Mixin for prompt generation methods"""
 
+    def _get_tiling_data_class_name(self) -> str:
+        """Generate TilingData class name from op_name"""
+        op_name = self.task.op_name
+        # Convert to PascalCase and add CustomTilingData
+        pascal_name = "".join(word.capitalize() for word in op_name.split("_"))
+        return f"{pascal_name}CustomTilingData"
+
     def _get_task_description(self) -> str:
         """Get task description from CANNInitTask"""
         return self.task.get_base_task_description()
@@ -50,28 +57,97 @@ infer_shape_body:
 ```"""
 
     def _get_response_format(self) -> str:
-        return """## RESPONSE FORMAT
+        tiling_class_name = self._get_tiling_data_class_name()
+        return f"""## RESPONSE FORMAT
 name: [descriptive_name]
 thought: [optimization rationale]
 
 kernel_src:
 ```cpp
-[Ascend C kernel code]
+[Ascend C kernel code - IMPORTANT: All Ascend C APIs must use AscendC:: namespace prefix]
+[Example structure:
+  #include "kernel_operator.h"
+
+  constexpr int32_t BUFFER_NUM = 2;
+
+  class KernelAdd {{
+  public:
+      __aicore__ inline KernelAdd() {{}}
+      __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR z, ...) {{
+          xGm.SetGlobalBuffer((__gm__ DTYPE*)x);
+          // ... setup queues with pipe.InitBuffer
+      }}
+      __aicore__ inline void Process() {{
+          // Process loop with CopyIn, Compute, CopyOut pipeline
+      }}
+  private:
+      AscendC::TPipe pipe;
+      AscendC::TQue<AscendC::QuePosition::VECIN, BUFFER_NUM> inQueueX;
+      AscendC::GlobalTensor<DTYPE> xGm;
+      // ... other members
+  }};
+
+  extern "C" __global__ __aicore__ void add_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z,
+                                                     GM_ADDR workspace, GM_ADDR tiling) {{
+      GET_TILING_DATA(tiling_data, tiling);
+      KernelAdd op;
+      op.Init(x, y, z, tiling_data.totalLength, tiling_data.tileLength);
+      op.Process();
+  }}
+]
+[Common APIs that need AscendC:: prefix:
+  - AscendC::GlobalTensor<T>
+  - AscendC::LocalTensor<T>
+  - AscendC::TPipe
+  - AscendC::TQue<AscendC::QuePosition::VECIN/VECOUT, N>
+  - AscendC::GetBlockNum(), AscendC::GetBlockIdx()
+  - AscendC::DataCopy(dst, src, len)
+  - AscendC::Add(dst, src1, src2, len)
+]
 ```
 
 tiling_fields:
 ```json
-[{"name": "field1", "type": "uint32_t"}, ...]
+[{{"name": "field1", "type": "uint32_t"}}, ...]
 ```
 
 tiling_func_body:
 ```cpp
-[TilingFunc body]
+[TilingFunc body - this code runs on CPU to calculate tiling parameters]
+[Available context: gert::TilingContext* context, and {tiling_class_name} tiling]
+[Example API usage:
+  auto shape = context->GetInputShape(0)->GetStorageShape();
+  uint32_t totalLength = 1;
+  for (size_t i = 0; i < shape.GetDimNum(); i++) {{
+      totalLength *= shape.GetDim(i);
+  }}
+
+  {tiling_class_name} tiling;
+  tiling.set_field1(value1);
+  tiling.set_field2(value2);
+
+  tiling.SaveToBuffer(context->GetRawTilingData()->GetData(),
+                      context->GetRawTilingData()->GetCapacity());
+  context->GetRawTilingData()->SetDataSize(tiling.GetDataSize());
+  context->SetBlockDim(8);  // Number of AI cores to use
+
+  size_t *currentWorkspace = context->GetWorkspaceSizes(1);
+  currentWorkspace[0] = 0;  // Workspace size if needed
+
+  return ge::GRAPH_SUCCESS;
+]
 ```
 
 infer_shape_body:
 ```cpp
-[InferShape body]
+[InferShape body - infer output shape from input shapes]
+[Available context: gert::InferShapeContext* context]
+[Example API usage:
+  const gert::Shape* input_shape = context->GetInputShape(0);
+  gert::Shape* output_shape = context->GetOutputShape(0);
+  *output_shape = *input_shape;  // For element-wise ops
+  return GRAPH_SUCCESS;
+]
 ```"""
 
     def _get_init_prompt(self, task_desc: str, current_best: Solution, thoughts: List[str]) -> List[dict]:

@@ -12,6 +12,11 @@ Usage:
 
 import argparse
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load .env file
+load_dotenv(Path(__file__).parent / ".env")
 
 from evotoolkit.task.cann_init import CANNInitTask, EvoEngineerCANNInterface
 from evotoolkit.evo_method.evoengineer import EvoEngineer, EvoEngineerConfig
@@ -22,16 +27,16 @@ from _config import get_task_data, ensure_output_dir
 
 def create_llm():
     """Create LLM client from environment variables"""
-    api_url = os.environ.get("LLM_API_URL")
-    api_key = os.environ.get("LLM_API_KEY")
-    model = os.environ.get("LLM_MODEL", "gpt-4o")
+    api_url = os.environ.get("API_URL")
+    api_key = os.environ.get("API_KEY")
+    model = os.environ.get("MODEL", "gpt-4o")
 
     if not api_url or not api_key:
         raise ValueError(
-            "Please set LLM_API_URL and LLM_API_KEY environment variables.\n"
+            "Please set API_URL and API_KEY environment variables in .env file.\n"
             "Example:\n"
-            "  export LLM_API_URL=https://api.openai.com/v1/chat/completions\n"
-            "  export LLM_API_KEY=sk-xxx"
+            "  API_URL=https://api.openai.com/v1/chat/completions\n"
+            "  API_KEY=sk-xxx"
         )
 
     return HttpsApi(api_url=api_url, key=api_key, model=model, timeout=120)
@@ -103,8 +108,11 @@ def main():
     print(f"Task: {task.get_task_type()}")
     print(f"Op Name: {task.op_name}")
 
-    # Create interface
-    interface = EvoEngineerCANNInterface(task)
+    # Create output directory
+    output_dir = ensure_output_dir("evoengineer_run")
+
+    # Create interface with output directory for project files
+    interface = EvoEngineerCANNInterface(task, output_dir=str(output_dir))
 
     # Dry run mode - just test prompt generation
     if args.dry_run:
@@ -114,9 +122,6 @@ def main():
     # Create LLM client
     llm = create_llm()
     print(f"LLM Model: {llm._model}")
-
-    # Create output directory
-    output_dir = ensure_output_dir("evoengineer_run")
 
     # Create config
     config = EvoEngineerConfig(

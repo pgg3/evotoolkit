@@ -13,7 +13,7 @@
 import re
 from typing import TYPE_CHECKING, Any, Callable, List
 
-from evotoolkit.task.cann_init.method_interface.prompts.phase0 import (
+from evotoolkit.task.cann_init.method_interface.cann_initer.prompts.phase0 import (
     _format_signature_for_kernel,
 )
 from .prompts import RETRIEVAL_PLANNER_PROMPT

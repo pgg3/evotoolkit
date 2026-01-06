@@ -16,7 +16,7 @@ Design Pattern (following pybind.py):
 
 from typing import List, Optional
 
-from evotoolkit.task.cann_init.method_interface.prompts.phase0 import (
+from evotoolkit.task.cann_init.method_interface.cann_initer.prompts.phase0 import (
     _format_signature_for_kernel,
 )
 
