@@ -72,6 +72,11 @@ adversarial_attack = [
     "foolbox",  # For adversarial attack framework
 ]
 
+# Control tasks with Box2D physics (LunarLander, BipedalWalker, etc.)
+control_box2d = [
+    "gymnasium[box2d]",  # Gymnasium with Box2D environments
+]
+
 # All experimental tasks
 all_tasks = [
     "ninja",
@@ -82,6 +87,7 @@ all_tasks = [
     "scipy",
     "pandas",
     "foolbox",
+    "gymnasium[box2d]",
 ]
 
 [project.urls]

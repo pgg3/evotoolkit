@@ -3,6 +3,12 @@
 
 
 from .adversarial_attack import AdversarialAttackTask
+from .control_box2d import (
+    EoHControlInterface,
+    EvoEngineerControlInterface,
+    FunSearchControlInterface,
+    LunarLanderTask,
+)
 from .method_interface import (
     EoHPythonInterface,
     EvoEngineerPythonInterface,
