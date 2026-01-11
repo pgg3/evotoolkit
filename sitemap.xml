@@ -2,938 +2,938 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
     <url>
         <loc>https://evotoolkit.readthedocs.io/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/getting-started/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/getting-started/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/getting-started/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/installation/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/installation/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/installation/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/core/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/interfaces/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/methods/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/methods/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/methods/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/tasks/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/tasks/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/tasks/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/tools/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/tools/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/tools/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/core/base-config/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/base-config/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/base-config/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/core/base-run-state-dict/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/base-run-state-dict/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/base-run-state-dict/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/core/base-task/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/base-task/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/base-task/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/core/history-manager/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/history-manager/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/history-manager/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/core/list-algorithms/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/list-algorithms/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/list-algorithms/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/core/list-tasks/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/list-tasks/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/list-tasks/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/core/method/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/method/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/method/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/core/operators/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/operators/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/operators/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/core/solution/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/solution/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/solution/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/core/solve/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/solve/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/solve/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/interfaces/base-method-interface/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/base-method-interface/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/base-method-interface/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/interfaces/cuda/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/cuda/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/cuda/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/interfaces/cuda/eoh-cuda-interface/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/cuda/eoh-cuda-interface/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/cuda/eoh-cuda-interface/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/interfaces/cuda/evoengineer-free-cuda-interface/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/cuda/evoengineer-free-cuda-interface/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/cuda/evoengineer-free-cuda-interface/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/interfaces/cuda/evoengineer-full-cuda-interface/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/cuda/evoengineer-full-cuda-interface/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/cuda/evoengineer-full-cuda-interface/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/interfaces/cuda/evoengineer-insight-cuda-interface/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/cuda/evoengineer-insight-cuda-interface/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/cuda/evoengineer-insight-cuda-interface/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/interfaces/cuda/funsearch-cuda-interface/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/cuda/funsearch-cuda-interface/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/cuda/funsearch-cuda-interface/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/interfaces/python/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/python/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/python/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/interfaces/python/eoh-python-interface/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/python/eoh-python-interface/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/python/eoh-python-interface/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/interfaces/python/evoengineer-python-interface/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/python/evoengineer-python-interface/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/python/evoengineer-python-interface/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/interfaces/python/funsearch-python-interface/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/python/funsearch-python-interface/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/python/funsearch-python-interface/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/methods/eoh/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/methods/eoh/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/methods/eoh/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/methods/evoengineer/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/methods/evoengineer/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/methods/evoengineer/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/methods/funsearch/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/methods/funsearch/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/methods/funsearch/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/tasks/cuda/cuda-task/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/tasks/cuda/cuda-task/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/tasks/cuda/cuda-task/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/tasks/python/adversarial-attack/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/tasks/python/adversarial-attack/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/tasks/python/adversarial-attack/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/tasks/python/python-task/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/tasks/python/python-task/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/tasks/python/python-task/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/tasks/python/scientific-regression/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/tasks/python/scientific-regression/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/tasks/python/scientific-regression/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/tasks/string/prompt-optimization/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/tasks/string/prompt-optimization/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/tasks/string/prompt-optimization/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/tasks/string/string-task/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/tasks/string/string-task/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/tasks/string/string-task/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/api/tools/https-api/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/tools/https-api/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/tools/https-api/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/development/architecture/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/development/architecture/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/development/architecture/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/development/contributing/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/development/contributing/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/development/contributing/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/getting-started/exploring-results/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/getting-started/exploring-results/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/getting-started/exploring-results/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/getting-started/first-optimization/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/getting-started/first-optimization/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/getting-started/first-optimization/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/getting-started/next-steps/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/getting-started/next-steps/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/getting-started/next-steps/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/getting-started/try-algorithms/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/getting-started/try-algorithms/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/getting-started/try-algorithms/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/getting-started/understanding-code/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/getting-started/understanding-code/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/getting-started/understanding-code/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/installation/env-managers/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/installation/env-managers/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/installation/env-managers/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/installation/from-source/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/installation/from-source/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/installation/from-source/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/installation/llm-and-verify/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/installation/llm-and-verify/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/installation/llm-and-verify/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/installation/pypi/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/installation/pypi/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/installation/pypi/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/installation/requirements/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/installation/requirements/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/installation/requirements/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/installation/troubleshooting/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/installation/troubleshooting/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/installation/troubleshooting/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/tutorials/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/tutorials/advanced-overview/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/advanced-overview/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/advanced-overview/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/tutorials/built-in-overview/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/built-in-overview/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/built-in-overview/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/tutorials/customization-overview/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/customization-overview/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/customization-overview/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/tutorials/advanced/configuration/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/advanced/configuration/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/advanced/configuration/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/tutorials/advanced/debugging/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/advanced/debugging/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/advanced/debugging/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/tutorials/advanced/internals/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/advanced/internals/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/advanced/internals/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/tutorials/advanced/low-level-api/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/advanced/low-level-api/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/advanced/low-level-api/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/tutorials/built-in/adversarial-attack/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/built-in/adversarial-attack/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/built-in/adversarial-attack/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/tutorials/built-in/cuda-task/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/built-in/cuda-task/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/built-in/cuda-task/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/tutorials/built-in/prompt-engineering/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/built-in/prompt-engineering/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/built-in/prompt-engineering/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/tutorials/built-in/scientific-regression/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/built-in/scientific-regression/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/built-in/scientific-regression/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/tutorials/customization/custom-task/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/customization/custom-task/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/customization/custom-task/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/tutorials/customization/customizing-evolution/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/customization/customizing-evolution/"/>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/customization/customizing-evolution/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/getting-started/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/getting-started/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/getting-started/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/installation/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/installation/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/installation/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/core/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/interfaces/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/methods/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/methods/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/methods/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/tasks/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/tasks/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/tasks/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/tools/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/tools/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/tools/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/core/base-config/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/base-config/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/base-config/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/core/base-run-state-dict/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/base-run-state-dict/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/base-run-state-dict/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/core/base-task/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/base-task/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/base-task/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/core/history-manager/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/history-manager/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/history-manager/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/core/list-algorithms/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/list-algorithms/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/list-algorithms/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/core/list-tasks/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/list-tasks/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/list-tasks/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/core/method/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/method/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/method/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/core/operators/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/operators/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/operators/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/core/solution/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/solution/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/solution/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/core/solve/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/core/solve/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/core/solve/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/interfaces/base-method-interface/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/base-method-interface/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/base-method-interface/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/interfaces/cuda/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/cuda/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/cuda/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/interfaces/cuda/eoh-cuda-interface/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/cuda/eoh-cuda-interface/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/cuda/eoh-cuda-interface/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/interfaces/cuda/evoengineer-free-cuda-interface/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/cuda/evoengineer-free-cuda-interface/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/cuda/evoengineer-free-cuda-interface/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/interfaces/cuda/evoengineer-full-cuda-interface/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/cuda/evoengineer-full-cuda-interface/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/cuda/evoengineer-full-cuda-interface/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/interfaces/cuda/evoengineer-insight-cuda-interface/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/cuda/evoengineer-insight-cuda-interface/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/cuda/evoengineer-insight-cuda-interface/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/interfaces/cuda/funsearch-cuda-interface/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/cuda/funsearch-cuda-interface/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/cuda/funsearch-cuda-interface/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/interfaces/python/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/python/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/python/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/interfaces/python/eoh-python-interface/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/python/eoh-python-interface/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/python/eoh-python-interface/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/interfaces/python/evoengineer-python-interface/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/python/evoengineer-python-interface/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/python/evoengineer-python-interface/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/interfaces/python/funsearch-python-interface/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/interfaces/python/funsearch-python-interface/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/interfaces/python/funsearch-python-interface/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/methods/eoh/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/methods/eoh/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/methods/eoh/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/methods/evoengineer/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/methods/evoengineer/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/methods/evoengineer/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/methods/funsearch/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/methods/funsearch/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/methods/funsearch/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/tasks/cuda/cuda-task/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/tasks/cuda/cuda-task/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/tasks/cuda/cuda-task/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/tasks/python/adversarial-attack/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/tasks/python/adversarial-attack/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/tasks/python/adversarial-attack/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/tasks/python/python-task/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/tasks/python/python-task/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/tasks/python/python-task/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/tasks/python/scientific-regression/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/tasks/python/scientific-regression/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/tasks/python/scientific-regression/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/tasks/string/prompt-optimization/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/tasks/string/prompt-optimization/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/tasks/string/prompt-optimization/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/tasks/string/string-task/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/tasks/string/string-task/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/tasks/string/string-task/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/api/tools/https-api/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/api/tools/https-api/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/api/tools/https-api/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/development/architecture/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/development/architecture/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/development/architecture/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/development/contributing/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/development/contributing/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/development/contributing/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/getting-started/exploring-results/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/getting-started/exploring-results/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/getting-started/exploring-results/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/getting-started/first-optimization/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/getting-started/first-optimization/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/getting-started/first-optimization/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/getting-started/next-steps/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/getting-started/next-steps/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/getting-started/next-steps/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/getting-started/try-algorithms/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/getting-started/try-algorithms/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/getting-started/try-algorithms/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/getting-started/understanding-code/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/getting-started/understanding-code/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/getting-started/understanding-code/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/installation/env-managers/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/installation/env-managers/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/installation/env-managers/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/installation/from-source/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/installation/from-source/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/installation/from-source/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/installation/llm-and-verify/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/installation/llm-and-verify/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/installation/llm-and-verify/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/installation/pypi/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/installation/pypi/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/installation/pypi/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/installation/requirements/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/installation/requirements/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/installation/requirements/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/installation/troubleshooting/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/installation/troubleshooting/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/installation/troubleshooting/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/tutorials/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/tutorials/advanced-overview/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/advanced-overview/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/advanced-overview/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/tutorials/built-in-overview/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/built-in-overview/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/built-in-overview/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/tutorials/customization-overview/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/customization-overview/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/customization-overview/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/tutorials/advanced/configuration/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/advanced/configuration/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/advanced/configuration/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/tutorials/advanced/debugging/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/advanced/debugging/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/advanced/debugging/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/tutorials/advanced/internals/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/advanced/internals/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/advanced/internals/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/tutorials/advanced/low-level-api/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/advanced/low-level-api/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/advanced/low-level-api/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/tutorials/built-in/adversarial-attack/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/built-in/adversarial-attack/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/built-in/adversarial-attack/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/tutorials/built-in/cuda-task/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/built-in/cuda-task/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/built-in/cuda-task/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/tutorials/built-in/prompt-engineering/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/built-in/prompt-engineering/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/built-in/prompt-engineering/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/tutorials/built-in/scientific-regression/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/built-in/scientific-regression/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/built-in/scientific-regression/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/tutorials/customization/custom-task/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/customization/custom-task/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/customization/custom-task/"/>
     </url>
     <url>
         <loc>https://evotoolkit.readthedocs.io/zh/tutorials/customization/customizing-evolution/</loc>
-        <lastmod>2025-12-11</lastmod>
+        <lastmod>2026-01-11</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="zh" href="https://evotoolkit.readthedocs.io/zh/tutorials/customization/customizing-evolution/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://evotoolkit.readthedocs.io/tutorials/customization/customizing-evolution/"/>
