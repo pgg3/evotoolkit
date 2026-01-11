@@ -72,6 +72,14 @@ adversarial_attack = [
     "foolbox",  # For adversarial attack framework
 ]
 
+# CANN operator initialization task (Ascend NPU)
+# Note: Requires CANN toolkit and Python environment to be installed
+# See: https://www.hiascend.com/software/cann
+cann_init = [
+    # No additional Python dependencies beyond base requirements
+    # Requires CANN toolkit installed on the system
+]
+
 # All experimental tasks
 all_tasks = [
     "ninja",
@@ -81,7 +89,7 @@ all_tasks = [
     "psutil",
     "scipy",
     "pandas",
-    "foolbox",
+    "foolbox"
 ]
 
 [project.urls]
