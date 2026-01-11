@@ -5,5 +5,12 @@
 
 from .cann_initer import CANNIniterInterface
 from .evoengineer import EvoEngineerCANNInterface
+from .funsearch_interface import FunSearchCANNInterface
+from .eoh_interface import EoHCANNInterface
 
-__all__ = ["CANNIniterInterface", "EvoEngineerCANNInterface"]
+__all__ = [
+    "CANNIniterInterface",
+    "EvoEngineerCANNInterface",
+    "FunSearchCANNInterface",
+    "EoHCANNInterface",
+]
