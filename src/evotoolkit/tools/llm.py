@@ -140,22 +140,30 @@ class HttpsApi:
                 res = conn.getresponse()
                 data = res.read().decode("utf-8")
                 data = json.loads(data)
+
+                # Check for API error response
+                if "error" in data:
+                    raise RuntimeError(f"API Error: {data['error']}")
+
+                if "choices" not in data or len(data["choices"]) == 0:
+                    raise RuntimeError(f"Invalid API response: {data}")
+
                 response = data["choices"][0]["message"]["content"]
-                usage = data["usage"]
+                usage = data.get("usage", {})
                 # if self._model.startswith('claude'):
                 #     response = data['content'][0]['text']
                 # else:
                 #     response = data['choices'][0]['message']['content']
                 return response, usage
-            except Exception:
+            except Exception as e:
                 retry += 1
                 if retry >= self._max_retry:
                     raise RuntimeError(
                         # f'{self.__class__.__name__} error: {traceback.format_exc()}.\n'
-                        "Model Response Error! You may check your API host and API key."
+                        f"Model Response Error! {str(e)}\nYou may check your API host and API key."
                     )
                 else:
-                    print("Model Response Error! Retrying...")
+                    print(f"Model Response Error! {str(e)} Retrying ({retry}/{self._max_retry})...")
                     # print(f'{self.__class__.__name__} error: {traceback.format_exc()}. Retrying...\n')
 
     def get_embedding(self, text: str | Any, *args, **kwargs) -> str:

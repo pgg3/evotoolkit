@@ -31,7 +31,7 @@ class CANNInitTask(BaseTask):
         self.op_name = data["op_name"]
         self.python_reference = data["python_reference"]
         self.npu_type = data.get("npu_type", "Ascend910B2")
-        self.cann_version = data.get("cann_version", "8.0")
+        self.cann_version = data.get("cann_version", "8.1.0rc1")
 
         self._parser = OperatorSignatureParser()
         self.signature = self._parser.parse(self.python_reference, self.op_name)
@@ -67,6 +67,8 @@ class CANNInitTask(BaseTask):
         - AscendC Vector API Reference（向量 API 参考）
         - Critical Constraints（关键约束，避免常见错误）
         - Attribute Access Guide（属性获取指南，仅当有 init_params 时）
+        - Tiling Edge Case Guide（Tiling 边界处理）
+        - Advanced API Reference（高级 API，用于复杂算子）
         - Component Specification（6 组件的定义和模板）
 
         其他方法（如 FunSearch, EvoLang）可以直接调用此方法获取完整任务描述，
@@ -84,6 +86,12 @@ class CANNInitTask(BaseTask):
         if attr_guide:
             parts.append(attr_guide)
 
+        # Tiling 边界处理指南
+        parts.append(self._get_tiling_edge_case_guide())
+
+        # 高级 API 参考（Matmul, Normalization, Index）
+        parts.append(self._get_advanced_api_reference())
+
         parts.append(self._get_component_specification())
 
         return "\n\n".join(parts)
@@ -91,7 +99,7 @@ class CANNInitTask(BaseTask):
     def _get_base_description(self) -> str:
         """内部方法：基础描述（角色 + 设备 + Reference）"""
         return f"""You are an Ascend C operator development expert.
-Your task is to implement the kernel code for the "{self.op_name}" operator.
+Your task is to implement an optimized, high-performance kernel for the "{self.op_name}" operator.
 Target device: {self.npu_type} NPU with CANN {self.cann_version}.
 
 Python Reference:
@@ -140,6 +148,7 @@ IMPORTANT: AscendC is a vectorized programming model. All computations MUST use 
 | `Exp` | dst = exp(src) | `Exp(dst, src, calCount)` |
 | `Ln` | dst = ln(src) | `Ln(dst, src, calCount)` |
 | `Sqrt` | dst = sqrt(src) | `Sqrt(dst, src, calCount)` |
+| `Rsqrt` | dst = 1/sqrt(src) | `Rsqrt(dst, src, calCount)` |
 | `Abs` | dst = abs(src) | `Abs(dst, src, calCount)` |
 | `Reciprocal` | dst = 1/src | `Reciprocal(dst, src, calCount)` |
 
@@ -172,6 +181,13 @@ IMPORTANT: AscendC is a vectorized programming model. All computations MUST use 
 | `Relu` | dst = max(0, src) | `Relu(dst, src, calCount)` |
 | `LeakyRelu` | dst = x<0 ? alpha*x : x | `LeakyRelu(dst, src, alpha, calCount)` |
 
+### Logic Operations (Level 2)
+| Function | Description | Signature |
+|----------|-------------|-----------|
+| `And` | dst = src0 & src1 | `And(dst, src0, src1, calCount)` |
+| `Or` | dst = src0 | src1 | `Or(dst, src0, src1, calCount)` |
+| `Not` | dst = ~src | `Not(dst, src, calCount)` |
+
 ### Compare & Select Operations (Level 2)
 | Function | Description | Signature |
 |----------|-------------|-----------|
@@ -182,6 +198,24 @@ IMPORTANT: AscendC is a vectorized programming model. All computations MUST use 
 **Compare modes**: `CMPMODE::GT`, `CMPMODE::GE`, `CMPMODE::LT`, `CMPMODE::LE`, `CMPMODE::EQ`, `CMPMODE::NE`
 **Select modes**: `SELMODE::VSEL_TENSOR_TENSOR_MODE`
 **Mask type**: `LocalTensor<uint8_t>` (NOT bool, NOT SelectMask)
+
+### Reduce Operations (Level 2 - requires workLocal buffer)
+| Function | Description | Signature |
+|----------|-------------|-----------|
+| `ReduceSum` | dst[0] = sum(src) | `ReduceSum(dst, src, workLocal, count)` |
+| `ReduceMax` | dst[0] = max(src) | `ReduceMax(dst, src, workLocal, count, calIndex=false)` |
+| `ReduceMin` | dst[0] = min(src) | `ReduceMin(dst, src, workLocal, count, calIndex=false)` |
+
+**IMPORTANT**: Reduce operations require a `workLocal` buffer of size >= count * sizeof(T).
+
+### High-level Activation Functions (require #include)
+For complex activations like Tanh, Sigmoid, Gelu, Softmax, include the high-level API:
+```cpp
+#include "lib/math/tanh.h"           // Tanh(dst, src, calCount)
+#include "lib/activation/sigmoid.h"  // Sigmoid(dst, src, calCount)
+#include "lib/activation/gelu.h"     // Gelu(dst, src, dataSize)
+#include "lib/activation/swish.h"    // Swish(dst, src, calCount)
+```
 
 ### Queue Position Types (from kernel_event.h)
 | Value | Usage |
@@ -292,7 +326,22 @@ for (int i = 0; i < len; i++) {
     output[i] = input[i] > 0 ? input[i] : alpha * (exp(input[i]) - 1);
 }
 ```
-✅ Use vectorized operations: CompareScalar + Select pattern"""
+✅ Use vectorized operations: CompareScalar + Select pattern
+
+### ❌ DO NOT use non-existent APIs:
+```cpp
+// WRONG - these APIs DO NOT EXIST!
+Pow(dst, src, exp, len);       // ❌ No Pow function
+MaxPool(dst, src, ...);        // ❌ No direct pooling API
+AvgPool(dst, src, ...);        // ❌ No direct pooling API
+Neg(dst, src, len);            // ❌ No Neg function
+Subs(dst, src, scalar, len);   // ❌ No Subs function
+Divs(dst, src, scalar, len);   // ❌ No Divs function
+```
+✅ Alternatives:
+- Negation: `Muls(dst, src, -1.0f, len)`
+- Subtraction: `Adds(dst, src, -scalar, len)`
+- Division by scalar: `Muls(dst, src, 1.0f/scalar, len)`"""
 
     def _get_attribute_access_guide(self) -> str:
         """内部方法：算子属性获取指南（仅当有 init_params 时使用）"""
@@ -340,6 +389,83 @@ const auto* attrs = context->GetAttrs();
 ```
 
 IMPORTANT: Do NOT invent APIs like `GetInitParam()`, `GetInitInput()`, `GetInitParamFloat()` - they do not exist!"""
+
+    def _get_tiling_edge_case_guide(self) -> str:
+        """内部方法：Tiling 边界处理指南"""
+        return """## Tiling Edge Case Handling
+
+When `totalLength` is not divisible by `BLOCK_DIM * tileNum * BUFFER_NUM`, handle the tail:
+
+```cpp
+// In Init(): calculate tail info
+uint32_t totalTiles = tileNum * BUFFER_NUM;
+this->tileLength = this->blockLength / totalTiles;
+this->tailLength = this->blockLength % totalTiles;
+this->hasTail = (this->tailLength > 0);
+
+// In Process(): handle main loop + tail
+for (int32_t i = 0; i < loopCount; i++) {
+    CopyIn(i);
+    Compute(i);
+    CopyOut(i);
+}
+if (this->hasTail) {
+    // Process remaining elements with tailLength
+}
+```
+
+**Key**: DataCopy length must match actual data size to avoid out-of-bounds access."""
+
+    def _get_advanced_api_reference(self) -> str:
+        """内部方法：高级 API 参考（Matmul, Normalization, Index）"""
+        return """## Advanced APIs (for complex operators)
+
+### Matmul API
+```cpp
+#include "lib/matmul_intf.h"
+
+// High-level: Matmul template class
+Matmul<half, half, float> mm;
+mm.Init(...);
+mm.SetTiling(tilingData);
+mm.Iterate(aMatrix, bMatrix, cMatrix);
+
+// Basic: Gemm function
+Gemm(dstLocal, src0Local, src1Local, m, k, n, tiling);
+```
+**Note**: Matmul uses Cube unit (not Vector), requires special memory layout and tiling.
+
+### Normalization APIs
+```cpp
+#include "lib/normalization/layernorm.h"
+LayerNorm(output, mean, variance, inputX, gamma, beta, epsilon, tiling);
+
+#include "lib/normalization/rmsnorm.h"
+RMSNorm(output, inputX, gamma, epsilon, tiling);
+
+#include "lib/normalization/batchnorm.h"
+BatchNorm(..., tiling);
+```
+**Note**: All normalization APIs require Tiling parameters computed on host.
+
+### Index APIs (Gather/Scatter)
+```cpp
+// Gather: collect elements by index
+Gather(dst, src, offsetLocal, repeatTimes, params);
+
+// Scatter: distribute elements by index
+Scatter(dst, src, offsetLocal, repeatTimes, params);
+
+// GatherMask: conditional gather
+GatherMask(dst, src, maskLocal, params, rsvdCnt);
+```
+**Note**: offset must be `LocalTensor<uint32_t>`, values are byte offsets or element indices.
+
+### Transpose API
+```cpp
+#include "lib/transpose/confusion_transpose.h"
+ConfusionTranspose(dst, src, tiling);
+```"""
 
     def _get_component_specification(self) -> str:
         """内部方法：完整代码架构说明和组件标注"""
