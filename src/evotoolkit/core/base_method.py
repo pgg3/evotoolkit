@@ -80,6 +80,10 @@ class Method(ABC):
                 if sol.evaluation_res.valid:
                     valid_sols.append(sol)
 
+        # Return None if no valid solutions
+        if not valid_sols:
+            return None
+
         # Return the kernel with minimum runtime
         best_kernel = max(valid_sols, key=lambda x: x.evaluation_res.score)
         return best_kernel
