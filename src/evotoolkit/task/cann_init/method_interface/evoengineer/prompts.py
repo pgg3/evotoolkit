@@ -1,10 +1,13 @@
 # Copyright (c) 2025 Ping Guo
 # Licensed under the MIT License
 
-"""Prompt generation for EvoEngineer CANN Interface"""
+"""Prompt generation for EvoEngineer CANN Interface
 
-import json
-from typing import List
+This module generates prompts that require LLM to produce 6 components for Ascend C operators,
+along with performance profiling information and optimization insights.
+"""
+
+from typing import List, Optional
 
 from evotoolkit.core import Solution
 
@@ -12,214 +15,244 @@ from evotoolkit.core import Solution
 class PromptMixin:
     """Mixin for prompt generation methods"""
 
-    def _get_tiling_data_class_name(self) -> str:
-        """Generate TilingData class name from op_name"""
-        op_name = self.task.op_name
-        # Convert to PascalCase and add CustomTilingData
-        pascal_name = "".join(word.capitalize() for word in op_name.split("_"))
-        return f"{pascal_name}CustomTilingData"
-
     def _get_task_description(self) -> str:
-        """Get task description from CANNInitTask"""
-        return self.task.get_base_task_description()
+        """Get full task description from CANNInitTask"""
+        return self.task.get_task_description()
 
-    def _format_solution(self, sol: Solution) -> str:
-        """Format a solution for display in prompt"""
-        if not sol or not sol.sol_string:
+    def _format_solution(self, sol: Solution, show_profile: bool = True) -> str:
+        """Format a solution for display in prompt.
+
+        Args:
+            sol: Solution to format
+            show_profile: Whether to show performance profile
+        """
+        if not sol or not sol.other_info:
             return "(no solution)"
 
-        info = sol.other_info or {}
-        runtime = ""
+        info = sol.other_info
+
+        parts = []
+
+        # Name and thought
+        name = info.get("name", "unnamed")
+        thought = info.get("thought", "")
+        parts.append(f"**Name:** {name}")
+
+        # Runtime if available
         if sol.evaluation_res and sol.evaluation_res.score is not None:
-            runtime = f"Runtime: {-sol.evaluation_res.score:.4f} ms\n"
+            runtime = -sol.evaluation_res.score
+            parts.append(f"**Runtime:** {runtime:.5f} milliseconds")
 
-        return f"""Name: {info.get('name', 'unnamed')}
-{runtime}Thought: {info.get('thought', '')}
+        if thought:
+            parts.append(f"**Approach:** {thought}")
 
-kernel_src:
+        parts.append("")
+
+        # 6 components
+        parts.append(self.task.format_solution_components(sol))
+
+        # Performance profile if available
+        if show_profile and sol.evaluation_res and sol.evaluation_res.additional_info:
+            prof_string = sol.evaluation_res.additional_info.get("prof_string", "")
+            if prof_string:
+                parts.append("")
+                parts.append("**Performance Profile:**")
+                parts.append(prof_string)
+
+        return "\n".join(parts)
+
+    def _build_thoughts_section(self, thoughts: List[str]) -> str:
+        """Build optimization insights section from random thoughts."""
+        if not thoughts:
+            return ""
+
+        thoughts_list = "\n".join(f"- {t}" for t in thoughts)
+        return f"""
+## OPTIMIZATION INSIGHTS
+
+{thoughts_list}
+"""
+
+    def _build_output_format(self) -> str:
+        """Build output format specification."""
+        return """## RESPONSE FORMAT
+
+name: [descriptive_name_with_underscores]
+thought: [Your optimization strategy and rationale]
+
+### KERNEL_IMPL
 ```cpp
-{sol.sol_string}
+[Your kernel class and helper code]
 ```
 
-tiling_fields:
-```json
-{json.dumps(info.get('tiling_fields', []), indent=2)}
+### KERNEL_ENTRY_BODY
+```cpp
+[Your entry function body]
 ```
 
-tiling_func_body:
-```cpp
-{info.get('tiling_func_body', '')}
+### TILING_FIELDS
+```
+[Your tiling fields, one per line]
 ```
 
-infer_shape_body:
-```cpp
-{info.get('infer_shape_body', '')}
-```"""
+Format: `TYPE NAME` or `TYPE NAME[SIZE]` or `struct TYPE NAME`
 
-    def _get_response_format(self) -> str:
-        tiling_class_name = self._get_tiling_data_class_name()
-        return f"""## RESPONSE FORMAT
-name: [descriptive_name]
-thought: [optimization rationale]
-
-kernel_src:
-```cpp
-[Ascend C kernel code - IMPORTANT: All Ascend C APIs must use AscendC:: namespace prefix]
-[Example structure:
-  #include "kernel_operator.h"
-
-  constexpr int32_t BUFFER_NUM = 2;
-
-  class KernelAdd {{
-  public:
-      __aicore__ inline KernelAdd() {{}}
-      __aicore__ inline void Init(GM_ADDR x, GM_ADDR y, GM_ADDR z, ...) {{
-          xGm.SetGlobalBuffer((__gm__ DTYPE*)x);
-          // ... setup queues with pipe.InitBuffer
-      }}
-      __aicore__ inline void Process() {{
-          // Process loop with CopyIn, Compute, CopyOut pipeline
-      }}
-  private:
-      AscendC::TPipe pipe;
-      AscendC::TQue<AscendC::QuePosition::VECIN, BUFFER_NUM> inQueueX;
-      AscendC::GlobalTensor<DTYPE> xGm;
-      // ... other members
-  }};
-
-  extern "C" __global__ __aicore__ void add_custom(GM_ADDR x, GM_ADDR y, GM_ADDR z,
-                                                     GM_ADDR workspace, GM_ADDR tiling) {{
-      GET_TILING_DATA(tiling_data, tiling);
-      KernelAdd op;
-      op.Init(x, y, z, tiling_data.totalLength, tiling_data.tileLength);
-      op.Process();
-  }}
-]
-[Common APIs that need AscendC:: prefix:
-  - AscendC::GlobalTensor<T>
-  - AscendC::LocalTensor<T>
-  - AscendC::TPipe
-  - AscendC::TQue<AscendC::QuePosition::VECIN/VECOUT, N>
-  - AscendC::GetBlockNum(), AscendC::GetBlockIdx()
-  - AscendC::DataCopy(dst, src, len)
-  - AscendC::Add(dst, src1, src2, len)
-]
+Example:
+```
+uint32_t totalLength
+uint32_t tileNum
+int64_t dims[4]
+struct TCubeTiling matmulTiling
 ```
 
-tiling_fields:
-```json
-[{{"name": "field1", "type": "uint32_t"}}, ...]
+### TILING_FUNC_BODY
+```cpp
+[Your tiling function body]
 ```
 
-tiling_func_body:
+### INFER_SHAPE_BODY
 ```cpp
-[TilingFunc body - this code runs on CPU to calculate tiling parameters]
-[Available context: gert::TilingContext* context, and {tiling_class_name} tiling]
-[Example API usage:
-  auto shape = context->GetInputShape(0)->GetStorageShape();
-  uint32_t totalLength = 1;
-  for (size_t i = 0; i < shape.GetDimNum(); i++) {{
-      totalLength *= shape.GetDim(i);
-  }}
-
-  {tiling_class_name} tiling;
-  tiling.set_field1(value1);
-  tiling.set_field2(value2);
-
-  tiling.SaveToBuffer(context->GetRawTilingData()->GetData(),
-                      context->GetRawTilingData()->GetCapacity());
-  context->GetRawTilingData()->SetDataSize(tiling.GetDataSize());
-  context->SetBlockDim(8);  // Number of AI cores to use
-
-  size_t *currentWorkspace = context->GetWorkspaceSizes(1);
-  currentWorkspace[0] = 0;  // Workspace size if needed
-
-  return ge::GRAPH_SUCCESS;
-]
+[Your infer shape body]
 ```
 
-infer_shape_body:
+### OUTPUT_ALLOC_CODE
 ```cpp
-[InferShape body - infer output shape from input shapes]
-[Available context: gert::InferShapeContext* context]
-[Example API usage:
-  const gert::Shape* input_shape = context->GetInputShape(0);
-  gert::Shape* output_shape = context->GetOutputShape(0);
-  *output_shape = *input_shape;  // For element-wise ops
-  return GRAPH_SUCCESS;
-]
-```"""
+[Your output allocation code]
+```
 
-    def _get_init_prompt(self, task_desc: str, current_best: Solution, thoughts: List[str]) -> List[dict]:
-        thoughts_section = ""
-        if thoughts:
-            thoughts_section = "\n## OPTIMIZATION INSIGHTS\n" + "\n".join(f"- {t}" for t in thoughts)
+### TILING_INCLUDES (optional, only if using struct types like TCubeTiling)
+```
+tiling/platform/platform_ascendc.h
+```
+
+### KERNEL_INCLUDES (optional, only if needed)
+```
+lib/matmul_intf.h
+```
+
+## FORMAT REQUIREMENTS
+1. All code must be valid Ascend C code
+2. Follow the exact format with ### headers and code blocks
+3. Provide clear name and thought explaining your approach
+4. MAKE SURE THE PROPOSAL CODE IS VALID ASCEND C CODE"""
+
+    def _get_init_prompt(
+        self,
+        task_desc: str,
+        current_best: Optional[Solution],
+        thoughts: List[str],
+    ) -> List[dict]:
+        """Generate init operator prompt."""
+        thoughts_section = self._build_thoughts_section(thoughts)
 
         best_section = ""
-        if current_best and current_best.sol_string:
-            best_section = f"\n## CURRENT BEST\n{self._format_solution(current_best)}"
+        if current_best and current_best.other_info:
+            best_section = f"""
+## BASELINE CODE
 
-        prompt = f"""# ASCEND C KERNEL TASK
+{self._format_solution(current_best, show_profile=True)}
+
+---
+"""
+
+        strategy_section = """## OPTIMIZATION STRATEGY
+
+"""
+        if thoughts:
+            strategy_section += "Use the insights above if relevant as optimization guidance.\n"
+        strategy_section += "Propose a new Ascend C kernel implementation which aims to reduce the runtime of the operation, while ensuring the kernel returns the correct result."
+
+        prompt = f"""# ASCEND C KERNEL OPTIMIZATION TASK
 
 {task_desc}
 {best_section}
 {thoughts_section}
+{strategy_section}
 
-## TASK
-Implement a high-performance Ascend C kernel for this operator.
+---
 
-{self._get_response_format()}"""
+{self._build_output_format()}"""
 
         return [{"role": "user", "content": prompt}]
 
     def _get_crossover_prompt(
-        self, task_desc: str, parents: List[Solution], current_best: Solution, thoughts: List[str]
+        self,
+        task_desc: str,
+        parents: List[Solution],
+        current_best: Solution,
+        thoughts: List[str],
     ) -> List[dict]:
-        thoughts_section = ""
-        if thoughts:
-            thoughts_section = "\n## OPTIMIZATION INSIGHTS\n" + "\n".join(f"- {t}" for t in thoughts)
+        """Generate crossover operator prompt."""
+        thoughts_section = self._build_thoughts_section(thoughts)
 
+        # Build parents section
         parents_section = "\n## PARENTS TO COMBINE\n"
         for i, p in enumerate(parents, 1):
-            parents_section += f"\n### Parent {i}\n{self._format_solution(p)}\n"
+            parents_section += f"\n### Parent {i}\n\n{self._format_solution(p, show_profile=False)}\n"
 
-        prompt = f"""# ASCEND C KERNEL CROSSOVER
+        strategy_section = """## CROSSOVER STRATEGY
+
+Combine the best features from both parent kernels:
+"""
+        if thoughts:
+            strategy_section += "Use the insights above if relevant as crossover guidance.\n"
+        strategy_section += """
+Create a hybrid Ascend C kernel that combines the strengths of both parents."""
+
+        prompt = f"""# ASCEND C KERNEL CROSSOVER TASK
 
 {task_desc}
 
 ## CURRENT BEST
-{self._format_solution(current_best)}
+
+{self._format_solution(current_best, show_profile=True)}
+
 {parents_section}
+
 {thoughts_section}
+{strategy_section}
 
-## TASK
-Combine the best features from both parent implementations.
+---
 
-{self._get_response_format()}"""
+{self._build_output_format()}"""
 
         return [{"role": "user", "content": prompt}]
 
     def _get_mutation_prompt(
-        self, task_desc: str, individual: Solution, current_best: Solution, thoughts: List[str]
+        self,
+        task_desc: str,
+        individual: Solution,
+        current_best: Solution,
+        thoughts: List[str],
     ) -> List[dict]:
-        thoughts_section = ""
-        if thoughts:
-            thoughts_section = "\n## OPTIMIZATION INSIGHTS\n" + "\n".join(f"- {t}" for t in thoughts)
+        """Generate mutation operator prompt."""
+        thoughts_section = self._build_thoughts_section(thoughts)
 
-        prompt = f"""# ASCEND C KERNEL MUTATION
+        strategy_section = """## MUTATION STRATEGY
+
+Apply significant changes to the target kernel:
+"""
+        if thoughts:
+            strategy_section += "Use the insights above if relevant as mutation guidance.\n"
+        strategy_section += "Create a substantially modified version that explores new optimization directions."
+
+        prompt = f"""# ASCEND C KERNEL MUTATION TASK
 
 {task_desc}
 
 ## CURRENT BEST
-{self._format_solution(current_best)}
+
+{self._format_solution(current_best, show_profile=True)}
 
 ## SOURCE TO MUTATE
-{self._format_solution(individual)}
+
+{self._format_solution(individual, show_profile=False)}
+
 {thoughts_section}
+{strategy_section}
 
-## TASK
-Apply significant modifications to explore new optimization directions.
+---
 
-{self._get_response_format()}"""
+{self._build_output_format()}"""
 
         return [{"role": "user", "content": prompt}]
