@@ -64,16 +64,29 @@ class CANNInitTask(BaseTask):
         - 角色定义 + 设备信息
         - Python Reference
         - Operator Signature（输入输出参数）
+        - AscendC Vector API Reference（向量 API 参考）
+        - Critical Constraints（关键约束，避免常见错误）
+        - Attribute Access Guide（属性获取指南，仅当有 init_params 时）
         - Component Specification（6 组件的定义和模板）
 
         其他方法（如 FunSearch, EvoLang）可以直接调用此方法获取完整任务描述，
         然后添加各自特有的内容（如 solutions 展示、输出格式）。
         """
-        return f"""{self._get_base_description()}
+        parts = [
+            self._get_base_description(),
+            self._get_signature_summary(),
+            self._get_api_reference(),
+            self._get_critical_constraints(),
+        ]
 
-{self._get_signature_summary()}
+        # 条件性添加属性获取指南
+        attr_guide = self._get_attribute_access_guide()
+        if attr_guide:
+            parts.append(attr_guide)
 
-{self._get_component_specification()}"""
+        parts.append(self._get_component_specification())
+
+        return "\n\n".join(parts)
 
     def _get_base_description(self) -> str:
         """内部方法：基础描述（角色 + 设备 + Reference）"""
@@ -114,6 +127,219 @@ Python Reference:
                 lines.append(f"- `{param['name']}`: {dtype}{default_str}")
 
         return "\n".join(lines)
+
+    def _get_api_reference(self) -> str:
+        """内部方法：AscendC 向量 API 参考（从 CANN SDK 头文件提取）"""
+        return """## AscendC Vector API Reference (from CANN SDK headers)
+
+IMPORTANT: AscendC is a vectorized programming model. All computations MUST use vector APIs.
+
+### Unary Math Operations (Level 2 simplified interface)
+| Function | Description | Signature |
+|----------|-------------|-----------|
+| `Exp` | dst = exp(src) | `Exp(dst, src, calCount)` |
+| `Ln` | dst = ln(src) | `Ln(dst, src, calCount)` |
+| `Sqrt` | dst = sqrt(src) | `Sqrt(dst, src, calCount)` |
+| `Abs` | dst = abs(src) | `Abs(dst, src, calCount)` |
+| `Reciprocal` | dst = 1/src | `Reciprocal(dst, src, calCount)` |
+
+**NOTE**: There is NO `Neg` function. Use `Muls(dst, src, -1.0f, len)` for negation.
+
+### Binary Operations (Level 2 - requires two tensors)
+| Function | Description | Signature |
+|----------|-------------|-----------|
+| `Add` | dst = src0 + src1 | `Add(dst, src0, src1, calCount)` |
+| `Sub` | dst = src0 - src1 | `Sub(dst, src0, src1, calCount)` |
+| `Mul` | dst = src0 * src1 | `Mul(dst, src0, src1, calCount)` |
+| `Div` | dst = src0 / src1 | `Div(dst, src0, src1, calCount)` |
+| `Max` | dst = max(src0, src1) | `Max(dst, src0, src1, calCount)` |
+| `Min` | dst = min(src0, src1) | `Min(dst, src0, src1, calCount)` |
+
+### Scalar-Vector Operations (Level 2 - tensor + scalar)
+| Function | Description | Signature |
+|----------|-------------|-----------|
+| `Adds` | dst = src + scalar | `Adds(dst, src, scalar, calCount)` |
+| `Muls` | dst = src * scalar | `Muls(dst, src, scalar, calCount)` |
+| `Maxs` | dst = max(src, scalar) | `Maxs(dst, src, scalar, calCount)` |
+| `Mins` | dst = min(src, scalar) | `Mins(dst, src, scalar, calCount)` |
+| `LeakyRelu` | dst = x<0 ? alpha*x : x | `LeakyRelu(dst, src, alpha, calCount)` |
+
+**NOTE**: There is NO `Subs` or `Divs`. Use `Adds(dst, src, -scalar, len)` for subtraction.
+
+### Activation Functions
+| Function | Description | Signature |
+|----------|-------------|-----------|
+| `Relu` | dst = max(0, src) | `Relu(dst, src, calCount)` |
+| `LeakyRelu` | dst = x<0 ? alpha*x : x | `LeakyRelu(dst, src, alpha, calCount)` |
+
+### Compare & Select Operations (Level 2)
+| Function | Description | Signature |
+|----------|-------------|-----------|
+| `Compare` | Compare two tensors | `Compare(dstMask, src0, src1, cmpMode, calCount)` |
+| `CompareScalar` | Compare tensor with scalar | `CompareScalar(dstMask, src, scalar, cmpMode, calCount)` |
+| `Select` | Select based on mask | `Select(dst, mask, src0, src1, selMode, calCount)` |
+
+**Compare modes**: `CMPMODE::GT`, `CMPMODE::GE`, `CMPMODE::LT`, `CMPMODE::LE`, `CMPMODE::EQ`, `CMPMODE::NE`
+**Select modes**: `SELMODE::VSEL_TENSOR_TENSOR_MODE`
+**Mask type**: `LocalTensor<uint8_t>` (NOT bool, NOT SelectMask)
+
+### Queue Position Types (from kernel_event.h)
+| Value | Usage |
+|-------|-------|
+| `QuePosition::VECIN` | Input queue |
+| `QuePosition::VECOUT` | Output queue |
+| `QuePosition::VECCALC` | **Temporary/calculation buffer** (use this for intermediate results!) |
+
+### Complete Pattern for Conditional Operations (SELU/ELU)
+```cpp
+// 1. Declare queues (in class definition)
+TQue<QuePosition::VECIN, BUFFER_NUM> inQueueX;
+TQue<QuePosition::VECOUT, BUFFER_NUM> outQueueY;
+TQue<QuePosition::VECCALC, BUFFER_NUM> tmpQueue;   // For intermediate results
+TQue<QuePosition::VECCALC, BUFFER_NUM> maskQueue;  // For comparison mask
+
+// 2. In Init(), initialize all buffers
+pipe.InitBuffer(tmpQueue, BUFFER_NUM, this->tileLength * sizeof(float));
+pipe.InitBuffer(maskQueue, BUFFER_NUM, this->tileLength * sizeof(uint8_t));
+
+// 3. In Compute()
+LocalTensor<float> xLocal = inQueueX.DeQue<float>();
+LocalTensor<float> yLocal = outQueueY.AllocTensor<float>();
+LocalTensor<float> tmp = tmpQueue.AllocTensor<float>();
+LocalTensor<uint8_t> selMask = maskQueue.AllocTensor<uint8_t>();
+
+// Compute negative part: alpha * (exp(x) - 1)
+Exp(tmp, xLocal, len);
+Adds(tmp, tmp, -1.0f, len);
+Muls(tmp, tmp, alpha, len);
+
+// Compare with scalar 0 using CompareScalar
+CompareScalar(selMask, xLocal, 0.0f, CMPMODE::GT, len);
+
+// Select: mask=1 -> xLocal, mask=0 -> tmp
+Select(yLocal, selMask, xLocal, tmp, SELMODE::VSEL_TENSOR_TENSOR_MODE, len);
+
+// Apply final scaling
+Muls(yLocal, yLocal, scale, len);
+
+// Release resources
+outQueueY.EnQue(yLocal);
+inQueueX.FreeTensor(xLocal);
+tmpQueue.FreeTensor(tmp);
+maskQueue.FreeTensor(selMask);
+```"""
+
+    def _get_critical_constraints(self) -> str:
+        """内部方法：关键约束（LLM 常见错误警告，基于 CANN SDK）"""
+        return """## CRITICAL CONSTRAINTS (Common LLM Errors)
+
+### ❌ DO NOT use standard C/C++ math functions:
+```cpp
+// WRONG - these functions DO NOT EXIST in AscendC kernel code!
+float result = exp(x);      // ❌ Compilation error: 'exp' undeclared
+float result = expf(x);     // ❌ Compilation error: 'expf' undeclared
+float result = sin(x);      // ❌ Compilation error: 'sin' undeclared
+```
+✅ Use AscendC vector functions: `Exp(dst, src, calCount)`, `Ln(dst, src, calCount)`
+
+### ❌ DO NOT access LocalTensor elements as scalars:
+```cpp
+// WRONG - LocalTensor does NOT support element-wise indexing!
+float val = xLocal[i];           // ❌ no conversion to float
+zLocal[i] = val * 2;             // ❌ no viable overloaded '='
+if (xLocal[i] > 0) { ... }       // ❌ invalid operands
+```
+✅ Use vector operations on entire tensors.
+
+### ❌ DO NOT invent QuePosition values:
+```cpp
+// WRONG - these QuePosition values DO NOT EXIST!
+TQue<QuePosition::TEMP, BUFFER_NUM> tmpQueue;     // ❌ no member named 'TEMP'
+TQue<QuePosition::VECTMP, BUFFER_NUM> tmpQueue;   // ❌ no member named 'VECTMP'
+TQue<QuePosition::VECBUF, BUFFER_NUM> tmpQueue;   // ❌ no member named 'VECBUF'
+TQue<QuePosition::TMP, BUFFER_NUM> tmpQueue;      // ❌ no member named 'TMP'
+```
+✅ Use: `QuePosition::VECIN`, `QuePosition::VECOUT`, `QuePosition::VECCALC`
+
+### ❌ DO NOT use Sub for tensor-scalar subtraction:
+```cpp
+// WRONG - Sub requires TWO tensors, not tensor and scalar!
+Sub(dst, src, scalar, len);   // ❌ no matching function
+Sub(dst, src, alpha, len);    // ❌ compilation error
+```
+✅ Use `Adds` with negative scalar: `Adds(dst, src, -scalar, len)`
+
+### ❌ DO NOT use Compare with scalar directly:
+```cpp
+// WRONG - Compare requires TWO tensors!
+Compare(mask, xLocal, 0.0f, CMPMODE::GT, len);  // ❌ no matching function
+```
+✅ Use `CompareScalar`: `CompareScalar(mask, xLocal, 0.0f, CMPMODE::GT, len)`
+
+### ❌ DO NOT invent mask types:
+```cpp
+// WRONG - these types DO NOT EXIST!
+SelectMask selMask;           // ❌ unknown type name 'SelectMask'
+Tensor<bool> mask;            // ❌ no template named 'Tensor'
+LocalTensor<bool> mask;       // ❌ bool not supported
+```
+✅ Use: `LocalTensor<uint8_t>` for comparison masks
+
+### ❌ DO NOT use for loops for element-wise computation:
+```cpp
+// WRONG - this is scalar code pattern, not vectorized!
+for (int i = 0; i < len; i++) {
+    output[i] = input[i] > 0 ? input[i] : alpha * (exp(input[i]) - 1);
+}
+```
+✅ Use vectorized operations: CompareScalar + Select pattern"""
+
+    def _get_attribute_access_guide(self) -> str:
+        """内部方法：算子属性获取指南（仅当有 init_params 时使用）"""
+        if not self.signature.get("init_params"):
+            return ""
+
+        params = self.signature["init_params"]
+        param_examples = []
+        for i, param in enumerate(params):
+            param_examples.append(f"// Get {param['name']} ({param['dtype']})")
+            if param['dtype'] == 'float':
+                param_examples.append(f"float {param['name']} = *(reinterpret_cast<const float*>(attrs->GetAttrPointer({i})));")
+            elif param['dtype'] == 'int':
+                param_examples.append(f"int {param['name']} = *(reinterpret_cast<const int*>(attrs->GetAttrPointer({i})));")
+            else:
+                param_examples.append(f"auto {param['name']} = *(reinterpret_cast<const {param['dtype']}*>(attrs->GetAttrPointer({i})));")
+            param_examples.append(f"tiling.set_{param['name']}({param['name']});")
+            param_examples.append("")
+
+        tiling_fields = "\n".join(f"{p['dtype']} {p['name']}" for p in params)
+        attr_code = "\n".join(param_examples)
+
+        return f"""## Accessing Operator Attributes
+
+This operator has init parameters that must be passed from host (TilingFunc) to device (kernel).
+
+### Step 1: Define fields in TILING_FIELDS
+```
+{tiling_fields}
+```
+
+### Step 2: Get attributes in TILING_FUNC_BODY
+```cpp
+// Get attributes from context
+const auto* attrs = context->GetAttrs();
+{attr_code}
+```
+
+### Step 3: Use in kernel Compute()
+```cpp
+// Access via tilingData in kernel
+{chr(10).join(f'{p["dtype"]} {p["name"]} = tilingData.{p["name"]};' for p in params)}
+// Then use in vector operations, e.g.:
+// Muls(tmp, src, alpha, len);
+```
+
+IMPORTANT: Do NOT invent APIs like `GetInitParam()`, `GetInitInput()`, `GetInitParamFloat()` - they do not exist!"""
 
     def _get_component_specification(self) -> str:
         """内部方法：完整代码架构说明和组件标注"""

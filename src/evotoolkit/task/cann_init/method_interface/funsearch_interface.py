@@ -325,13 +325,23 @@ IMPORTANT:
         return None
 
     def _parse_includes(self, content: str) -> List[str]:
-        """Parse include list from JSON or text format."""
+        """Parse include list from JSON or text format.
+
+        Validates that each entry looks like a valid header file path.
+        Filters out markdown artifacts like ``` that may leak from LLM output.
+        """
         content = content.strip()
+
+        # Filter out markdown code fence artifacts
+        if content in ('```', '```cpp', '```c++', '```c', '```h'):
+            return []
 
         # Try JSON first
         if content.startswith("["):
             try:
-                return json.loads(content)
+                parsed = json.loads(content)
+                # Validate each entry
+                return [h for h in parsed if self._is_valid_header_path(h)]
             except json.JSONDecodeError:
                 pass
 
@@ -339,9 +349,38 @@ IMPORTANT:
         includes = []
         for line in content.split("\n"):
             line = line.strip().strip('"').strip("'")
-            if line and not line.startswith("//") and not line.startswith("#"):
+            # Skip empty lines, comments
+            if not line or line.startswith("//") or line.startswith("#"):
+                continue
+            # Validate header path
+            if self._is_valid_header_path(line):
                 includes.append(line)
         return includes
+
+    def _is_valid_header_path(self, path: str) -> bool:
+        """Check if a string looks like a valid C/C++ header path.
+
+        Valid patterns:
+        - Contains .h extension (e.g., "kernel_operator.h", "tiling/platform.h")
+        - Contains / path separator (e.g., "lib/matmul_intf.h")
+
+        Invalid patterns:
+        - Markdown artifacts (```, ```cpp, etc.)
+        - Empty or whitespace only
+        - Comment lines
+        """
+        if not path or not path.strip():
+            return False
+        # Filter markdown artifacts
+        if path.startswith('`') or path.endswith('`'):
+            return False
+        # Should contain .h or have a path-like structure
+        if '.h' in path or '/' in path:
+            return True
+        # Also accept common header extensions
+        if any(path.endswith(ext) for ext in ('.hpp', '.hxx', '.h++')):
+            return True
+        return False
 
     def _fix_json(self, content: str) -> Optional[List]:
         """Try to fix common JSON formatting issues."""
