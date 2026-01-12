@@ -13,6 +13,7 @@ class HostOperatorGenerator(TemplateBase):
         tiling_func_body: str,
         infer_shape_body: str,
         soc_versions: Optional[List[str]] = None,
+        tiling_func_includes: Optional[List[str]] = None,
     ) -> str:
         inputs = self.signature.get("inputs", [])
         outputs = self.signature.get("outputs", [])
@@ -47,8 +48,15 @@ class HostOperatorGenerator(TemplateBase):
             f'        this->AICore().AddConfig("{soc}");' for soc in soc_versions
         )
 
+        # Generate extra includes for TilingFunc
+        extra_includes = ""
+        if tiling_func_includes:
+            for inc in tiling_func_includes:
+                extra_includes += f'#include "{inc}"\n'
+
         return f'''#include "{self.op_custom}_tiling.h"
 #include "register/op_def_registry.h"
+{extra_includes}
 
 namespace optiling {{
 

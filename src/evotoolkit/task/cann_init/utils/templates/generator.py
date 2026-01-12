@@ -8,6 +8,7 @@ from .host_tiling import HostTilingGenerator
 from .host_operator import HostOperatorGenerator
 from .python_bind import PythonBindGenerator
 from .model_src import ModelSrcGenerator
+from .kernel_src import KernelSrcGenerator
 
 
 class AscendCTemplateGenerator:
@@ -18,24 +19,34 @@ class AscendCTemplateGenerator:
         self._host_operator_gen = HostOperatorGenerator(signature)
         self._python_bind_gen = PythonBindGenerator(signature)
         self._model_src_gen = ModelSrcGenerator(signature)
+        self._kernel_src_gen = KernelSrcGenerator(signature)
 
     def generate(
         self,
-        kernel_src: str,
+        kernel_impl: str,
+        kernel_entry_body: str,
         tiling_fields: List[Dict[str, str]],
         tiling_func_body: str,
         infer_shape_body: str,
         project_path: str,
-        output_alloc_code: Optional[str] = None,
+        output_alloc_code: str,
         soc_versions: Optional[List[str]] = None,
+        tiling_func_includes: Optional[List[str]] = None,
+        kernel_includes: Optional[List[str]] = None,
     ) -> Dict[str, str]:
         host_tiling_src = self._host_tiling_gen.generate(tiling_fields)
         host_operator_src = self._host_operator_gen.generate(
             tiling_func_body=tiling_func_body,
             infer_shape_body=infer_shape_body,
             soc_versions=soc_versions,
+            tiling_func_includes=tiling_func_includes,
         )
         python_bind_src = self._python_bind_gen.generate(output_alloc_code)
+        kernel_src = self._kernel_src_gen.generate(
+            kernel_impl=kernel_impl,
+            kernel_entry_body=kernel_entry_body,
+            kernel_includes=kernel_includes,
+        )
 
         return {
             "project_json_src": self._project_json_gen.generate(),

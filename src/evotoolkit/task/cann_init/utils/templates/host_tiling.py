@@ -9,6 +9,19 @@ from .base import TemplateBase
 
 class HostTilingGenerator(TemplateBase):
     def generate(self, tiling_fields: List[Dict[str, Union[str, int]]]) -> str:
+        # Collect extra includes from fields
+        extra_includes = []
+        for field in tiling_fields:
+            if inc := field.get("include"):
+                if inc not in extra_includes:
+                    extra_includes.append(inc)
+
+        # Generate include statements
+        include_code = '#include "register/tilingdata_base.h"\n'
+        for inc in extra_includes:
+            include_code += f'#include "{inc}"\n'
+
+        # Generate field definitions
         fields_code = ""
         for field in tiling_fields:
             fields_code += f"    {self._field_to_macro(field)}\n"
@@ -16,8 +29,7 @@ class HostTilingGenerator(TemplateBase):
         return f'''#ifndef {self.op_custom.upper()}_TILING_H
 #define {self.op_custom.upper()}_TILING_H
 
-#include "register/tilingdata_base.h"
-
+{include_code}
 namespace optiling {{
 BEGIN_TILING_DATA_DEF({self.op_custom_capital}TilingData)
 {fields_code}END_TILING_DATA_DEF;

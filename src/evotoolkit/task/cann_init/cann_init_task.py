@@ -146,23 +146,34 @@ Python Reference:
             if config.build_only:
                 return self._handle_build_only(config, project_path, kernel_src)
 
-            # 验证必要字段
-            if not all([config.tiling_fields, config.tiling_func_body, config.infer_shape_body]):
+            # 验证必要字段 (6 个组件都必须提供)
+            required_fields = [
+                config.tiling_fields,
+                config.tiling_func_body,
+                config.infer_shape_body,
+                config.output_alloc_code,
+                config.kernel_impl,
+                config.kernel_entry_body,
+            ]
+            if not all(required_fields):
                 return self._make_result(
                     valid=False,
                     stage="validation",
-                    error="Missing required fields: tiling_fields, tiling_func_body, infer_shape_body",
+                    error="Missing required fields: tiling_fields, tiling_func_body, infer_shape_body, output_alloc_code, kernel_impl, kernel_entry_body",
                     kernel_src=kernel_src,
                 )
 
             # 生成完整代码
             full_code = self._template_gen.generate(
-                kernel_src=kernel_src,
+                kernel_impl=config.kernel_impl,
+                kernel_entry_body=config.kernel_entry_body,
                 tiling_fields=config.tiling_fields,
                 tiling_func_body=config.tiling_func_body,
                 infer_shape_body=config.infer_shape_body,
                 project_path=project_path,
                 output_alloc_code=config.output_alloc_code,
+                tiling_func_includes=config.tiling_func_includes,
+                kernel_includes=config.kernel_includes,
             )
 
             # fake_mode: 仅写入文件

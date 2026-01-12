@@ -70,13 +70,20 @@ class CANNSolutionConfig:
     # LLM outputs - TilingData
     tiling_fields: Optional[List[Dict[str, str]]] = None
 
+    # LLM outputs - Extra includes for TilingFunc (e.g., "lib/matmul_intf.h")
+    tiling_func_includes: Optional[List[str]] = None
+
     # LLM outputs - Function bodies (new design: all logic in function body)
     tiling_func_body: Optional[str] = None      # TilingFunc complete body
     infer_shape_body: Optional[str] = None      # InferShape complete body
 
+    # LLM outputs - Kernel (templated generation)
+    kernel_impl: Optional[str] = None           # Kernel class and helper code
+    kernel_entry_body: Optional[str] = None     # Entry function body (after GET_TILING_DATA)
+    kernel_includes: Optional[List[str]] = None # Extra includes for kernel (e.g., "lib/matmul_intf.h")
+
     # LLM outputs - Full source (alternative: LLM generates complete file)
     host_operator_src: Optional[str] = None
-    kernel_src: Optional[str] = None
     python_bind_src: Optional[str] = None
 
     # Output allocation (for python_bind)
@@ -99,10 +106,13 @@ class CANNSolutionConfig:
         return cls(
             project_path=d.get("project_path"),
             tiling_fields=d.get("tiling_fields"),
+            tiling_func_includes=d.get("tiling_func_includes"),
             tiling_func_body=d.get("tiling_func_body"),
             infer_shape_body=d.get("infer_shape_body"),
+            kernel_impl=d.get("kernel_impl"),
+            kernel_entry_body=d.get("kernel_entry_body"),
+            kernel_includes=d.get("kernel_includes"),
             host_operator_src=d.get("host_operator_src"),
-            kernel_src=d.get("kernel_src"),
             python_bind_src=d.get("python_bind_src"),
             output_alloc_code=d.get("output_alloc_code"),
             compile_only=d.get("compile_only", False),
@@ -121,14 +131,20 @@ class CANNSolutionConfig:
             result["project_path"] = self.project_path
         if self.tiling_fields is not None:
             result["tiling_fields"] = self.tiling_fields
+        if self.tiling_func_includes is not None:
+            result["tiling_func_includes"] = self.tiling_func_includes
         if self.tiling_func_body is not None:
             result["tiling_func_body"] = self.tiling_func_body
         if self.infer_shape_body is not None:
             result["infer_shape_body"] = self.infer_shape_body
+        if self.kernel_impl is not None:
+            result["kernel_impl"] = self.kernel_impl
+        if self.kernel_entry_body is not None:
+            result["kernel_entry_body"] = self.kernel_entry_body
+        if self.kernel_includes is not None:
+            result["kernel_includes"] = self.kernel_includes
         if self.host_operator_src is not None:
             result["host_operator_src"] = self.host_operator_src
-        if self.kernel_src is not None:
-            result["kernel_src"] = self.kernel_src
         if self.python_bind_src is not None:
             result["python_bind_src"] = self.python_bind_src
         if self.output_alloc_code is not None:

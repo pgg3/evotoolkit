@@ -17,10 +17,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from evotoolkit.task.cann_init import CANNInitTask, CANNSolutionConfig
 from evotoolkit.core import Solution
 from _config import (
-    KERNEL_SRC,
+    KERNEL_IMPL,
+    KERNEL_ENTRY_BODY,
     TILING_FIELDS,
     TILING_FUNC_BODY,
     INFER_SHAPE_BODY,
+    OUTPUT_ALLOC_CODE,
     get_task_data,
     ensure_output_dir,
 )
@@ -35,11 +37,14 @@ def run_single(task, output_dir):
     """Single solution evaluation (no parallelism)."""
     config = CANNSolutionConfig(
         project_path=str(output_dir),
+        kernel_impl=KERNEL_IMPL,
+        kernel_entry_body=KERNEL_ENTRY_BODY,
         tiling_fields=TILING_FIELDS,
         tiling_func_body=TILING_FUNC_BODY,
         infer_shape_body=INFER_SHAPE_BODY,
+        output_alloc_code=OUTPUT_ALLOC_CODE,
     )
-    solution = Solution(sol_string=KERNEL_SRC, other_info=config.to_dict())
+    solution = Solution(sol_string="", other_info=config.to_dict())
 
     print("\nEvaluating (this may take a few minutes)...")
     result = task.evaluate_solution(solution)
@@ -61,13 +66,16 @@ def run_parallel(task, output_dir, num_solutions, delay):
     for i in range(num_solutions):
         config = CANNSolutionConfig(
             project_path=str(output_dir / f"sol_{i:03d}"),
+            kernel_impl=KERNEL_IMPL,
+            kernel_entry_body=KERNEL_ENTRY_BODY,
             tiling_fields=TILING_FIELDS,
             tiling_func_body=TILING_FUNC_BODY,
             infer_shape_body=INFER_SHAPE_BODY,
+            output_alloc_code=OUTPUT_ALLOC_CODE,
             compile_only=True,
             save_compile_to=str(output_dir / f"sol_{i:03d}"),
         )
-        solutions.append((i, Solution(KERNEL_SRC, config.to_dict())))
+        solutions.append((i, Solution("", config.to_dict())))
 
     # Phase 1: Sequential setup
     print(f"\nPhase 1: Sequential project setup ({num_solutions} solutions)...")
@@ -99,7 +107,7 @@ def run_parallel(task, output_dir, num_solutions, delay):
                 "build_only": True,
                 "save_compile_to": str(output_dir / f"sol_{idx:03d}"),
             }
-            build_sol = Solution(KERNEL_SRC, config_dict)
+            build_sol = Solution("", config_dict)
             future = executor.submit(build_with_delay, task, build_sol, i * delay)
             futures[future] = idx
 

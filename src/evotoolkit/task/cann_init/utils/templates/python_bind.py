@@ -5,18 +5,21 @@ from .base import TemplateBase
 
 
 class PythonBindGenerator(TemplateBase):
-    def generate(self, output_alloc_code: str = None) -> str:
+    def generate(self, output_alloc_code: str) -> str:
+        """Generate Python binding code.
+
+        Args:
+            output_alloc_code: Required. Code for allocating output tensor(s).
+                              Must define 'result' variable.
+        """
         inputs = self.signature.get("inputs", [])
         init_params = self.signature.get("init_params", [])
 
         param_parts = []
-        first_tensor = None
 
         for inp in inputs:
             if inp.get("is_tensor", True):
                 param_parts.append(f"const at::Tensor& {inp['name']}")
-                if first_tensor is None:
-                    first_tensor = inp['name']
             else:
                 cpp_type = self._dtype_to_cpp_type(inp.get("dtype", "float"))
                 param_parts.append(f"{cpp_type} {inp['name']}")
@@ -24,8 +27,6 @@ class PythonBindGenerator(TemplateBase):
         for param in init_params:
             if param.get("is_tensor", False):
                 param_parts.append(f"const at::Tensor& {param['name']}")
-                if first_tensor is None:
-                    first_tensor = param['name']
             else:
                 cpp_type = self._dtype_to_cpp_type(param.get("dtype", "float"))
                 param_parts.append(f"{cpp_type} {param['name']}")
@@ -34,12 +35,6 @@ class PythonBindGenerator(TemplateBase):
 
         all_args = [inp["name"] for inp in inputs] + [param["name"] for param in init_params]
         exec_args = ", ".join(all_args + ["result"])
-
-        if first_tensor is None:
-            first_tensor = "x"
-
-        if output_alloc_code is None:
-            output_alloc_code = f"at::Tensor result = at::empty_like({first_tensor});"
 
         return f'''#include <torch/library.h>
 #include <torch/csrc/autograd/custom_function.h>
