@@ -13,9 +13,10 @@ class HistoryManager:
     """管理进化算法运行历史的保存和加载"""
 
     def __init__(self, output_path: str):
-        self.output_path = output_path
-        self.history_dir = os.path.join(output_path, "history")
-        self.summary_dir = os.path.join(output_path, "summary")
+        # Use absolute paths to avoid issues with os.chdir() in multi-threaded environments
+        self.output_path = os.path.abspath(output_path)
+        self.history_dir = os.path.join(self.output_path, "history")
+        self.summary_dir = os.path.join(self.output_path, "summary")
 
         # 确保目录存在
         os.makedirs(self.history_dir, exist_ok=True)

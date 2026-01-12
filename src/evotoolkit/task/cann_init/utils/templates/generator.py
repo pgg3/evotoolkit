@@ -32,9 +32,13 @@ class AscendCTemplateGenerator:
         output_alloc_code: str,
         soc_versions: Optional[List[str]] = None,
         tiling_func_includes: Optional[List[str]] = None,
+        tiling_includes: Optional[List[str]] = None,
         kernel_includes: Optional[List[str]] = None,
     ) -> Dict[str, str]:
-        host_tiling_src = self._host_tiling_gen.generate(tiling_fields)
+        host_tiling_src = self._host_tiling_gen.generate(
+            tiling_fields=tiling_fields,
+            tiling_includes=tiling_includes,
+        )
         host_operator_src = self._host_operator_gen.generate(
             tiling_func_body=tiling_func_body,
             infer_shape_body=infer_shape_body,

@@ -9,6 +9,7 @@ This module contains the base configuration class that is shared
 across all evolutionary algorithms in the framework.
 """
 
+import os
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -30,7 +31,9 @@ class BaseConfig:
 
     def __init__(self, interface: "BaseMethodInterface", output_path: str, verbose: bool = True):
         self.interface = interface
-        self.output_path = output_path
+        # Convert to absolute path immediately to avoid issues with os.chdir() in multi-threaded environments
+        # This must happen at config creation time, before any worker threads change the CWD
+        self.output_path = os.path.abspath(output_path)
         self.verbose = verbose
 
     @property

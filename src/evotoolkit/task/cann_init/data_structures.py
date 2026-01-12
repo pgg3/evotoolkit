@@ -65,38 +65,47 @@ class CompileResult:
 
 @dataclass
 class CANNSolutionConfig:
+    """CANN Solution 配置，包含 LLM 生成的组件和执行控制参数。
+
+    LLM 生成组件按目标文件分组：
+    - Kernel (Device): kernel_impl + kernel_entry_body → kernel_src
+    - Host Tiling: tiling_fields → host_tiling_src
+    - Host Operator: tiling_func_body + infer_shape_body → host_operator_src
+    - Python Bind: output_alloc_code → python_bind_src
+    """
+
+    # === Project Config ===
     project_path: Optional[str] = None
 
-    # LLM outputs - TilingData
-    tiling_fields: Optional[List[Dict[str, str]]] = None
-
-    # LLM outputs - Extra includes for TilingFunc (e.g., "lib/matmul_intf.h")
-    tiling_func_includes: Optional[List[str]] = None
-
-    # LLM outputs - Function bodies (new design: all logic in function body)
-    tiling_func_body: Optional[str] = None      # TilingFunc complete body
-    infer_shape_body: Optional[str] = None      # InferShape complete body
-
-    # LLM outputs - Kernel (templated generation)
+    # === Kernel (Device side) - generates kernel_src ===
+    # Template: #include + kernel_impl + entry function(signature + GET_TILING_DATA + body)
     kernel_impl: Optional[str] = None           # Kernel class and helper code
     kernel_entry_body: Optional[str] = None     # Entry function body (after GET_TILING_DATA)
-    kernel_includes: Optional[List[str]] = None # Extra includes for kernel (e.g., "lib/matmul_intf.h")
+    kernel_includes: Optional[List[str]] = None # Extra includes (e.g., "lib/matmul_intf.h")
 
-    # LLM outputs - Full source (alternative: LLM generates complete file)
-    host_operator_src: Optional[str] = None
-    python_bind_src: Optional[str] = None
+    # === Host Tiling - generates host_tiling_src ===
+    # Template: #include + BEGIN_TILING_DATA_DEF + fields + END_TILING_DATA_DEF
+    tiling_fields: Optional[List[Dict[str, str]]] = None  # TilingData struct fields
+    tiling_includes: Optional[List[str]] = None  # Extra includes for host_tiling_src
 
-    # Output allocation (for python_bind)
-    output_alloc_code: Optional[str] = None
+    # === Host Operator - generates host_operator_src ===
+    # Template: #include + TilingFunc + InferShape + IMPL_OP
+    tiling_func_body: Optional[str] = None      # TilingFunc function body
+    tiling_func_includes: Optional[List[str]] = None  # Extra includes for TilingFunc
+    infer_shape_body: Optional[str] = None      # InferShape function body
 
-    # Execution control
-    compile_only: bool = False
-    load_from: Optional[str] = None
-    skip_correctness: bool = False
-    skip_performance: bool = False
-    setup_only: bool = False
-    build_only: bool = False
-    save_compile_to: Optional[str] = None
+    # === Python Bind - generates python_bind_src ===
+    # Template: impl function(alloc + EXEC_NPU_CMD) + PYBIND11_MODULE
+    output_alloc_code: Optional[str] = None     # Output tensor allocation code
+
+    # === Execution control ===
+    compile_only: bool = False                  # Only compile, skip correctness/performance
+    setup_only: bool = False                    # Only setup project (write files)
+    build_only: bool = False                    # Only build (requires setup_only first)
+    load_from: Optional[str] = None             # Load compiled result from path
+    save_compile_to: Optional[str] = None       # Save compiled result to path
+    skip_correctness: bool = False              # Skip correctness verification
+    skip_performance: bool = False              # Skip performance measurement
 
     @classmethod
     def from_dict(cls, d: Optional[Dict[str, Any]]) -> "CANNSolutionConfig":
@@ -104,64 +113,78 @@ class CANNSolutionConfig:
             return cls()
 
         return cls(
+            # Project config
             project_path=d.get("project_path"),
-            tiling_fields=d.get("tiling_fields"),
-            tiling_func_includes=d.get("tiling_func_includes"),
-            tiling_func_body=d.get("tiling_func_body"),
-            infer_shape_body=d.get("infer_shape_body"),
+            # Kernel (Device)
             kernel_impl=d.get("kernel_impl"),
             kernel_entry_body=d.get("kernel_entry_body"),
             kernel_includes=d.get("kernel_includes"),
-            host_operator_src=d.get("host_operator_src"),
-            python_bind_src=d.get("python_bind_src"),
+            # Host Tiling
+            tiling_fields=d.get("tiling_fields"),
+            tiling_includes=d.get("tiling_includes"),
+            # Host Operator
+            tiling_func_body=d.get("tiling_func_body"),
+            tiling_func_includes=d.get("tiling_func_includes"),
+            infer_shape_body=d.get("infer_shape_body"),
+            # Python Bind
             output_alloc_code=d.get("output_alloc_code"),
+            # Execution control
             compile_only=d.get("compile_only", False),
-            load_from=d.get("load_from"),
-            skip_correctness=d.get("skip_correctness", False),
-            skip_performance=d.get("skip_performance", False),
             setup_only=d.get("setup_only", False),
             build_only=d.get("build_only", False),
+            load_from=d.get("load_from"),
             save_compile_to=d.get("save_compile_to"),
+            skip_correctness=d.get("skip_correctness", False),
+            skip_performance=d.get("skip_performance", False),
         )
 
     def to_dict(self) -> Dict[str, Any]:
         result = {}
 
+        # Project config
         if self.project_path is not None:
             result["project_path"] = self.project_path
-        if self.tiling_fields is not None:
-            result["tiling_fields"] = self.tiling_fields
-        if self.tiling_func_includes is not None:
-            result["tiling_func_includes"] = self.tiling_func_includes
-        if self.tiling_func_body is not None:
-            result["tiling_func_body"] = self.tiling_func_body
-        if self.infer_shape_body is not None:
-            result["infer_shape_body"] = self.infer_shape_body
+
+        # Kernel (Device)
         if self.kernel_impl is not None:
             result["kernel_impl"] = self.kernel_impl
         if self.kernel_entry_body is not None:
             result["kernel_entry_body"] = self.kernel_entry_body
         if self.kernel_includes is not None:
             result["kernel_includes"] = self.kernel_includes
-        if self.host_operator_src is not None:
-            result["host_operator_src"] = self.host_operator_src
-        if self.python_bind_src is not None:
-            result["python_bind_src"] = self.python_bind_src
+
+        # Host Tiling
+        if self.tiling_fields is not None:
+            result["tiling_fields"] = self.tiling_fields
+        if self.tiling_includes is not None:
+            result["tiling_includes"] = self.tiling_includes
+
+        # Host Operator
+        if self.tiling_func_body is not None:
+            result["tiling_func_body"] = self.tiling_func_body
+        if self.tiling_func_includes is not None:
+            result["tiling_func_includes"] = self.tiling_func_includes
+        if self.infer_shape_body is not None:
+            result["infer_shape_body"] = self.infer_shape_body
+
+        # Python Bind
         if self.output_alloc_code is not None:
             result["output_alloc_code"] = self.output_alloc_code
+
+        # Execution control
         if self.compile_only:
             result["compile_only"] = True
-        if self.load_from is not None:
-            result["load_from"] = self.load_from
-        if self.skip_correctness:
-            result["skip_correctness"] = True
-        if self.skip_performance:
-            result["skip_performance"] = True
         if self.setup_only:
             result["setup_only"] = True
         if self.build_only:
             result["build_only"] = True
+        if self.load_from is not None:
+            result["load_from"] = self.load_from
         if self.save_compile_to is not None:
             result["save_compile_to"] = self.save_compile_to
+        if self.skip_correctness:
+            result["skip_correctness"] = True
+        if self.skip_performance:
+            result["skip_performance"] = True
 
         return result

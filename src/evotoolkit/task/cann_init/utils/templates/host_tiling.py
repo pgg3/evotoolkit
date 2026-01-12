@@ -2,24 +2,22 @@
 # Licensed under the MIT License
 
 import re
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 from .base import TemplateBase
 
 
 class HostTilingGenerator(TemplateBase):
-    def generate(self, tiling_fields: List[Dict[str, Union[str, int]]]) -> str:
-        # Collect extra includes from fields
-        extra_includes = []
-        for field in tiling_fields:
-            if inc := field.get("include"):
-                if inc not in extra_includes:
-                    extra_includes.append(inc)
-
+    def generate(
+        self,
+        tiling_fields: List[Dict[str, Union[str, int]]],
+        tiling_includes: Optional[List[str]] = None,
+    ) -> str:
         # Generate include statements
         include_code = '#include "register/tilingdata_base.h"\n'
-        for inc in extra_includes:
-            include_code += f'#include "{inc}"\n'
+        if tiling_includes:
+            for inc in tiling_includes:
+                include_code += f'#include "{inc}"\n'
 
         # Generate field definitions
         fields_code = ""

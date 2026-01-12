@@ -15,9 +15,17 @@ Supports phased execution for parallel compilation:
 import os
 import subprocess
 import shutil
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Callable, Optional
 
 from ..templates.pybind_templates import setup_pybind_directory
+
+
+def _make_logger(verbose: bool) -> Callable[[str], None]:
+    """Create a logger function based on verbose setting."""
+    if verbose:
+        return lambda msg: print(msg)
+    else:
+        return lambda msg: None
 
 
 def underscore_to_pascalcase(underscore_str: str) -> str:
@@ -121,6 +129,7 @@ def ascend_setup(
     op_name: str,
     project_path: str,
     device: str = "Ascend910B",
+    verbose: bool = True,
 ) -> Dict[str, Any]:
     """
     Setup phase: msopgen + write source files.
@@ -132,10 +141,12 @@ def ascend_setup(
         op_name: Operator name (e.g., "add")
         project_path: Base directory for operator projects
         device: Target device (e.g., "Ascend910B")
+        verbose: Whether to print progress messages
 
     Returns:
         {"success": bool, "error": str or None, "target_directory": str}
     """
+    log = _make_logger(verbose)
     op = f"{op_name}_custom"
     op_capital = underscore_to_pascalcase(op)
     op_lower = op_name.lower()  # For filenames (msopgen uses lowercase)
@@ -164,7 +175,7 @@ def ascend_setup(
             f.write(full_code.get("project_json_src", ""))
 
         # Step 2: Run msopgen to create project structure
-        print("[INFO] Creating operator project with msopgen...")
+        log("[INFO] Creating operator project with msopgen...")
         os.chdir(project_path)
 
         try:
@@ -181,7 +192,7 @@ def ascend_setup(
                 text=True,
                 timeout=60,
             )
-            print("[INFO] Operator project created successfully")
+            log("[INFO] Operator project created successfully")
         except subprocess.CalledProcessError as e:
             error_msg = f"msopgen failed:\nExit Code: {e.returncode}\nStdout:\n{e.stdout}\nStderr:\n{e.stderr}"
             return {"success": False, "error": error_msg, "target_directory": target_directory}
@@ -191,7 +202,7 @@ def ascend_setup(
             os.chdir(original_cwd)
 
         # Step 3: Write source files to project
-        print("[INFO] Writing source files...")
+        log("[INFO] Writing source files...")
 
         # NOTE: msopgen uses lowercase filenames (e.g., sdpa_custom_tiling.h, sdpa_custom.cpp)
         with open(os.path.join(target_directory, "op_host", f"{op_lower}_custom_tiling.h"), "w") as f:
@@ -204,7 +215,7 @@ def ascend_setup(
             f.write(full_code.get("kernel_src", ""))
 
         # Set up Python binding directory with built-in templates
-        print("[INFO] Setting up Python binding environment...")
+        log("[INFO] Setting up Python binding environment...")
         cpp_ext_dir = setup_pybind_directory(project_path)
         csrc_dir = os.path.join(cpp_ext_dir, "csrc")
         with open(os.path.join(csrc_dir, "op.cpp"), "w") as f:
@@ -215,7 +226,7 @@ def ascend_setup(
         with open(model_path, "w") as f:
             f.write(full_code.get("model_src", ""))
 
-        print("[INFO] Setup phase completed successfully")
+        log("[INFO] Setup phase completed successfully")
         return {"success": True, "error": None, "target_directory": target_directory}
 
     except Exception as e:
@@ -227,6 +238,7 @@ def ascend_build(
     op_name: str,
     project_path: str,
     full_code: Dict[str, str],
+    verbose: bool = True,
 ) -> Dict[str, Any]:
     """
     Build phase: build.sh + deploy + pybind.
@@ -237,10 +249,12 @@ def ascend_build(
         op_name: Operator name (e.g., "add")
         project_path: Base directory for operator projects
         full_code: Dictionary containing code (needed for model_src)
+        verbose: Whether to print progress messages
 
     Returns:
         {"success": bool, "error": str or None, "context": dict}
     """
+    log = _make_logger(verbose)
     op = f"{op_name}_custom"
     op_capital = underscore_to_pascalcase(op)
     target_directory = os.path.join(project_path, op_capital)
@@ -250,7 +264,7 @@ def ascend_build(
 
     try:
         # Step 4: Build the operator
-        print("[INFO] Building operator...")
+        log("[INFO] Building operator...")
         os.environ.pop("ASCEND_CUSTOM_OPP_PATH", None)
         os.chdir(target_directory)
 
@@ -262,7 +276,7 @@ def ascend_build(
                 text=True,
                 timeout=180,
             )
-            print("[INFO] Build succeeded")
+            log("[INFO] Build succeeded")
         except subprocess.CalledProcessError as e:
             # Capture full output for debugging
             full_output = f"STDOUT:\n{e.stdout}\n\nSTDERR:\n{e.stderr}"
@@ -282,7 +296,7 @@ def ascend_build(
         # Step 5: Deploy the operator package to project-local opp directory
         # IMPORTANT: Use --install-path to avoid global OPP pollution
         # This enables parallel compilation without conflicts
-        print("[INFO] Deploying operator package...")
+        log("[INFO] Deploying operator package...")
         os.chdir(os.path.join(target_directory, "build_out"))
 
         # Create local opp directory for this project
@@ -297,7 +311,7 @@ def ascend_build(
                 text=True,
                 timeout=60,
             )
-            print(f"[INFO] Deploy succeeded to {local_opp_path}")
+            log(f"[INFO] Deploy succeeded to {local_opp_path}")
         except subprocess.CalledProcessError as e:
             error_msg = f"Deploy failed:\nExit Code: {e.returncode}\nOutput:\n{e.stdout}\nStderr:\n{e.stderr}"
             return {"success": False, "error": error_msg, "context": context}
@@ -307,7 +321,7 @@ def ascend_build(
             os.chdir(original_cwd)
 
         # Step 6: Build Python bindings
-        print("[INFO] Building Python bindings...")
+        log("[INFO] Building Python bindings...")
         os.chdir(cpp_ext_dir)
 
         try:
@@ -318,7 +332,7 @@ def ascend_build(
                 text=True,
                 timeout=120,
             )
-            print("[INFO] Python binding succeeded")
+            log("[INFO] Python binding succeeded")
         except subprocess.CalledProcessError as e:
             error_msg = f"Python binding failed:\nExit Code: {e.returncode}\nOutput:\n{e.stdout}"
             return {"success": False, "error": error_msg, "context": context}
@@ -337,7 +351,7 @@ def ascend_build(
             os.environ["LD_LIBRARY_PATH"] = f"{custom_lib_path}:{existing_path}"
 
         # Step 8: Load model code into context
-        print("[INFO] Loading model code...")
+        log("[INFO] Loading model code...")
         try:
             model_src = full_code.get("model_src", "")
             compile(model_src, "<string>", "exec")
@@ -345,7 +359,7 @@ def ascend_build(
         except Exception as e:
             return {"success": False, "error": f"Failed to load model: {str(e)}", "context": context}
 
-        print("[INFO] Build phase completed successfully")
+        log("[INFO] Build phase completed successfully")
         return {"success": True, "error": None, "context": context}
 
     except Exception as e:
@@ -358,6 +372,7 @@ def ascend_compile(
     op_name: str,
     project_path: str,
     device: str = "Ascend910B",
+    verbose: bool = True,
 ) -> Dict[str, Any]:
     """
     Compile Ascend C operator code (full pipeline).
@@ -376,15 +391,16 @@ def ascend_compile(
         op_name: Operator name (e.g., "add")
         project_path: Base directory for operator projects
         device: Target device (e.g., "Ascend910B")
+        verbose: Whether to print progress messages
 
     Returns:
         {"success": bool, "error": str or None, "context": dict}
     """
     # Phase 1: Setup
-    setup_result = ascend_setup(full_code, op_name, project_path, device)
+    setup_result = ascend_setup(full_code, op_name, project_path, device, verbose=verbose)
     if not setup_result["success"]:
         return {"success": False, "error": setup_result["error"], "context": {}}
 
     # Phase 2: Build
-    build_result = ascend_build(op_name, project_path, full_code)
+    build_result = ascend_build(op_name, project_path, full_code, verbose=verbose)
     return build_result

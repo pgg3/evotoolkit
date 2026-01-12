@@ -50,6 +50,7 @@ class AscendCEvaluator:
         num_warmup: int = 3,
         seed: int = 1024,
         sandbox_timeout: int = 600,
+        verbose: bool = True,
     ):
         """
         Initialize the evaluator.
@@ -62,6 +63,7 @@ class AscendCEvaluator:
             num_warmup: Number of warmup runs before performance measurement
             seed: Random seed for reproducibility
             sandbox_timeout: Timeout in seconds for sandbox operations (default: 600)
+            verbose: Whether to print build progress messages
         """
         self.project_path = project_path
         self.device = device
@@ -70,6 +72,7 @@ class AscendCEvaluator:
         self.num_warmup = num_warmup
         self.seed = seed
         self.sandbox_timeout = sandbox_timeout
+        self.verbose = verbose
 
         # Sandbox executor for isolated execution
         self._sandbox = CANNSandboxExecutor(default_timeout=sandbox_timeout)
@@ -110,6 +113,7 @@ class AscendCEvaluator:
             op_name=op_name,
             project_path=actual_path,
             device=self.device,
+            verbose=self.verbose,
         )
 
         # Build CompileResult

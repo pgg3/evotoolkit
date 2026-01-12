@@ -18,6 +18,7 @@ class FunSearchRunStateDict(BaseRunStateDict):
         database_file: str = None,
         is_done: bool = False,
         batch_size: int = 1,
+        next_batch_id: int = 0,
     ):
         super().__init__(task_info)
 
@@ -34,6 +35,7 @@ class FunSearchRunStateDict(BaseRunStateDict):
         self.current_batch_solutions: List[Solution] = []
         self.current_batch_usage: List[dict] = []
         self.current_batch_start: int = 0
+        self.next_batch_id: int = next_batch_id  # 下一个要保存的批次ID
 
     def to_json(self) -> dict:
         """Convert the run state to JSON-serializable dictionary (only current state, no history)"""
@@ -58,13 +60,12 @@ class FunSearchRunStateDict(BaseRunStateDict):
             "database_file": self.database_file,
             "tot_sample_nums": self.tot_sample_nums,
             "batch_size": self.batch_size,
+            "next_batch_id": self.next_batch_id,
             "is_done": self.is_done,
             "current_best": current_best,
             "metadata": {
                 "history_saved_in": "history/",
-                "last_batch": (self.tot_sample_nums - 1) // self.batch_size
-                if self.tot_sample_nums > 0
-                else 0,
+                "last_batch": self.next_batch_id - 1 if self.next_batch_id > 0 else 0,
             },
         }
 
@@ -78,6 +79,7 @@ class FunSearchRunStateDict(BaseRunStateDict):
             database_file=data.get("database_file"),
             is_done=data.get("is_done", False),
             batch_size=data.get("batch_size", 1),
+            next_batch_id=data.get("next_batch_id", 0),
         )
         return instance
 
@@ -97,8 +99,8 @@ class FunSearchRunStateDict(BaseRunStateDict):
         if not should_save:
             return
 
-        # 计算批次ID
-        batch_id = (self.tot_sample_nums - 1) // self.batch_size
+        # 使用递增的批次ID（不再基于 tot_sample_nums 计算）
+        batch_id = self.next_batch_id
 
         # 计算样本范围
         sample_range = (self.current_batch_start, self.tot_sample_nums)
@@ -124,20 +126,24 @@ class FunSearchRunStateDict(BaseRunStateDict):
         # 保存usage_history摘要
         self._history_manager.save_usage_history(self.usage_history)
 
-        # 更新批次起始点并清空缓存
+        # 更新批次起始点并清空缓存，递增批次ID
         self.current_batch_start = self.tot_sample_nums
         self.current_batch_solutions = []
         self.current_batch_usage = []
+        self.next_batch_id += 1
 
     def save_database_state(self, database_dict: dict, output_path: str) -> None:
         """Save database state to a separate JSON file"""
+        # Convert to absolute path to avoid issues with os.chdir() in multi-threaded environments
+        abs_output_path = os.path.abspath(output_path)
+
         if not self.database_file:
             # Generate database filename based on output path
-            self.database_file = os.path.join(output_path, "programs_database.json")
+            self.database_file = os.path.join(abs_output_path, "programs_database.json")
 
         database_path = self.database_file
         if not os.path.isabs(database_path):
-            database_path = os.path.join(output_path, database_path)
+            database_path = os.path.join(abs_output_path, database_path)
 
         os.makedirs(os.path.dirname(database_path), exist_ok=True)
         with open(database_path, "w", encoding="utf-8") as f:
@@ -148,9 +154,12 @@ class FunSearchRunStateDict(BaseRunStateDict):
         if not self.database_file:
             return {}
 
+        # Convert to absolute path to avoid issues with os.chdir() in multi-threaded environments
+        abs_output_path = os.path.abspath(output_path)
+
         database_path = self.database_file
         if not os.path.isabs(database_path):
-            database_path = os.path.join(output_path, database_path)
+            database_path = os.path.join(abs_output_path, database_path)
 
         if not os.path.exists(database_path):
             return {}
@@ -167,8 +176,11 @@ class FunSearchRunStateDict(BaseRunStateDict):
         if not self.database_file:
             return False
 
+        # Convert to absolute path to avoid issues with os.chdir() in multi-threaded environments
+        abs_output_path = os.path.abspath(output_path)
+
         database_path = self.database_file
         if not os.path.isabs(database_path):
-            database_path = os.path.join(output_path, database_path)
+            database_path = os.path.join(abs_output_path, database_path)
 
         return os.path.exists(database_path)

@@ -53,15 +53,20 @@ class Method(ABC):
         """Save run state to file and history"""
         # 先保存历史
         self.run_state_dict.save_current_history()
-        # 再保存当前状态
-        self.run_state_dict.to_json_file(os.path.join(self.config.output_path, "run_state.json"))
+        # 再保存当前状态 - use absolute path to avoid os.chdir() issues
+        abs_output_path = os.path.abspath(self.config.output_path)
+        self.run_state_dict.to_json_file(os.path.join(abs_output_path, "run_state.json"))
 
     def _load_run_state_dict(self) -> BaseRunStateDict | None:
         """Load run state from file"""
+        # Use absolute path to avoid os.chdir() issues
+        abs_output_path = os.path.abspath(self.config.output_path)
+        run_state_file = os.path.join(abs_output_path, "run_state.json")
+
         run_state_class = self._get_run_state_class()
-        if os.path.exists(os.path.join(self.config.output_path, "run_state.json")):
-            self.verbose_info(f"Loading run state from file {os.path.join(self.config.output_path, 'run_state.json')}")
-            return run_state_class.from_json_file(os.path.join(self.config.output_path, "run_state.json"))
+        if os.path.exists(run_state_file):
+            self.verbose_info(f"Loading run state from file {run_state_file}")
+            return run_state_class.from_json_file(run_state_file)
         else:
             run_state_dict = run_state_class(self.config.task.task_info)
             self.verbose_info("Initialized run state dict.")

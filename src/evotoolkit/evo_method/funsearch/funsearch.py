@@ -116,7 +116,7 @@ class FunSearch(Method):
 
                             # Immediately submit for evaluation without waiting
                             eval_future = executor.submit(
-                                self.config.task.evaluate_code, new_program.sol_string
+                                self.config.task.evaluate_solution, new_program
                             )
                             eval_futures.append((eval_future, new_program))
                         except Exception as e:
