@@ -21,6 +21,11 @@ class BaseConfig:
     Base configuration class for evolutionary methods.
 
     Note: task is accessed via interface.task to avoid data redundancy.
+
+    TODO: Consider adding `initial_solutions: list[Solution] = None` parameter
+    to allow users to optionally provide seed solutions. Evolution methods would
+    inject these into sol_history at startup and evaluate them before the main loop.
+    This keeps initial solution injection explicit and optional.
     """
 
     def __init__(self, interface: "BaseMethodInterface", output_path: str, verbose: bool = True):
