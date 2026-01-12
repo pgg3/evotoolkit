@@ -55,20 +55,7 @@ class FunSearch(Method):
 
         # Initialize with seed program if sol_history is empty
         if len(self.run_state_dict.sol_history) == 0:
-            init_sol = self._get_init_sol()
-            if init_sol is None:
-                exit()
-
-            programs_db.register_solution(init_sol)  # Register to all islands
-            self.run_state_dict.sol_history.append(
-                init_sol
-            )  # Add to sol_history but don't count in sample_nums
-
-            self._save_run_state_dict_with_database(programs_db)
-
-            self.verbose_info(
-                f"Initialized with seed program (score: {init_sol.evaluation_res.score if init_sol.evaluation_res else 'None'})"
-            )
+            self.verbose_info("Starting with empty solution history - will generate initial solutions in main loop")
         else:
             self.verbose_info(
                 f"Continuing from sample {self.run_state_dict.tot_sample_nums} with {len(self.run_state_dict.sol_history)} solutions in history"
@@ -92,15 +79,17 @@ class FunSearch(Method):
                     f"Samples {start_sample} - {end_sample} / {self.config.max_sample_nums or 'unlimited'}"
                 )
 
-                # Get prompt solutions from random island
+                # Get prompt solutions from random island (may be empty for initial generation)
                 prompt_solutions, island_id = programs_db.get_prompt_solutions()
                 if not prompt_solutions:
-                    self.verbose_info("No solutions available for prompting")
-                    continue
-
-                self.verbose_info(
-                    f"Selected {len(prompt_solutions)} solutions from island {island_id}"
-                )
+                    self.verbose_info("No solutions in database - generating from scratch")
+                    # Use empty list, interface should handle this case
+                    prompt_solutions = []
+                    island_id = 0
+                else:
+                    self.verbose_info(
+                        f"Selected {len(prompt_solutions)} solutions from island {island_id}"
+                    )
 
                 # Async generate and evaluate programs - single executor for both
                 with concurrent.futures.ThreadPoolExecutor(

@@ -35,17 +35,20 @@ class EvoEngineerFreeCudaInterface(EvoEngineerFullCudaInterface):
         """Generate prompt for any operator"""
         task_description = self.task.get_base_task_description()
 
-        if current_best_sol is None:
-            current_best_sol = self.make_init_sol()
-
         if operator_name == "init":
+            # For init operator, current_best_sol may be None
+            if current_best_sol is not None and current_best_sol.sol_string:
+                baseline_section = f"""## BASELINE CODE
+```cpp
+{current_best_sol.sol_string}
+```"""
+            else:
+                baseline_section = ""
+
             prompt = f"""# CUDA KERNEL OPTIMIZATION TASK
 {task_description}
 
-## BASELINE CODE
-```cpp
-{current_best_sol.sol_string}
-```
+{baseline_section}
 
 ## OPTIMIZATION STRATEGY
 Propose a new CUDA kernel code which aims to reduce the runtime of the operation, while ensuring the kernel returns the correct result.
@@ -59,7 +62,7 @@ code:
 
 ## FORMAT REQUIREMENTS:
 1. MAKE SURE THE PROPOSAL CODE IS VALID CUDA CODE.
-2. The PYBIND11_MODULE inside the code has to be the same as ## BASELINE CODE.
+2. {"The PYBIND11_MODULE inside the code has to be the same as ## BASELINE CODE." if current_best_sol else ""}
 3. The code MUST be wrapped in ```cpp and ``` markers."""
             return [{"role": "user", "content": prompt}]
         else:

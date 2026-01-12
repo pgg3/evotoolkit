@@ -10,16 +10,21 @@ from ..solution import Solution
 
 
 class BaseMethodInterface(abc.ABC):
-    """Base Adapter"""
+    """Base interface for method-specific prompt building and response parsing.
+
+    Interface is responsible for:
+    - Building prompts for the LLM based on solutions and task info
+    - Parsing LLM responses into Solution objects
+
+    Interface is NOT responsible for:
+    - Creating initial solutions (handled by evolution methods or task)
+    - Evaluating solutions (handled by task)
+    """
 
     def __init__(self, task: BaseTask):
         self.task = task
 
     @abstractmethod
-    def make_init_sol(self) -> Solution:
-        """Create initial solution from task info."""
-        raise NotImplementedError()
-
-    @abstractmethod
     def parse_response(self, response_str: str) -> Solution:
+        """Parse LLM response string into a Solution object."""
         raise NotImplementedError()

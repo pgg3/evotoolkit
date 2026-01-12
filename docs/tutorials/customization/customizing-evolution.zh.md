@@ -234,8 +234,7 @@ EvoToolkit 使用三层架构来实现新算法：
                     ↓
 ┌─────────────────────────────────────────┐
 │  第 2 层：通用 Interface 基类           │
-│  - 必需方法：make_init_sol()            │
-│  -          parse_response()            │
+│  - 必需方法：parse_response()           │
 │  - 其他方法：由算法需求决定             │
 │  位置：core/method_interface/           │
 └─────────────────────────────────────────┘
@@ -249,9 +248,8 @@ EvoToolkit 使用三层架构来实现新算法：
 ```
 
 !!! important "Interface 设计的灵活性"
-    **核心要求：** `BaseMethodInterface` 只强制要求两个方法：
+    **核心要求：** `BaseMethodInterface` 只强制要求一个方法：
 
-    - `make_init_sol()` - 创建初始解
     - `parse_response(response_str)` - 解析 LLM 响应
 
     **算法特定方法：** 其他所有方法都由您的算法需求决定：
@@ -362,9 +360,8 @@ class MyAlgorithm(Method):
 
 #### 步骤 2：创建通用 Interface 基类 (第 2 层)
 
-通用 Interface 定义算法需要的核心方法。**重要：** `BaseMethodInterface` 只要求实现两个核心方法：
+通用 Interface 定义算法需要的核心方法。**重要：** `BaseMethodInterface` 只要求实现一个核心方法：
 
-- `make_init_sol()` - 创建初始解
 - `parse_response(response_str: str)` - 解析 LLM 响应
 
 **其他方法完全由您的算法需求决定。** 不同算法有不同的结构：
@@ -386,12 +383,6 @@ class MyAlgorithmInterface(BaseMethodInterface):
 
     def __init__(self, task: BaseTask):
         super().__init__(task)
-
-    def make_init_sol(self) -> Solution:
-        """创建初始解（必需）"""
-        init_sol = self.task.make_init_sol_wo_other_info()
-        init_sol.other_info = {'generation': 0}
-        return init_sol
 
     @abstractmethod
     def parse_response(self, response_str: str) -> Solution:
@@ -422,7 +413,7 @@ class MyAlgorithmInterface(BaseMethodInterface):
 **文件位置：** 您可以将 Interface 文件放在任何位置。如果要贡献到 EvoToolkit 库，建议放在 `src/evotool/core/method_interface/my_algorithm_interface.py`。
 
 !!! note "设计原则"
-    - **必需方法**：只有 `make_init_sol()` 和 `parse_response()` 是必需的
+    - **必需方法**：只有 `parse_response()` 是必需的
     - **自定义方法**：根据算法的进化策略添加任何需要的方法
     - **灵活性**：不要受限于现有算法的结构，设计最适合您问题的接口
 

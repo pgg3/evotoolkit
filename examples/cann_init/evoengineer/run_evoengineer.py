@@ -48,9 +48,8 @@ def test_prompt_generation(interface: EvoEngineerCANNInterface):
     print("Testing Prompt Generation")
     print("=" * 50)
 
-    # Test init prompt
-    init_sol = interface.make_init_sol()
-    prompt = interface.get_operator_prompt("init", [], init_sol, [])
+    # Test init prompt (with no current_best_sol, interface should handle this)
+    prompt = interface.get_operator_prompt("init", [], None, [])
     print("\n--- Init Prompt ---")
     print(prompt[0]["content"][:1000] + "...")
 

@@ -6,8 +6,6 @@ import os
 from abc import ABC, abstractmethod
 from typing import List, Type
 
-import numpy as np
-
 from .base_config import BaseConfig
 from .base_run_state_dict import BaseRunStateDict
 from .solution import Solution
@@ -20,28 +18,6 @@ class Method(ABC):
         # 初始化历史管理器
         self.run_state_dict.init_history_manager(self.config.output_path)
         self._save_run_state_dict()
-
-    def _get_init_sol(self):
-        # Try to create and evaluate initial solution up to 3 times
-        initial_sol = None
-        for attempt in range(3):
-            try:
-                candidate_sol = self.config.interface.make_init_sol()
-                if candidate_sol.evaluation_res is None:
-                    candidate_sol.evaluation_res = self.config.task.evaluate_code(candidate_sol.sol_string)
-
-                if candidate_sol.evaluation_res is not None and candidate_sol.evaluation_res.valid:
-                    if (not np.isinf(candidate_sol.evaluation_res.score)) and (candidate_sol.evaluation_res.score > -np.inf):
-                        initial_sol = candidate_sol
-                        break
-                else:
-                    self.verbose_info(f"Initial solution attempt {attempt + 1} failed: invalid evaluation result")
-            except Exception as e:
-                self.verbose_info(f"Initial solution attempt {attempt + 1} failed with exception: {e}")
-
-        if initial_sol is None:
-            print("Warning: Failed to create valid initial solution after 3 attempts. Exiting.")
-        return initial_sol
 
     @abstractmethod
     def run(self, *args):

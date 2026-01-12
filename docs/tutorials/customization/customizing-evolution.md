@@ -234,8 +234,7 @@ EvoToolkit uses a three-layer architecture to implement new algorithms:
                     ↓
 ┌─────────────────────────────────────────┐
 │  Layer 2: Generic Interface Base Class  │
-│  - Only requires: make_init_sol()       │
-│  -               parse_response()       │
+│  - Only requires: parse_response()      │
 │  - Other methods: algorithm-specific    │
 │  Location: core/method_interface/       │
 └─────────────────────────────────────────┘
@@ -249,9 +248,8 @@ EvoToolkit uses a three-layer architecture to implement new algorithms:
 ```
 
 !!! important "Interface Design Flexibility"
-    **Core Requirements:** `BaseMethodInterface` only mandates two methods:
+    **Core Requirements:** `BaseMethodInterface` only mandates one method:
 
-    - `make_init_sol()` - Create initial solution
     - `parse_response(response_str)` - Parse LLM response
 
     **Algorithm-Specific Methods:** All other methods are defined by your algorithm's needs:

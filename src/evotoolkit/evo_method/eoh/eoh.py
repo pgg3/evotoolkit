@@ -25,19 +25,7 @@ class EoH(Method):
         if "sample" not in self.run_state_dict.usage_history:
             self.run_state_dict.usage_history["sample"] = []
 
-        # Initialize with seed solution if sol_history is empty
-        if len(self.run_state_dict.sol_history) == 0:
-            init_sol = self._get_init_sol()
-            if init_sol is None:
-                exit()
-            self.run_state_dict.sol_history.append(init_sol)
-            self.run_state_dict.population.append(init_sol)
-            self._save_run_state_dict()
-            self.verbose_info(
-                f"Initialized with baseline solution (score: {init_sol.evaluation_res.score if init_sol.evaluation_res else 'None'})"
-            )
-
-        # Initialize population if starting from scratch
+        # Initialize population if starting from scratch (no mandatory seed solution required)
         if self.run_state_dict.generation == 0:
             self._initialize_population()
 

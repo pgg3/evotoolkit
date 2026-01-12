@@ -33,9 +33,6 @@ class EvoEngineerFullCudaInterface(EvoEngineerInterface):
         """Generate prompt for any operator"""
         task_description = self.task.get_base_task_description()
 
-        if current_best_sol is None:
-            current_best_sol = self.make_init_sol()
-
         if operator_name == "init":
             # Build the thoughts section if available
             thoughts_section = ""
@@ -47,26 +44,37 @@ class EvoEngineerFullCudaInterface(EvoEngineerInterface):
 {thoughts_list}
 """
 
-            prompt = f"""# CUDA KERNEL OPTIMIZATION TASK
-{task_description}
-
-## BASELINE CODE
-**Name:** {current_best_sol.other_info["name"]}
+            # For init operator, current_best_sol may be None
+            if current_best_sol is not None and current_best_sol.evaluation_res is not None:
+                baseline_section = f"""## BASELINE CODE
+**Name:** {current_best_sol.other_info.get("name", "baseline") if current_best_sol.other_info else "baseline"}
 **Runtime:** {-current_best_sol.evaluation_res.score:.5f} milliseconds
-**Current Approach:** {current_best_sol.other_info["thought"]}
+**Current Approach:** {current_best_sol.other_info.get("thought", "Baseline implementation") if current_best_sol.other_info else "Baseline implementation"}
 **Kernel Code:**
 ```cpp
 {current_best_sol.sol_string}
 ```
 **Performance Profile:**
-{current_best_sol.evaluation_res.additional_info["prof_string"]}
+{current_best_sol.evaluation_res.additional_info.get("prof_string", "No profile available") if current_best_sol.evaluation_res.additional_info else "No profile available"}
 
 ## OPTIMIZATION INSIGHTS
 {thoughts_section}
 
 ## OPTIMIZATION STRATEGY
 {"Use the insights above if relevant as optimization guidance." if random_thoughts and len(random_thoughts) > 0 else ""}
-Propose a new CUDA kernel code which aims to reduce the runtime of the operation, while ensuring the kernel returns the correct result.
+Propose a new CUDA kernel code which aims to reduce the runtime of the operation, while ensuring the kernel returns the correct result."""
+            else:
+                baseline_section = f"""## OPTIMIZATION INSIGHTS
+{thoughts_section}
+
+## TASK
+{"Use the insights above if relevant as guidance." if random_thoughts and len(random_thoughts) > 0 else ""}
+Create a CUDA kernel that addresses the task requirements effectively."""
+
+            prompt = f"""# CUDA KERNEL OPTIMIZATION TASK
+{task_description}
+
+{baseline_section}
 
 ## RESPONSE FORMAT:
 name: [descriptive_name_with_underscores]

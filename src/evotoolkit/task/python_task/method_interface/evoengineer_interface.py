@@ -38,9 +38,6 @@ class EvoEngineerPythonInterface(EvoEngineerInterface):
         """Generate prompt for any operator"""
         task_description = self.task.get_base_task_description()
 
-        if current_best_sol is None:
-            current_best_sol = self.make_init_sol()
-
         if operator_name == "init":
             # Build the thoughts section if available
             thoughts_section = ""
@@ -50,13 +47,12 @@ class EvoEngineerPythonInterface(EvoEngineerInterface):
                 )
                 thoughts_section = f"""{thoughts_list}"""
 
-            prompt = f"""# PYTHON FUNCTION OPTIMIZATION TASK
-{task_description}
-
-## BASELINE CODE
-**Name:** {current_best_sol.other_info["name"]}
+            # For init operator, current_best_sol may be None
+            if current_best_sol is not None and current_best_sol.evaluation_res is not None:
+                baseline_section = f"""## BASELINE CODE
+**Name:** {current_best_sol.other_info.get("name", "baseline") if current_best_sol.other_info else "baseline"}
 **Score:** {current_best_sol.evaluation_res.score:.5f}
-**Current Approach:** {current_best_sol.other_info["thought"]}
+**Current Approach:** {current_best_sol.other_info.get("thought", "Baseline implementation") if current_best_sol.other_info else "Baseline implementation"}
 **Function Code:**
 ```python
 {current_best_sol.sol_string}
@@ -67,7 +63,19 @@ class EvoEngineerPythonInterface(EvoEngineerInterface):
 
 ## OPTIMIZATION STRATEGY
 {"Use the insights above if relevant as optimization guidance." if random_thoughts and len(random_thoughts) > 0 else ""}
-Propose a new Python function that aims to improve the score while ensuring it returns the correct result.
+Propose a new Python function that aims to improve the score while ensuring it returns the correct result."""
+            else:
+                baseline_section = f"""## OPTIMIZATION INSIGHTS
+{thoughts_section}
+
+## TASK
+{"Use the insights above if relevant as guidance." if random_thoughts and len(random_thoughts) > 0 else ""}
+Create a Python function that addresses the task requirements effectively."""
+
+            prompt = f"""# PYTHON FUNCTION OPTIMIZATION TASK
+{task_description}
+
+{baseline_section}
 
 ## RESPONSE FORMAT:
 name: [descriptive_name_with_underscores]

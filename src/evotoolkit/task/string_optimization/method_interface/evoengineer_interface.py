@@ -39,9 +39,6 @@ class EvoEngineerStringInterface(EvoEngineerInterface):
         """Generate prompt for any operator"""
         task_description = self.task.get_base_task_description()
 
-        if current_best_sol is None:
-            current_best_sol = self.make_init_sol()
-
         if operator_name == "init":
             # Build the thoughts section if available
             thoughts_section = ""
@@ -56,18 +53,24 @@ Reference insights (consider if relevant):
 
 """
 
-            prompt = f"""
-{task_description}
-
+            # For init operator, current_best_sol may be None
+            if current_best_sol is not None and current_best_sol.evaluation_res is not None:
+                current_solution_section = f"""
 Here is the current best solution:
 
 <current_solution>
 <string>{current_best_sol.sol_string}</string>
 <score>{current_best_sol.evaluation_res.score:.5f}</score>
-</current_solution>{thoughts_section}
+</current_solution>"""
+            else:
+                current_solution_section = ""
 
-Think deeply about how to improve this solution. {"Reference insights are provided above - use them as inspiration if they seem relevant to your optimization approach." if random_thoughts and len(random_thoughts) > 0 else ""} Propose a new solution that:
-1. Analyzes the current solution to identify improvement opportunities
+            prompt = f"""
+{task_description}
+{current_solution_section}{thoughts_section}
+
+Think deeply about how to {"improve this solution" if current_best_sol else "create a solution"}. {"Reference insights are provided above - use them as inspiration if they seem relevant to your optimization approach." if random_thoughts and len(random_thoughts) > 0 else ""} Propose a {"new solution that" if current_best_sol else "solution that"}:
+1. {"Analyzes the current solution to identify improvement opportunities" if current_best_sol else "Addresses the task requirements effectively"}
 2. Applies proven techniques and principles
 3. Explains your rationale clearly
 
