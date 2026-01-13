@@ -89,13 +89,14 @@ class Method(ABC):
         return best_kernel
 
     @staticmethod
-    def _get_best_sol(sol_list: List[Solution]):
+    def _get_best_sol(sol_list: List[Solution]) -> Solution | None:
+        """Get the best solution from a list. Returns None if list is empty."""
+        if not sol_list:
+            return None
         best_valid_sol = Method._get_best_valid_sol(sol_list)
         if best_valid_sol is not None:
-            best_sol = best_valid_sol
-        else:
-            best_sol = sol_list[0]
-        return best_sol
+            return best_valid_sol
+        return sol_list[0]
 
     @abstractmethod
     def _get_run_state_class(self) -> Type[BaseRunStateDict]:

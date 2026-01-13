@@ -150,11 +150,10 @@ class EvoEngineer(Method):
                 try:
                     solution, usage = future.result()
 
-                    # Add usage history
-                    self.run_state_dict.usage_history["sample"].append(usage)
-                    self.run_state_dict.current_gen_usage.append(
-                        usage
-                    )  # 添加到当前代usage历史
+                    # Add usage history only if we have valid usage data
+                    if usage:
+                        self.run_state_dict.usage_history["sample"].append(usage)
+                        self.run_state_dict.current_gen_usage.append(usage)
 
                     # Immediately submit for evaluation without waiting
                     # Support both sol_string (traditional) and other_info (CANN-style) solutions
@@ -305,10 +304,9 @@ class EvoEngineer(Method):
     ) -> tuple[Solution, dict]:
         """Generate a single solution using an operator"""
         try:
-            current_best_sol = self._get_best_sol(self.run_state_dict.population)
             random_3_thought = self._get_n_random_thought(3)
             prompt_content = self.config.interface.get_operator_prompt(
-                operator.name, selected_individuals, current_best_sol, random_3_thought
+                operator.name, selected_individuals, None, random_3_thought
             )
             response, usage = self.config.running_llm.get_response(prompt_content)
             new_sol = self.config.interface.parse_response(response)
