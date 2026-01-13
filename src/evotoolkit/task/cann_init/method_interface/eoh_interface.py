@@ -16,6 +16,7 @@ EoH Operators:
 
 import json
 import re
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from evotoolkit.core import EoHInterface, Solution
@@ -35,9 +36,16 @@ class EoHCANNInterface(EoHInterface):
     6. output_alloc_code - Output tensor allocation code
     """
 
-    def __init__(self, task: CANNInitTask):
+    def __init__(self, task: CANNInitTask, output_dir: str = None):
         super().__init__(task)
         self.task: CANNInitTask = task
+        self.solution_counter = 0
+        # Set up projects directory for storing compiled solutions
+        if output_dir:
+            self.projects_dir = Path(output_dir) / "projects"
+            self.projects_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            self.projects_dir = None
 
     def get_prompt_i1(self) -> List[dict]:
         """Generate initialization prompt (I1 operator)."""
@@ -264,6 +272,12 @@ IMPORTANT:
         # Add name and thought to components
         components["name"] = name or "eoh_generated"
         components["thought"] = thought or ""
+
+        # Assign project path if projects_dir is set
+        if self.projects_dir:
+            self.solution_counter += 1
+            project_path = self.projects_dir / f"solution_{self.solution_counter:04d}"
+            components["project_path"] = str(project_path)
 
         return Solution(sol_string="", other_info=components)
 

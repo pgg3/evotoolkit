@@ -18,7 +18,6 @@ class EvoEngineerCANNInterface(PromptMixin, ParserMixin, EvoEngineerInterface):
 
     def __init__(self, task: CANNInitTask, output_dir: str = None):
         super().__init__(task)
-        self.valid_require = 2
         self.solution_counter = 0
         # Set up projects directory
         if output_dir:
@@ -41,7 +40,7 @@ class EvoEngineerCANNInterface(PromptMixin, ParserMixin, EvoEngineerInterface):
         self,
         operator_name: str,
         selected_individuals: List[Solution],
-        current_best_sol: Solution,
+        _current_best_sol: Solution,  # Unused - CANN doesn't need current_best
         random_thoughts: List[str],
         **_kwargs,
     ) -> List[dict]:
@@ -49,10 +48,10 @@ class EvoEngineerCANNInterface(PromptMixin, ParserMixin, EvoEngineerInterface):
         task_desc = self._get_task_description()
 
         if operator_name == "init":
-            return self._get_init_prompt(task_desc, current_best_sol, random_thoughts)
+            return self._get_init_prompt(task_desc, random_thoughts)
         elif operator_name == "crossover":
-            return self._get_crossover_prompt(task_desc, selected_individuals, current_best_sol, random_thoughts)
+            return self._get_crossover_prompt(task_desc, selected_individuals, random_thoughts)
         elif operator_name == "mutation":
-            return self._get_mutation_prompt(task_desc, selected_individuals[0], current_best_sol, random_thoughts)
+            return self._get_mutation_prompt(task_desc, selected_individuals[0], random_thoughts)
         else:
             raise ValueError(f"Unknown operator: {operator_name}")

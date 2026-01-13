@@ -7,7 +7,7 @@ This module generates prompts that require LLM to produce 6 components for Ascen
 along with performance profiling information and optimization insights.
 """
 
-from typing import List, Optional
+from typing import List
 
 from evotoolkit.core import Solution
 
@@ -139,21 +139,10 @@ lib/matmul_intf.h
     def _get_init_prompt(
         self,
         task_desc: str,
-        current_best: Optional[Solution],
         thoughts: List[str],
     ) -> List[dict]:
         """Generate init operator prompt."""
         thoughts_section = self._build_thoughts_section(thoughts)
-
-        best_section = ""
-        if current_best and current_best.other_info:
-            best_section = f"""
-## BASELINE CODE
-
-{self._format_solution(current_best, show_profile=True)}
-
----
-"""
 
         strategy_section = """## OPTIMIZATION STRATEGY
 
@@ -165,7 +154,6 @@ lib/matmul_intf.h
         prompt = f"""# ASCEND C KERNEL OPTIMIZATION TASK
 
 {task_desc}
-{best_section}
 {thoughts_section}
 {strategy_section}
 
@@ -179,7 +167,6 @@ lib/matmul_intf.h
         self,
         task_desc: str,
         parents: List[Solution],
-        current_best: Solution,
         thoughts: List[str],
     ) -> List[dict]:
         """Generate crossover operator prompt."""
@@ -202,11 +189,6 @@ Create a hybrid Ascend C kernel that combines the strengths of both parents."""
         prompt = f"""# ASCEND C KERNEL CROSSOVER TASK
 
 {task_desc}
-
-## CURRENT BEST
-
-{self._format_solution(current_best, show_profile=True)}
-
 {parents_section}
 
 {thoughts_section}
@@ -222,7 +204,6 @@ Create a hybrid Ascend C kernel that combines the strengths of both parents."""
         self,
         task_desc: str,
         individual: Solution,
-        current_best: Solution,
         thoughts: List[str],
     ) -> List[dict]:
         """Generate mutation operator prompt."""
@@ -239,10 +220,6 @@ Apply significant changes to the target kernel:
         prompt = f"""# ASCEND C KERNEL MUTATION TASK
 
 {task_desc}
-
-## CURRENT BEST
-
-{self._format_solution(current_best, show_profile=True)}
 
 ## SOURCE TO MUTATE
 

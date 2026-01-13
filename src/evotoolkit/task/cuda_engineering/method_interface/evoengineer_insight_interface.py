@@ -13,7 +13,6 @@ from .evoengineer_full_interface import EvoEngineerFullCudaInterface
 class EvoEngineerInsightCudaInterface(EvoEngineerFullCudaInterface):
     def __init__(self, task_config: CudaTask):
         super().__init__(task_config)
-        self.valid_require = 0
 
     def get_init_operators(self) -> List[Operator]:
         """Get initialization operators for CUDA optimization"""

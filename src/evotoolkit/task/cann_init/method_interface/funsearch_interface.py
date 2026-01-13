@@ -9,6 +9,7 @@ It generates prompts that require LLM to produce 6 components for Ascend C opera
 
 import json
 import re
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from evotoolkit.core import FunSearchInterface, Solution
@@ -32,9 +33,16 @@ class FunSearchCANNInterface(FunSearchInterface):
     - tiling_func_includes - Extra TilingFunc headers
     """
 
-    def __init__(self, task: CANNInitTask):
+    def __init__(self, task: CANNInitTask, output_dir: str = None):
         super().__init__(task)
         self.task: CANNInitTask = task  # Type hint for IDE
+        self.solution_counter = 0
+        # Set up projects directory for storing compiled solutions
+        if output_dir:
+            self.projects_dir = Path(output_dir) / "projects"
+            self.projects_dir.mkdir(parents=True, exist_ok=True)
+        else:
+            self.projects_dir = None
 
     def get_prompt(self, solutions: List[Solution]) -> List[dict]:
         """Generate FunSearch prompt based on available solutions.
@@ -208,6 +216,12 @@ IMPORTANT:
         if missing:
             # Try fallback parsing for partial responses
             components = self._fallback_parse(response_str, components)
+
+        # Assign project path if projects_dir is set
+        if self.projects_dir:
+            self.solution_counter += 1
+            project_path = self.projects_dir / f"solution_{self.solution_counter:04d}"
+            components["project_path"] = str(project_path)
 
         return Solution(sol_string="", other_info=components)
 

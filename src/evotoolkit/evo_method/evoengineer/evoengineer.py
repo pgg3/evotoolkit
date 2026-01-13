@@ -25,34 +25,39 @@ class EvoEngineer(Method):
         if "sample" not in self.run_state_dict.usage_history:
             self.run_state_dict.usage_history["sample"] = []
 
-        # Initialize population if starting from scratch (no mandatory seed solution required)
-        if self.run_state_dict.generation == 0:
-            self._initialize_population()
+        # Calculate minimum valid solutions needed for offspring operators
+        offspring_ops = self.config.get_offspring_operators()
+        min_valid_for_offspring = (
+            max(op.selection_size for op in offspring_ops) if offspring_ops else 1
+        )
 
-        # Check if we have enough individuals for selection
-        valid_population = self._get_valid_population(self.run_state_dict.population)
-        if len(valid_population) < self.config.interface.valid_require:
-            self.verbose_info(
-                f"The search is terminated since EvoEngineer unable to obtain {self.config.interface.valid_require} feasible algorithms during initialization."
-            )
-            return
-
-        # Main evolution loop - moved loop control logic here
+        # Main evolution loop - unified init and offspring
         while (self.run_state_dict.generation < self.config.max_generations) and (
             self.run_state_dict.tot_sample_nums < self.config.max_sample_nums
         ):
             try:
+                valid_count = len(
+                    self._get_valid_population(self.run_state_dict.population)
+                )
+
+                # Dynamically choose operators based on population state
+                if valid_count >= min_valid_for_offspring:
+                    operators = self.config.get_offspring_operators()
+                    label = f"Gen {self.run_state_dict.generation}"
+                else:
+                    operators = self.config.get_init_operators()
+                    label = "Init"
+                    self.verbose_info(
+                        f"Valid solutions: {valid_count}/{min_valid_for_offspring}"
+                    )
+
                 self.verbose_info(
-                    f"Generation {self.run_state_dict.generation} - Sample {self.run_state_dict.tot_sample_nums + 1} - {self.run_state_dict.tot_sample_nums + self.config.num_samplers} / {self.config.max_sample_nums or 'unlimited'}"
+                    f"{label} - Sample {self.run_state_dict.tot_sample_nums + 1} - "
+                    f"{self.run_state_dict.tot_sample_nums + self.config.num_samplers} / "
+                    f"{self.config.max_sample_nums or 'unlimited'}"
                 )
 
-                # Apply offspring operators in parallel for this generation
-                self._apply_operators_parallel(
-                    self.config.get_offspring_operators(),
-                    f"Gen {self.run_state_dict.generation}",
-                )
-
-                # Manage population size - keep only the best pop_size individuals
+                self._apply_operators_parallel(operators, label)
                 self._manage_population_size()
 
                 self.run_state_dict.generation += 1
@@ -68,39 +73,6 @@ class EvoEngineer(Method):
         # Mark as done and save final state
         self.run_state_dict.is_done = True
         self._save_run_state_dict()
-
-    def _initialize_population(self):
-        """Initialize population using init operators - keep generating until we have enough valid solutions"""
-        self.verbose_info("Initializing population...")
-
-        initial_sample_limit = self.config.max_sample_nums  # Reasonable limit
-
-        # Keep generating until we have pop_size valid solutions or hit sample limit
-        while self.run_state_dict.tot_sample_nums < initial_sample_limit:
-            # Apply init operators in parallel
-            self._apply_operators_parallel(self.config.get_init_operators(), "Init")
-
-            valid_count = len(
-                self._get_valid_population(self.run_state_dict.population)
-            )
-            self.verbose_info(f"Valid solutions: {valid_count}/{self.config.pop_size}")
-
-            self._save_run_state_dict()
-
-            if valid_count >= self.config.interface.valid_require:
-                break
-
-        valid_population = self._get_valid_population(self.run_state_dict.population)
-        if len(valid_population) >= self.config.interface.valid_require:
-            self.run_state_dict.generation = 1
-            self._save_run_state_dict()
-            self.verbose_info(
-                f"Initialization completed with {len(valid_population)} valid solutions"
-            )
-        else:
-            self.verbose_info(
-                f"Warning: Only {len(valid_population)} valid solutions obtained, need at least {self.config.interface.valid_require}"
-            )
 
     def _get_valid_population(self, population: List[Solution]) -> List[Solution]:
         """Get valid solutions from population"""

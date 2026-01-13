@@ -23,7 +23,6 @@ class EvoEngineerInterface(BaseMethodInterface):
 
     def __init__(self, task: BaseTask):
         super().__init__(task)
-        self.valid_require = 2
 
     def evaluate(self, solution: Solution) -> EvaluationResult:
         """Evaluate a solution. Override for tasks requiring evaluate_solution."""
