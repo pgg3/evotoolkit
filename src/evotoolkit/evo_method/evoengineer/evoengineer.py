@@ -185,7 +185,13 @@ class EvoEngineer(Method):
                     )  # 添加到当前代usage历史
 
                     # Immediately submit for evaluation without waiting
-                    if solution.sol_string.strip():
+                    # Support both sol_string (traditional) and other_info (CANN-style) solutions
+                    should_evaluate = (
+                        solution.sol_string.strip() or
+                        (solution.other_info and isinstance(solution.other_info, dict))
+                    )
+
+                    if should_evaluate:
                         eval_future = executor.submit(
                             self.config.interface.evaluate, solution
                         )

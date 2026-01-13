@@ -209,10 +209,22 @@ class EoH(Method):
         ) as executor:
             futures = []
             for i, solution in enumerate(solutions):
-                if solution.sol_string.strip():  # Only evaluate non-empty solutions
-                    future = executor.submit(
-                        self.config.task.evaluate_code, solution.sol_string
-                    )
+                # Support both sol_string (traditional) and other_info (CANN-style) solutions
+                should_evaluate = (
+                    solution.sol_string.strip() or
+                    (solution.other_info and isinstance(solution.other_info, dict))
+                )
+
+                if should_evaluate:  # Only evaluate non-empty solutions
+                    # Use evaluate_solution if available (for CANN-style tasks), otherwise evaluate_code
+                    if hasattr(self.config.task, 'evaluate_solution') and solution.other_info:
+                        future = executor.submit(
+                            self.config.task.evaluate_solution, solution
+                        )
+                    else:
+                        future = executor.submit(
+                            self.config.task.evaluate_code, solution.sol_string
+                        )
                     futures.append((future, i))
 
             # Collect results
@@ -339,10 +351,22 @@ class EoH(Method):
                         )  # 添加到当前代usage历史
 
                         # Immediately submit for evaluation without waiting
-                        if solution.sol_string.strip():
-                            eval_future = executor.submit(
-                                self.config.task.evaluate_code, solution.sol_string
-                            )
+                        # Support both sol_string (traditional) and other_info (CANN-style) solutions
+                        should_evaluate = (
+                            solution.sol_string.strip() or
+                            (solution.other_info and isinstance(solution.other_info, dict))
+                        )
+
+                        if should_evaluate:
+                            # Use evaluate_solution if available (for CANN-style tasks), otherwise evaluate_code
+                            if hasattr(self.config.task, 'evaluate_solution') and solution.other_info:
+                                eval_future = executor.submit(
+                                    self.config.task.evaluate_solution, solution
+                                )
+                            else:
+                                eval_future = executor.submit(
+                                    self.config.task.evaluate_code, solution.sol_string
+                                )
                             eval_futures.append((eval_future, solution, operator_name))
                         else:
                             new_solutions.append(solution)
