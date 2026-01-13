@@ -155,6 +155,7 @@ def _measure_performance_worker(
             event_class=torch_npu.npu.Event,
             num_warmup=num_warmup,
             num_trials=num_trials,
+            measure_baseline=True,  # Also measure baseline for speedup
         )
 
         return_dict["result"] = result
