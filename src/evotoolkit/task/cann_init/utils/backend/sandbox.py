@@ -248,6 +248,7 @@ def _full_evaluate_worker(
                 event_class=torch_npu.npu.Event,
                 num_warmup=num_warmup,
                 num_trials=num_perf_trials,
+                measure_baseline=True,  # Also measure baseline for speedup
             )
 
             runtime = perf_result.get("runtime")
@@ -265,6 +266,9 @@ def _full_evaluate_worker(
                 "success": True,
                 "runtime": runtime,
                 "runtime_std": perf_result.get("std"),
+                "baseline_runtime": perf_result.get("baseline_runtime"),
+                "baseline_std": perf_result.get("baseline_std"),
+                "speedup": perf_result.get("speedup"),
             }
         else:
             return_dict["result"] = {
