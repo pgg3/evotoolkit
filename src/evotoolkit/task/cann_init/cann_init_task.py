@@ -803,6 +803,9 @@ at::Tensor result = at::empty_like({first_input});
                 score=-runtime,
                 runtime=runtime,
                 runtime_std=perf_result.get("std"),
+                baseline_runtime=perf_result.get("baseline_runtime"),
+                baseline_std=perf_result.get("baseline_std"),
+                speedup=perf_result.get("speedup"),
                 **base_info,
             )
 
