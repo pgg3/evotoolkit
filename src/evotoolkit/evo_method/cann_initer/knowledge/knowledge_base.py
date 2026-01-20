@@ -17,7 +17,7 @@ import tarfile
 import tempfile
 import urllib.request
 from pathlib import Path
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Optional, Set
 
 from ..utils import KnowledgeBase
 
@@ -574,7 +574,7 @@ class RealKnowledgeBase(KnowledgeBase):
         Returns:
             {
                 "status": "found" | "not_found" | "ambiguous",
-                "api_info": dict | None,
+                "api_info": dict | None,  # includes header_file path when available
                 "candidates": list
             }
         """
@@ -598,13 +598,21 @@ class RealKnowledgeBase(KnowledgeBase):
         # New format (dict)
         # Exact match
         if name in apis:
-            return {"status": "found", "api_info": {"name": name, **apis[name]}, "candidates": []}
+            api_info = {"name": name, **apis[name]}
+            # Add header file path
+            if api_info.get("header"):
+                api_info["header_file"] = self._find_header_path(api_info["header"])
+            return {"status": "found", "api_info": api_info, "candidates": []}
 
         # Case-insensitive match
         name_lower = name.lower()
-        for api_name, api_info in apis.items():
+        for api_name, api_data in apis.items():
             if api_name.lower() == name_lower:
-                return {"status": "found", "api_info": {"name": api_name, **api_info}, "candidates": []}
+                api_info = {"name": api_name, **api_data}
+                # Add header file path
+                if api_info.get("header"):
+                    api_info["header_file"] = self._find_header_path(api_info["header"])
+                return {"status": "found", "api_info": api_info, "candidates": []}
 
         # Not found - return candidates
         candidates = [api for api in apis
@@ -613,6 +621,26 @@ class RealKnowledgeBase(KnowledgeBase):
             return {"status": "ambiguous", "api_info": None, "candidates": candidates[:5]}
 
         return {"status": "not_found", "api_info": None, "candidates": []}
+
+    def _find_header_path(self, header_name: str) -> Optional[str]:
+        """Find full path to header file in CANN SDK"""
+        if not self.config.cann_path:
+            return None
+
+        cann = Path(self.config.cann_path)
+        candidates = [
+            # New structure (CANN 8.x+): compiler/ascendc/...
+            cann / "compiler" / "ascendc" / "include" / "basic_api" / "interface" / header_name,
+            # Legacy structure: arch-specific
+            cann / "aarch64-linux" / "ascendc" / "include" / "basic_api" / "interface" / header_name,
+            cann / "x86_64-linux" / "ascendc" / "include" / "basic_api" / "interface" / header_name,
+            cann / "include" / "ascendc" / "basic_api" / "interface" / header_name,
+        ]
+
+        for path in candidates:
+            if path.exists():
+                return str(path)
+        return None
 
     # =========================================================================
     # Operator Search (Relaxed Mode)
@@ -665,6 +693,11 @@ class RealKnowledgeBase(KnowledgeBase):
             "kernel_code": None,
             "host_code": None,
             "readme": None,
+            # New: file paths for Claude to read directly
+            "path": str(op_path),
+            "kernel_files": [],
+            "host_files": [],
+            "readme_file": None,
         }
 
         # Load kernel code (.h files contain core implementation for Ascend C)
@@ -673,6 +706,9 @@ class RealKnowledgeBase(KnowledgeBase):
             # Read both .h and .cpp files - .h often contains the actual implementation
             h_files = list(kernel_dir.glob("*.h"))
             cpp_files = list(kernel_dir.glob("*.cpp"))
+
+            # Store file paths
+            result["kernel_files"] = [str(f) for f in h_files + cpp_files]
 
             code_parts = []
             # .h files first (contain template class implementations)
@@ -692,6 +728,10 @@ class RealKnowledgeBase(KnowledgeBase):
             host_dir = op_path / "op_host"
             cpp_files = list(host_dir.glob("*.cpp"))
             h_files = list(host_dir.glob("*.h"))
+
+            # Store file paths
+            result["host_files"] = [str(f) for f in cpp_files + h_files]
+
             tiling_files = [f for f in cpp_files + h_files if "tiling" in f.name.lower()]
             if tiling_files:
                 result["host_code"] = tiling_files[0].read_text(errors="ignore")
@@ -701,21 +741,41 @@ class RealKnowledgeBase(KnowledgeBase):
         # Load README
         readme = op_path / "README.md"
         if readme.exists():
+            result["readme_file"] = str(readme)
             result["readme"] = readme.read_text(errors="ignore")
 
         return result
 
     def _find_related(self, name: str, op_info: dict, extra: List[str] = None) -> List[dict]:
-        """Find related operators"""
+        """Find related operators with file paths"""
         related = []
         if extra:
             for m in extra:
-                related.append({"name": m, "reason": "Similar name"})
+                rel_info = {"name": m, "reason": "Similar name"}
+                # Add path info if operator exists in index
+                if m in self.index["operators"]:
+                    rel_op = self.index["operators"][m]
+                    rel_info["path"] = rel_op.get("path")
+                    # Add kernel files path
+                    if rel_op.get("has_kernel"):
+                        kernel_dir = Path(rel_op["path"]) / "op_kernel"
+                        rel_info["kernel_files"] = [str(f) for f in kernel_dir.glob("*.h")] + \
+                                                   [str(f) for f in kernel_dir.glob("*.cpp")]
+                related.append(rel_info)
         else:
             category = op_info["category"]
             for op in self.index["categories"].get(category, [])[:3]:
                 if op != name:
-                    related.append({"name": op, "reason": f"Same category: {category}"})
+                    rel_info = {"name": op, "reason": f"Same category: {category}"}
+                    # Add path info
+                    if op in self.index["operators"]:
+                        rel_op = self.index["operators"][op]
+                        rel_info["path"] = rel_op.get("path")
+                        if rel_op.get("has_kernel"):
+                            kernel_dir = Path(rel_op["path"]) / "op_kernel"
+                            rel_info["kernel_files"] = [str(f) for f in kernel_dir.glob("*.h")] + \
+                                                       [str(f) for f in kernel_dir.glob("*.cpp")]
+                    related.append(rel_info)
         return related[:3]
 
     def _fuzzy_match(self, query: str, top_k: int) -> List[str]:
