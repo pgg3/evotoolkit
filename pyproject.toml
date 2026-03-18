@@ -139,6 +139,7 @@ omit = [
     "*/cann_initer/*",
     "*/cann_init/*",
     "*/cuda_engineering/*",
+    "*/data/__init__.py",
     "*/data/downloader.py",
     "*/data/constants.py",
     "*/tools/llm.py",
