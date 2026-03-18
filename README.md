@@ -1,5 +1,10 @@
 # EvoToolkit
 
+[![CI](https://github.com/pgg3/evotoolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/pgg3/evotoolkit/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/pgg3/evotoolkit/branch/master/graph/badge.svg)](https://codecov.io/gh/pgg3/evotoolkit)
+[![PyPI](https://img.shields.io/pypi/v/evotoolkit)](https://pypi.org/project/evotoolkit/)
+[![Python](https://img.shields.io/pypi/pyversions/evotoolkit)](https://pypi.org/project/evotoolkit/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/pgg3/evotoolkit)
 
 
@@ -53,7 +58,7 @@ result = evotoolkit.solve(
 
 ## Documentation
 
-Full documentation: https://evotoolkit.readthedocs.io/
+Full documentation: https://pgg3.github.io/evotoolkit/
 
 ## Citation
 
