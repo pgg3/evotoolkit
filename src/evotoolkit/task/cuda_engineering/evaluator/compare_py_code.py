@@ -24,9 +24,7 @@ def compare_py_code(org_code: str, func_code: str, timing_dict: dict) -> dict:
         timing_dict["lock_acquired"] = True
         set_seed(0)
         init_inputs = org_ns["get_init_inputs"]()
-        init_inputs = [
-            x.cuda() if isinstance(x, torch.Tensor) else x for x in init_inputs
-        ]
+        init_inputs = [x.cuda() if isinstance(x, torch.Tensor) else x for x in init_inputs]
         with torch.no_grad():
             set_seed(0)
             org_model_inst = org_ns["Model"](*init_inputs)
@@ -35,9 +33,7 @@ def compare_py_code(org_code: str, func_code: str, timing_dict: dict) -> dict:
                 func_model_inst = func_ns["Model"](*init_inputs)
             except Exception as e:
                 result_dict["correctness"] = False
-                result_dict["error_msg"] = (
-                    f"Failed to create the model from the functional code: {str(e)}"
-                )
+                result_dict["error_msg"] = f"Failed to create the model from the functional code: {str(e)}"
                 return result_dict
 
         atol = 1e-02
@@ -45,9 +41,7 @@ def compare_py_code(org_code: str, func_code: str, timing_dict: dict) -> dict:
         for i in range(5):
             with torch.no_grad():
                 inputs = org_ns["get_inputs"]()
-                inputs = [
-                    x.cuda() if isinstance(x, torch.Tensor) else x for x in inputs
-                ]
+                inputs = [x.cuda() if isinstance(x, torch.Tensor) else x for x in inputs]
 
                 model = org_model_inst.cuda()
                 func_model = func_model_inst.cuda()
@@ -60,25 +54,17 @@ def compare_py_code(org_code: str, func_code: str, timing_dict: dict) -> dict:
                     torch.cuda.synchronize()
                     if output.shape != output_new.shape:
                         result_dict["correctness"] = False
-                        result_dict["error_msg"] = (
-                            f"Output shape mismatch: Expected {output.shape}, got {output_new.shape}"
-                        )
+                        result_dict["error_msg"] = f"Output shape mismatch: Expected {output.shape}, got {output_new.shape}"
                         return result_dict
-                    if not torch.allclose(
-                        output, output_new, atol=atol, rtol=rtol
-                    ):  # fail
+                    if not torch.allclose(output, output_new, atol=atol, rtol=rtol):  # fail
                         max_diff = torch.max(torch.abs(output - output_new)).item()
                         avg_diff = torch.mean(torch.abs(output - output_new)).item()
                         result_dict["correctness"] = False
-                        result_dict["error_msg"] = (
-                            f"Output mismatch: max_diff={max_diff:.6f}, avg_diff={avg_diff:.6f}"
-                        )
+                        result_dict["error_msg"] = f"Output mismatch: max_diff={max_diff:.6f}, avg_diff={avg_diff:.6f}"
                         return result_dict
                 except Exception as e:
                     result_dict["correctness"] = False
-                    result_dict["error_msg"] = (
-                        f"Error running the functional model: {str(e)}"
-                    )
+                    result_dict["error_msg"] = f"Error running the functional model: {str(e)}"
                     return result_dict
         result_dict["correctness"] = True
         timing_dict["completed"] = True

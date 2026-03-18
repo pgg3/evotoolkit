@@ -68,9 +68,7 @@ code:
     def parse_response(self, response_str: str) -> Solution:
         """Parse response with multiple fallback strategies for free format"""
         if not response_str or not response_str.strip():
-            return Solution(
-                "", other_info={"name": "raw", "thought": "Failed to parse"}
-            )
+            return Solution("", other_info={"name": "raw", "thought": "Failed to parse"})
 
         content = response_str.strip()
 
@@ -88,11 +86,7 @@ code:
         # Strategy 2: Look for any cpp/cuda code block
         code = self._extract_any_code_block(content)
         if code:
-            return Solution(
-                code, other_info={"name": "extracted", "thought": "Code block fallback"}
-            )
+            return Solution(code, other_info={"name": "extracted", "thought": "Code block fallback"})
 
         # Strategy 3: Raw content (last resort)
-        return Solution(
-            content, other_info={"name": "raw", "thought": "Failed to parse"}
-        )
+        return Solution(content, other_info={"name": "raw", "thought": "Failed to parse"})

@@ -7,9 +7,7 @@ from . import conversion_prompts, evo_prompts, rag_prompts, translation_prompts
 
 class PromptMaker:
     @classmethod
-    def make_convert_prompt(
-        cls, code_to_convert: str, prev_response: str = None, error_msg: str = None
-    ) -> list:
+    def make_convert_prompt(cls, code_to_convert: str, prev_response: str = None, error_msg: str = None) -> list:
         """
         Convert original code to func code
         """
@@ -24,29 +22,19 @@ class PromptMaker:
         prompt = [{"role": "user", "content": base_prompt}]
 
         if error_msg is not None:
-            content_new = conversion_prompts.conversion_error_template.render(
-                error_msg=error_msg
-            )
-            prompt.append(
-                {"role": "assistant", "content": f"```python\n{prev_response}\n```"}
-            )
+            content_new = conversion_prompts.conversion_error_template.render(error_msg=error_msg)
+            prompt.append({"role": "assistant", "content": f"```python\n{prev_response}\n```"})
             prompt.append({"role": "user", "content": content_new})
 
         return prompt
 
     @classmethod
-    def make_translate_prompt(
-        cls, code_to_translate, prev_response: str, error_msg: str, error_summary: str
-    ):
-        base_prompt = translation_prompts.translation_template.render(
-            code_to_translate=code_to_translate
-        )
+    def make_translate_prompt(cls, code_to_translate, prev_response: str, error_msg: str, error_summary: str):
+        base_prompt = translation_prompts.translation_template.render(code_to_translate=code_to_translate)
         prompt = [{"role": "user", "content": base_prompt}]
 
         if error_msg is not None:
-            error_prompt = translation_prompts.translation_error_template.render(
-                error_summary=error_summary
-            )
+            error_prompt = translation_prompts.translation_error_template.render(error_summary=error_summary)
             prompt.append(
                 {
                     "role": "assistant",
@@ -58,17 +46,9 @@ class PromptMaker:
         return prompt
 
     @classmethod
-    def make_translate_error_summary_prompt(
-        cls, code_to_translate, prev_response: str = None, error_msg: str = None
-    ):
-        base_prompt = translation_prompts.translation_template.render(
-            code_to_translate=code_to_translate
-        )
-        error_summary_prompt = (
-            translation_prompts.translation_error_summary_template.render(
-                error_msg=error_msg
-            )
-        )
+    def make_translate_error_summary_prompt(cls, code_to_translate, prev_response: str = None, error_msg: str = None):
+        base_prompt = translation_prompts.translation_template.render(code_to_translate=code_to_translate)
+        error_summary_prompt = translation_prompts.translation_error_summary_template.render(error_msg=error_msg)
 
         prompt = [
             {"role": "user", "content": base_prompt},

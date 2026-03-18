@@ -35,9 +35,7 @@ except Exception:
     __version__ = "0.3.0b1.dev"
 
 
-def solve(
-    interface: BaseMethodInterface, output_path: str = "./results", **kwargs
-) -> Any:
+def solve(interface: BaseMethodInterface, output_path: str = "./results", **kwargs) -> Any:
     """
     Factory method to create and run an evolutionary optimization workflow.
 
@@ -90,9 +88,7 @@ def solve(
     algorithm_instance.run()
 
     # Step 5: Get the best solution from the run
-    best_solution = algorithm_instance._get_best_sol(
-        algorithm_instance.run_state_dict.sol_history
-    )
+    best_solution = algorithm_instance._get_best_sol(algorithm_instance.run_state_dict.sol_history)
 
     return best_solution
 

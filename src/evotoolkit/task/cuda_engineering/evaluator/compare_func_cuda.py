@@ -12,9 +12,7 @@ from .shared_lock import global_file_lock
 from .utils import set_seed
 
 
-def compare_func_cuda(
-    func_code: str, cuda_code: str, temp_path: str, temp_str: str, timing_dict: dict
-) -> dict:
+def compare_func_cuda(func_code: str, cuda_code: str, temp_path: str, temp_str: str, timing_dict: dict) -> dict:
     # Phase 1: Pre-lock work (counts toward timeout)
     result_dict = {
         "temp_str": temp_str,
@@ -59,9 +57,7 @@ def compare_func_cuda(
         # Phase 2: Post-lock work (counts toward timeout), Mark lock acquired, resume timeout counting
         timing_dict["lock_acquired"] = True
         init_inputs = func_ns["get_init_inputs"]()
-        init_inputs = [
-            x.cuda() if isinstance(x, torch.Tensor) else x for x in init_inputs
-        ]
+        init_inputs = [x.cuda() if isinstance(x, torch.Tensor) else x for x in init_inputs]
 
         atol = 1e-02
         rtol = 1e-02
@@ -73,9 +69,7 @@ def compare_func_cuda(
 
             for i in range(5):
                 inputs = func_ns["get_inputs"]()
-                inputs = [
-                    x.cuda() if isinstance(x, torch.Tensor) else x for x in inputs
-                ]
+                inputs = [x.cuda() if isinstance(x, torch.Tensor) else x for x in inputs]
 
                 model = func_model_inst.cuda()
                 model_new = func_model_inst_copy.cuda()
@@ -86,16 +80,12 @@ def compare_func_cuda(
                     output_new = model_new(*inputs, fn=cuda_fn.forward)
                     torch.cuda.synchronize()
                     if output.shape != output_new.shape:
-                        result_dict["error_msg"] = (
-                            f"Output shape mismatch: Expected {output.shape}, got {output_new.shape}"
-                        )
+                        result_dict["error_msg"] = f"Output shape mismatch: Expected {output.shape}, got {output_new.shape}"
                         return result_dict
                     if not torch.allclose(output, output_new, atol=atol, rtol=rtol):
                         max_diff = torch.max(torch.abs(output - output_new)).item()
                         avg_diff = torch.mean(torch.abs(output - output_new)).item()
-                        result_dict["error_msg"] = (
-                            f"Output mismatch: max_diff={max_diff:.6f}, avg_diff={avg_diff:.6f}"
-                        )
+                        result_dict["error_msg"] = f"Output mismatch: max_diff={max_diff:.6f}, avg_diff={avg_diff:.6f}"
                         return result_dict
                 except Exception as e:
                     result_dict["error_msg"] = f"Error running CUDA code: {e}"

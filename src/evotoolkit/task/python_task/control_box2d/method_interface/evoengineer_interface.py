@@ -29,26 +29,22 @@ CONTROL_INSIGHTS = [
     "Vertical velocity (vy) being negative means falling - more negative = falling faster",
     "The angle is in radians: 0 = upright, positive = tilted right, negative = tilted left",
     "Leg contacts (state[6], state[7]) indicate if the lander has touched ground",
-
     # Control theory
     "PD control: action proportional to error + derivative can provide smooth control",
     "Consider using state derivatives (change in velocity) for predictive control",
     "The angle and angular velocity are coupled - control them together for stability",
     "Dead-zones around target values (e.g., |angle| < 0.05 = do nothing) prevent oscillation",
-
     # Action selection
     "Action 1 (left engine) pushes RIGHT, Action 3 (right engine) pushes LEFT - counterintuitive!",
     "Main engine (action 2) is expensive (-0.3/frame) but essential for slowing descent",
     "Side engines (actions 1,3) are cheap (-0.03/frame) - use them freely for fine control",
     "Action 0 (do nothing) saves fuel - use it when already on the right trajectory",
-
     # Strategy tips
     "Prioritize survival (not crashing) over fuel efficiency in early evolution",
     "Height (y) determines urgency: closer to ground = more aggressive control needed",
     "Final approach: aim for x ≈ 0, vx ≈ 0, angle ≈ 0, vy slightly negative",
     "Both legs touching ground gives +20 bonus - land flat, not tilted",
     "State-dependent thresholds adapt control to different flight phases",
-
     # Common mistakes
     "Firing main engine when tilted wastes fuel and can push sideways",
     "Over-correcting angle causes oscillation - use angular velocity as damping",
@@ -68,13 +64,13 @@ def generate_episode_analysis(eval_result) -> str:
     # Basic performance metrics
     analysis = f"""### Performance Summary
 - **Average Reward:** {score:.2f}
-- **Std Deviation:** {info.get('std_reward', 'N/A')}
-- **Min / Max Reward:** {info.get('min_reward', 'N/A')} / {info.get('max_reward', 'N/A')}
-- **Success Rate:** {info.get('success_rate', 0):.1%}
-- **Average Episode Length:** {info.get('avg_length', 'N/A')} steps"""
+- **Std Deviation:** {info.get("std_reward", "N/A")}
+- **Min / Max Reward:** {info.get("min_reward", "N/A")} / {info.get("max_reward", "N/A")}
+- **Success Rate:** {info.get("success_rate", 0):.1%}
+- **Average Episode Length:** {info.get("avg_length", "N/A")} steps"""
 
     # Add episode details if available
-    all_rewards = info.get('all_rewards', [])
+    all_rewards = info.get("all_rewards", [])
     if all_rewards:
         successes = sum(1 for r in all_rewards if r > 100)
         crashes = sum(1 for r in all_rewards if r < -50)
@@ -83,7 +79,7 @@ def generate_episode_analysis(eval_result) -> str:
 ### Episode Breakdown
 - Successful landings (reward > 100): {successes}/{len(all_rewards)}
 - Likely crashes (reward < -50): {crashes}/{len(all_rewards)}
-- Episode rewards: {[f'{r:.0f}' for r in all_rewards[:5]]}{'...' if len(all_rewards) > 5 else ''}"""
+- Episode rewards: {[f"{r:.0f}" for r in all_rewards[:5]]}{"..." if len(all_rewards) > 5 else ""}"""
 
     return analysis
 
@@ -95,7 +91,7 @@ def select_insights(eval_result, n: int = 3) -> List[str]:
     if eval_result and eval_result.additional_info:
         info = eval_result.additional_info
         score = eval_result.score
-        success_rate = info.get('success_rate', 0)
+        success_rate = info.get("success_rate", 0)
 
         # Add insights based on performance
         if success_rate < 0.3:
@@ -182,19 +178,11 @@ class EvoEngineerControlInterface(EvoEngineerInterface):
         insights_text = "\n".join([f"- {thought}" for thought in insights])
 
         if operator_name == "init":
-            return self._get_init_prompt(
-                task_description, current_best_sol, episode_analysis, insights_text
-            )
+            return self._get_init_prompt(task_description, current_best_sol, episode_analysis, insights_text)
         elif operator_name == "crossover":
-            return self._get_crossover_prompt(
-                task_description, current_best_sol, selected_individuals,
-                episode_analysis, insights_text
-            )
+            return self._get_crossover_prompt(task_description, current_best_sol, selected_individuals, episode_analysis, insights_text)
         elif operator_name == "mutation":
-            return self._get_mutation_prompt(
-                task_description, current_best_sol, selected_individuals[0],
-                episode_analysis, insights_text
-            )
+            return self._get_mutation_prompt(task_description, current_best_sol, selected_individuals[0], episode_analysis, insights_text)
         else:
             raise ValueError(f"Unknown operator: {operator_name}")
 
@@ -398,32 +386,20 @@ thought: [Explain what significant changes you made and why they might improve p
         # Strategy 1: Standard format parsing
         result = self._parse_standard_format(content)
         if result and result[1]:
-            return Solution(
-                result[1],
-                other_info={"name": result[0], "thought": result[2]}
-            )
+            return Solution(result[1], other_info={"name": result[0], "thought": result[2]})
 
         # Strategy 2: Flexible format parsing
         result = self._parse_flexible_format(content)
         if result and result[1]:
-            return Solution(
-                result[1],
-                other_info={"name": result[0], "thought": result[2]}
-            )
+            return Solution(result[1], other_info={"name": result[0], "thought": result[2]})
 
         # Strategy 3: Code block extraction only
         code = self._extract_any_code_block(content)
         if code:
-            return Solution(
-                code,
-                other_info={"name": "extracted", "thought": "Fallback parsing"}
-            )
+            return Solution(code, other_info={"name": "extracted", "thought": "Fallback parsing"})
 
         # Strategy 4: Raw content (last resort)
-        return Solution(
-            content,
-            other_info={"name": "raw", "thought": "Failed to parse response"}
-        )
+        return Solution(content, other_info={"name": "raw", "thought": "Failed to parse response"})
 
     def _parse_standard_format(self, content: str) -> tuple:
         """Parse standard format: name -> code -> thought."""

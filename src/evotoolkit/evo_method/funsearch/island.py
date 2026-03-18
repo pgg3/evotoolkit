@@ -47,9 +47,7 @@ class Cluster:
         if len(self.solutions) == 1:
             return self.solutions[0]
 
-        normalized_lengths = (np.array(self.lengths) - min(self.lengths)) / (
-            max(self.lengths) + 1e-6
-        )
+        normalized_lengths = (np.array(self.lengths) - min(self.lengths)) / (max(self.lengths) + 1e-6)
         probabilities = _softmax(-normalized_lengths, temperature=1.0)
         return np.random.choice(self.solutions, p=probabilities)
 
@@ -83,16 +81,12 @@ class Island:
             return []
 
         # Filter out clusters with -inf scores
-        valid_signatures = [
-            sig for sig in self.clusters.keys() if not np.isinf(sig) or sig > -np.inf
-        ]
+        valid_signatures = [sig for sig in self.clusters.keys() if not np.isinf(sig) or sig > -np.inf]
 
         if not valid_signatures:
             return []
 
-        cluster_scores = np.array(
-            [self.clusters[sig].score for sig in valid_signatures]
-        )
+        cluster_scores = np.array([self.clusters[sig].score for sig in valid_signatures])
 
         # Normalize the scores
         max_abs_score = float(np.abs(cluster_scores).max())
@@ -101,9 +95,7 @@ class Island:
 
         # Convert scores to probabilities using softmax with temperature schedule
         period = self.cluster_sampling_temperature_period
-        temperature = self.cluster_sampling_temperature_init * (
-            1 - (self.num_programs % period) / period
-        )
+        temperature = self.cluster_sampling_temperature_init * (1 - (self.num_programs % period) / period)
         probabilities = _softmax(cluster_scores, temperature)
 
         # At the beginning when we have few clusters, place fewer solutions into prompt

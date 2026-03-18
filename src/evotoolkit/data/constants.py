@@ -57,19 +57,13 @@ def get_dataset_metadata(category: str, dataset_name: str) -> Dict:
         ValueError: If category or dataset is unknown
     """
     if category not in DATASET_CATEGORIES:
-        raise ValueError(
-            f"Unknown dataset category: {category}. "
-            f"Available: {list(DATASET_CATEGORIES.keys())}"
-        )
+        raise ValueError(f"Unknown dataset category: {category}. Available: {list(DATASET_CATEGORIES.keys())}")
 
     category_config = DATASET_CATEGORIES[category]
     datasets = category_config["datasets"]
 
     if dataset_name not in datasets:
-        raise ValueError(
-            f"Unknown dataset: {dataset_name} in category {category}. "
-            f"Available: {list(datasets.keys())}"
-        )
+        raise ValueError(f"Unknown dataset: {dataset_name} in category {category}. Available: {list(datasets.keys())}")
 
     return datasets[dataset_name]
 
@@ -88,10 +82,7 @@ def get_release_url(category: str) -> str:
         ValueError: If category is unknown
     """
     if category not in DATASET_CATEGORIES:
-        raise ValueError(
-            f"Unknown dataset category: {category}. "
-            f"Available: {list(DATASET_CATEGORIES.keys())}"
-        )
+        raise ValueError(f"Unknown dataset category: {category}. Available: {list(DATASET_CATEGORIES.keys())}")
 
     return DATASET_CATEGORIES[category]["release_url"]
 

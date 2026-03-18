@@ -46,9 +46,7 @@ class EvoEngineerStringInterface(EvoEngineerInterface):
             # Build the thoughts section if available
             thoughts_section = ""
             if random_thoughts and len(random_thoughts) > 0:
-                thoughts_list = "\n".join(
-                    [f"- {thought}" for thought in random_thoughts]
-                )
+                thoughts_list = "\n".join([f"- {thought}" for thought in random_thoughts])
                 thoughts_section = f"""
 
 Reference insights (consider if relevant):
@@ -87,9 +85,7 @@ thought: The rationale for the improvement idea.
             # Build the thoughts section if available
             thoughts_section = ""
             if random_thoughts and len(random_thoughts) > 0:
-                thoughts_list = "\n".join(
-                    [f"- {thought}" for thought in random_thoughts]
-                )
+                thoughts_list = "\n".join([f"- {thought}" for thought in random_thoughts])
                 thoughts_section = f"""
 
 Mutation insights (consider if relevant):
@@ -129,9 +125,7 @@ thought: The rationale for this mutation.
             # Build the thoughts section if available
             thoughts_section = ""
             if random_thoughts and len(random_thoughts) > 0:
-                thoughts_list = "\n".join(
-                    [f"- {thought}" for thought in random_thoughts]
-                )
+                thoughts_list = "\n".join([f"- {thought}" for thought in random_thoughts])
                 thoughts_section = f"""
 
 Crossover insights (consider if relevant):
@@ -191,31 +185,23 @@ thought: The rationale for this crossover, explaining which elements came from w
         result = self._parse_json_format(content)
         if result and result[1]:
             cleaned_solution = self._clean_solution_string(result[1])
-            return Solution(
-                cleaned_solution, other_info={"name": result[0], "thought": result[2]}
-            )
+            return Solution(cleaned_solution, other_info={"name": result[0], "thought": result[2]})
 
         # Strategy 2: Standard format parsing (expected format)
         result = self._parse_standard_format(content)
         if result and result[1]:  # Ensure we have solution
             # Clean up the solution string
             cleaned_solution = self._clean_solution_string(result[1])
-            return Solution(
-                cleaned_solution, other_info={"name": result[0], "thought": result[2]}
-            )
+            return Solution(cleaned_solution, other_info={"name": result[0], "thought": result[2]})
 
         # Strategy 3: Flexible format parsing (lenient fallback)
         result = self._parse_flexible_format(content)
         if result and result[1]:
             cleaned_solution = self._clean_solution_string(result[1])
-            return Solution(
-                cleaned_solution, other_info={"name": result[0], "thought": result[2]}
-            )
+            return Solution(cleaned_solution, other_info={"name": result[0], "thought": result[2]})
 
         # Strategy 4: Raw content (last resort)
-        return Solution(
-            content, other_info={"name": "raw", "thought": "Failed to parse"}
-        )
+        return Solution(content, other_info={"name": "raw", "thought": "Failed to parse"})
 
     def _parse_standard_format(self, content: str) -> tuple:
         """Parse standard format: name -> solution -> thought order"""
@@ -274,9 +260,7 @@ thought: The rationale for this crossover, explaining which elements came from w
             if isinstance(data, dict):
                 name = str(data.get("name", ""))
                 # Try different key names for solution
-                solution = str(
-                    data.get("solution", data.get("code", data.get("sol_string", "")))
-                )
+                solution = str(data.get("solution", data.get("code", data.get("sol_string", ""))))
                 thought = str(data.get("thought", data.get("reasoning", "")))
                 return (name, solution, thought)
         except json.JSONDecodeError:
@@ -292,11 +276,7 @@ thought: The rationale for this crossover, explaining which elements came from w
                 data = json.loads(json_str)
                 if isinstance(data, dict):
                     name = str(data.get("name", ""))
-                    solution = str(
-                        data.get(
-                            "solution", data.get("code", data.get("sol_string", ""))
-                        )
-                    )
+                    solution = str(data.get("solution", data.get("code", data.get("sol_string", ""))))
                     thought = str(data.get("thought", data.get("reasoning", "")))
 
                     # If we found valid solution, return it
@@ -307,9 +287,7 @@ thought: The rationale for this crossover, explaining which elements came from w
 
         # Try to extract from markdown code blocks containing JSON
         code_block_pattern = r"```(?:json)?\s*\n(.*?)\n```"
-        code_matches = re.finditer(
-            code_block_pattern, content, re.DOTALL | re.IGNORECASE
-        )
+        code_matches = re.finditer(code_block_pattern, content, re.DOTALL | re.IGNORECASE)
 
         for match in code_matches:
             try:
@@ -317,11 +295,7 @@ thought: The rationale for this crossover, explaining which elements came from w
                 data = json.loads(json_str)
                 if isinstance(data, dict):
                     name = str(data.get("name", ""))
-                    solution = str(
-                        data.get(
-                            "solution", data.get("code", data.get("sol_string", ""))
-                        )
-                    )
+                    solution = str(data.get("solution", data.get("code", data.get("sol_string", ""))))
                     thought = str(data.get("thought", data.get("reasoning", "")))
 
                     if solution:
@@ -349,19 +323,13 @@ thought: The rationale for this crossover, explaining which elements came from w
         # Handle cases like: "\"text\"" -> "text" or '"text"' -> 'text'
         if len(cleaned) >= 2:
             # Check for outer quotes
-            if (cleaned[0] == '"' and cleaned[-1] == '"') or (
-                cleaned[0] == "'" and cleaned[-1] == "'"
-            ):
+            if (cleaned[0] == '"' and cleaned[-1] == '"') or (cleaned[0] == "'" and cleaned[-1] == "'"):
                 cleaned = cleaned[1:-1]
 
             # After removing outer quotes, check for escaped quotes
             # "\"text\"" -> "text"
             if len(cleaned) >= 2:
-                if (
-                    cleaned[0] == '"'
-                    and cleaned[-1] == '"'
-                    and not (len(cleaned) > 2 and cleaned[1] == '"')
-                ):
+                if cleaned[0] == '"' and cleaned[-1] == '"' and not (len(cleaned) > 2 and cleaned[1] == '"'):
                     # Not already unescaped
                     pass
                 elif cleaned.startswith('\\"') and cleaned.endswith('\\"'):

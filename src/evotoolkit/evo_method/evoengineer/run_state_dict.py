@@ -22,9 +22,7 @@ class EvoEngineerRunStateDict(BaseRunStateDict):
         self.generation = generation
         self.tot_sample_nums = tot_sample_nums
         self.is_done = is_done
-        self.sol_history = (
-            sol_history or []
-        )  # Complete history of all solutions (kept in memory)
+        self.sol_history = sol_history or []  # Complete history of all solutions (kept in memory)
         self.population = population or []  # Current generation population
         self.usage_history = {}
 
@@ -53,11 +51,7 @@ class EvoEngineerRunStateDict(BaseRunStateDict):
         # 获取当前最优解
         current_best = None
         if self.sol_history:
-            valid_sols = [
-                s
-                for s in self.sol_history
-                if s.evaluation_res and s.evaluation_res.valid
-            ]
+            valid_sols = [s for s in self.sol_history if s.evaluation_res and s.evaluation_res.valid]
             if valid_sols:
                 best_sol = max(valid_sols, key=lambda x: x.evaluation_res.score)
                 current_best = {
@@ -122,17 +116,11 @@ class EvoEngineerRunStateDict(BaseRunStateDict):
             return
 
         # 计算统计信息
-        valid_sols = [
-            s
-            for s in self.current_gen_solutions
-            if s.evaluation_res and s.evaluation_res.valid
-        ]
+        valid_sols = [s for s in self.current_gen_solutions if s.evaluation_res and s.evaluation_res.valid]
         statistics = {
             "total_solutions": len(self.current_gen_solutions),
             "valid_solutions": len(valid_sols),
-            "valid_rate": len(valid_sols) / len(self.current_gen_solutions)
-            if self.current_gen_solutions
-            else 0,
+            "valid_rate": len(valid_sols) / len(self.current_gen_solutions) if self.current_gen_solutions else 0,
         }
 
         if valid_sols:

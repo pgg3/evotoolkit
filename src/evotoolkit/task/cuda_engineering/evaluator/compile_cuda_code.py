@@ -9,8 +9,7 @@ import torch.utils.cpp_extension as cpp_extension
 
 
 def compile_cuda_code(cuda_code: str, temp_path: str) -> dict:
-    result_dict = {"temp_str": None,
-                   "compile_success": False, "error_msg": None}
+    result_dict = {"temp_str": None, "compile_success": False, "error_msg": None}
     temp_str = next(tempfile._get_candidate_names())
     result_dict["temp_str"] = temp_str
     use_temp_path = os.path.join(temp_path, temp_str)

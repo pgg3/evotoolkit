@@ -138,9 +138,7 @@ class AdversarialAttackTask(PythonTask):
             return EvaluationResult(
                 valid=False,
                 score=float("-inf"),
-                additional_info={
-                    "error": 'Function "draw_proposals" not found in code'
-                },
+                additional_info={"error": 'Function "draw_proposals" not found in code'},
             )
 
         draw_proposals_func = namespace["draw_proposals"]
@@ -153,9 +151,7 @@ class AdversarialAttackTask(PythonTask):
                 return EvaluationResult(
                     valid=False,
                     score=float("-inf"),
-                    additional_info={
-                        "error": "Attack evaluation returned None/NaN/Inf"
-                    },
+                    additional_info={"error": "Attack evaluation returned None/NaN/Inf"},
                 )
 
             # Lower distance is better - negate for maximization
@@ -235,17 +231,13 @@ class AdversarialAttackTask(PythonTask):
                     img_adv = attack.run(fmodel, x, fb.criteria.Misclassification(y))
 
                     # Calculate L2 distance
-                    distance = torch.linalg.norm(
-                        (x - img_adv).flatten(start_dim=1), axis=1
-                    )
+                    distance = torch.linalg.norm((x - img_adv).flatten(start_dim=1), axis=1)
                     distance = distance.mean()
 
                     # Check if distance is valid
                     dist_value = float(distance.cpu().numpy())
                     if np.isnan(dist_value) or np.isinf(dist_value):
-                        print(
-                            f"Warning: Invalid distance for sample {sample_count}, using penalty value"
-                        )
+                        print(f"Warning: Invalid distance for sample {sample_count}, using penalty value")
                         distances.append(10.0)  # Penalty for invalid result
                     else:
                         distances.append(dist_value)

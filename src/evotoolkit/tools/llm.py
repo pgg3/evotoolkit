@@ -54,10 +54,7 @@ class HttpsApi:
         else:
             # Check if it looks like a URL without protocol (e.g., "api.openai.com/v1/chat/completions")
             if "/" in api_url:
-                raise ValueError(
-                    f"Invalid API URL: '{api_url}'\n"
-                    f"Did you forget the protocol? Try: 'https://{api_url}'"
-                )
+                raise ValueError(f"Invalid API URL: '{api_url}'\nDid you forget the protocol? Try: 'https://{api_url}'")
 
             # Plain hostname (e.g., "api.openai.com" or "ai.api.xn--fiqs8s")
             self._host = api_url.strip()
@@ -90,15 +87,11 @@ class HttpsApi:
                 # Check if it looks like a hostname without protocol (e.g., "api.openai.com/v1/embeddings")
                 if not embed_url.startswith("/") and "." in embed_url.split("/")[0]:
                     raise ValueError(
-                        f"Invalid embedding URL: '{embed_url}'\n"
-                        f"Did you forget the protocol? Try: 'https://{embed_url}'\n"
-                        f"Or use path format: '/{embed_url}'"
+                        f"Invalid embedding URL: '{embed_url}'\nDid you forget the protocol? Try: 'https://{embed_url}'\nOr use path format: '/{embed_url}'"
                     )
 
                 # Plain path
-                self._embed_url = (
-                    embed_url if embed_url.startswith("/") else f"/{embed_url}"
-                )
+                self._embed_url = embed_url if embed_url.startswith("/") else f"/{embed_url}"
         else:
             # Auto-infer embedding URL
             self._embed_url = "/v1/embeddings"
@@ -184,11 +177,6 @@ class HttpsApi:
             except Exception:
                 retry += 1
                 if retry >= self._max_retry:
-                    raise RuntimeError(
-                        f"{self.__class__.__name__} error: {traceback.format_exc()}.\n"
-                        f"You may check your API host and API key."
-                    )
+                    raise RuntimeError(f"{self.__class__.__name__} error: {traceback.format_exc()}.\nYou may check your API host and API key.")
                 else:
-                    print(
-                        f"{self.__class__.__name__} error: {traceback.format_exc()}. Retrying...\n"
-                    )
+                    print(f"{self.__class__.__name__} error: {traceback.format_exc()}. Retrying...\n")

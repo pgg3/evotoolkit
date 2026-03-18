@@ -59,14 +59,10 @@ class EvoAttack(MinimizationAttack if FOOLBOX_AVAILABLE else object):
             min_epsilon: Minimum epsilon threshold
         """
         if not FOOLBOX_AVAILABLE:
-            raise ImportError(
-                "EvoAttack requires foolbox and eagerpy. "
-                "Install with: pip install foolbox eagerpy"
-            )
+            raise ImportError("EvoAttack requires foolbox and eagerpy. Install with: pip install foolbox eagerpy")
 
         if init_attack is not None and not isinstance(init_attack, MinimizationAttack):
-            raise NotImplementedError(
-                "init_attack must be a MinimizationAttack")
+            raise NotImplementedError("init_attack must be a MinimizationAttack")
 
         self.library_module = library_module
         self.init_attack = init_attack
@@ -111,9 +107,7 @@ class EvoAttack(MinimizationAttack if FOOLBOX_AVAILABLE else object):
             if init_attack is None:
                 init_attack = LinearSearchBlendedUniformNoiseAttack(steps=50)
 
-            best_advs = init_attack.run(
-                model, originals, criterion, early_stop=early_stop
-            )
+            best_advs = init_attack.run(model, originals, criterion, early_stop=early_stop)
         else:
             best_advs = ep.astensor(starting_points)
 
@@ -128,18 +122,13 @@ class EvoAttack(MinimizationAttack if FOOLBOX_AVAILABLE else object):
             failed = is_adv.logical_not().float32().sum()
             if starting_points is None:
                 # If init_attack failed, use noisy version of originals as starting point
-                print(
-                    f"Warning: init_attack failed for {failed} of {len(is_adv)} inputs. Using noisy originals."
-                )
+                print(f"Warning: init_attack failed for {failed} of {len(is_adv)} inputs. Using noisy originals.")
                 noise_scale = 0.1
-                noise = ep.normal(
-                    originals, shape=originals.shape) * noise_scale
+                noise = ep.normal(originals, shape=originals.shape) * noise_scale
                 best_advs = ep.clip(originals + noise, min_, max_)
             else:
                 # If user-provided starting points are not adversarial, warn but continue
-                print(
-                    f"Warning: {failed} of {len(is_adv)} starting_points are not adversarial. Continuing anyway."
-                )
+                print(f"Warning: {failed} of {len(is_adv)} starting_points are not adversarial. Continuing anyway.")
 
         # Attack parameters
         self.hyperparams = 0.05 * np.ones(originals.shape[0])
@@ -165,7 +154,7 @@ class EvoAttack(MinimizationAttack if FOOLBOX_AVAILABLE else object):
                         orginals_np[i],
                         best_advs_np[i],
                         standard_noise_np[i],
-                        self.hyperparams[i: i + 1],
+                        self.hyperparams[i : i + 1],
                     )
                     candidates_np[i] = candidate_i
                 except Exception:
@@ -180,10 +169,7 @@ class EvoAttack(MinimizationAttack if FOOLBOX_AVAILABLE else object):
                 return restore_type(best_advs)
 
             # Convert to tensors
-            candidates = (
-                torch.from_numpy(candidates_np).float().to(
-                    originals_raw.device)
-            )
+            candidates = torch.from_numpy(candidates_np).float().to(originals_raw.device)
 
             # Check adversarial status
             is_adv = is_adversarial(candidates)
@@ -211,8 +197,7 @@ class EvoAttack(MinimizationAttack if FOOLBOX_AVAILABLE else object):
             best_advs = ep.where(is_best_adv, candidates, best_advs)
 
             # Check convergence
-            self.current_epsilons = ep.norms.l2(
-                flatten(best_advs - originals), axis=-1)
+            self.current_epsilons = ep.norms.l2(flatten(best_advs - originals), axis=-1)
             if (self.current_epsilons < self.min_epsilon).all():
                 return restore_type(best_advs)
 
@@ -242,8 +227,6 @@ class EvoAttack(MinimizationAttack if FOOLBOX_AVAILABLE else object):
         p_greater_idx = p >= p_threshold
 
         f_p[p_less_idx] = lower + (1 - lower) * p[p_less_idx] / p_threshold
-        f_p[p_greater_idx] = 1 + (h - 1) * (p[p_greater_idx] - p_threshold) / (
-            1 - p_threshold
-        )
+        f_p[p_greater_idx] = 1 + (h - 1) * (p[p_greater_idx] - p_threshold) / (1 - p_threshold)
 
         return f_p

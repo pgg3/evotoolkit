@@ -45,9 +45,7 @@ class EvoEngineerPythonInterface(EvoEngineerInterface):
             # Build the thoughts section if available
             thoughts_section = ""
             if random_thoughts and len(random_thoughts) > 0:
-                thoughts_list = "\n".join(
-                    [f"- {thought}" for thought in random_thoughts]
-                )
+                thoughts_list = "\n".join([f"- {thought}" for thought in random_thoughts])
                 thoughts_section = f"""{thoughts_list}"""
 
             prompt = f"""# PYTHON FUNCTION OPTIMIZATION TASK
@@ -86,9 +84,7 @@ thought: [The rationale for the improvement idea.]
             # Build the thoughts section if available
             thoughts_section = ""
             if random_thoughts and len(random_thoughts) > 0:
-                thoughts_list = "\n".join(
-                    [f"- {thought}" for thought in random_thoughts]
-                )
+                thoughts_list = "\n".join([f"- {thought}" for thought in random_thoughts])
                 thoughts_section = f"""{thoughts_list}"""
 
             # Build parent functions info
@@ -148,9 +144,7 @@ thought: [The rationale for the improvement idea.]
             # Build the thoughts section if available
             thoughts_section = ""
             if random_thoughts and len(random_thoughts) > 0:
-                thoughts_list = "\n".join(
-                    [f"- {thought}" for thought in random_thoughts]
-                )
+                thoughts_list = "\n".join([f"- {thought}" for thought in random_thoughts])
                 thoughts_section = f"""{thoughts_list}"""
 
             prompt = f"""# PYTHON FUNCTION MUTATION TASK
@@ -207,28 +201,20 @@ thought: [The rationale for the improvement idea.]
         # Strategy 1: Standard format parsing (most reliable)
         result = self._parse_standard_format(content)
         if result and result[1]:  # Ensure we have code
-            return Solution(
-                result[1], other_info={"name": result[0], "thought": result[2]}
-            )
+            return Solution(result[1], other_info={"name": result[0], "thought": result[2]})
 
         # Strategy 2: Flexible format parsing
         result = self._parse_flexible_format(content)
         if result and result[1]:
-            return Solution(
-                result[1], other_info={"name": result[0], "thought": result[2]}
-            )
+            return Solution(result[1], other_info={"name": result[0], "thought": result[2]})
 
         # Strategy 3: Code block fallback
         code = self._extract_any_code_block(content)
         if code:
-            return Solution(
-                code, other_info={"name": "extracted", "thought": "Fallback parsing"}
-            )
+            return Solution(code, other_info={"name": "extracted", "thought": "Fallback parsing"})
 
         # Strategy 4: Raw content (last resort)
-        return Solution(
-            content, other_info={"name": "raw", "thought": "Failed to parse"}
-        )
+        return Solution(content, other_info={"name": "raw", "thought": "Failed to parse"})
 
     def _parse_standard_format(self, content: str) -> tuple:
         """Parse standard format: name -> code -> thought order"""
@@ -260,9 +246,7 @@ thought: [The rationale for the improvement idea.]
         code = self._extract_any_code_block(content)
 
         # Try to extract thought
-        thought_pattern = (
-            r"(?:thought|Thought|THOUGHT)\s*:?\s*(.*?)(?=\n(?:name|code)|$)"
-        )
+        thought_pattern = r"(?:thought|Thought|THOUGHT)\s*:?\s*(.*?)(?=\n(?:name|code)|$)"
         thought_match = re.search(thought_pattern, content, re.DOTALL | re.IGNORECASE)
         thought = thought_match.group(1).strip() if thought_match else ""
 

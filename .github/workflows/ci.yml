@@ -31,8 +31,8 @@ jobs:
 
       - name: Lint with Ruff
         run: |
-          uv run ruff check .
-          uv run ruff format --check .
+          uv run ruff check src/ tests/
+          uv run ruff format --check src/ tests/
 
       - name: Run tests
         run: uv run pytest tests/ --cov --cov-report=xml -m "not cuda and not llm and not slow"

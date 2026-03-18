@@ -44,9 +44,7 @@ class EvoEngineerConfig(BaseConfig):
         # Validate init operators have selection_size=0
         for op in self.init_operators:
             if op.selection_size != 0:
-                raise ValueError(
-                    f"Init operator '{op.name}' must have selection_size=0, got {op.selection_size}"
-                )
+                raise ValueError(f"Init operator '{op.name}' must have selection_size=0, got {op.selection_size}")
 
     def get_init_operators(self) -> List[Operator]:
         """Get initialization operators"""

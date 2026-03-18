@@ -22,9 +22,7 @@ class FunSearchRunStateDict(BaseRunStateDict):
         super().__init__(task_info)
 
         self.tot_sample_nums = tot_sample_nums
-        self.sol_history = (
-            sol_history or []
-        )  # All solutions (valid/invalid, kept in memory)
+        self.sol_history = sol_history or []  # All solutions (valid/invalid, kept in memory)
         self.database_file = database_file  # Path to database JSON file
         self.is_done = is_done
         self.usage_history = {}
@@ -40,11 +38,7 @@ class FunSearchRunStateDict(BaseRunStateDict):
         # 获取当前最优解
         current_best = None
         if self.sol_history:
-            valid_sols = [
-                s
-                for s in self.sol_history
-                if s.evaluation_res and s.evaluation_res.valid
-            ]
+            valid_sols = [s for s in self.sol_history if s.evaluation_res and s.evaluation_res.valid]
             if valid_sols:
                 best_sol = max(valid_sols, key=lambda x: x.evaluation_res.score)
                 current_best = {
@@ -62,9 +56,7 @@ class FunSearchRunStateDict(BaseRunStateDict):
             "current_best": current_best,
             "metadata": {
                 "history_saved_in": "history/",
-                "last_batch": (self.tot_sample_nums - 1) // self.batch_size
-                if self.tot_sample_nums > 0
-                else 0,
+                "last_batch": (self.tot_sample_nums - 1) // self.batch_size if self.tot_sample_nums > 0 else 0,
             },
         }
 
@@ -90,9 +82,7 @@ class FunSearchRunStateDict(BaseRunStateDict):
             return
 
         # 检查是否应该保存：累积够batch_size个，或者算法结束
-        should_save = (
-            len(self.current_batch_solutions) >= self.batch_size
-        ) or self.is_done
+        should_save = (len(self.current_batch_solutions) >= self.batch_size) or self.is_done
 
         if not should_save:
             return
@@ -104,13 +94,7 @@ class FunSearchRunStateDict(BaseRunStateDict):
         sample_range = (self.current_batch_start, self.tot_sample_nums)
 
         # 元数据：包含island信息等
-        metadata = {
-            "valid_count": sum(
-                1
-                for s in self.current_batch_solutions
-                if s.evaluation_res and s.evaluation_res.valid
-            )
-        }
+        metadata = {"valid_count": sum(1 for s in self.current_batch_solutions if s.evaluation_res and s.evaluation_res.valid)}
 
         # 保存这个批次的历史
         self._history_manager.save_batch_history(

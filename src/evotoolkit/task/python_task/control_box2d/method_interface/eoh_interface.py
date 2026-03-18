@@ -216,6 +216,7 @@ Do not provide additional explanations beyond the required format.
 
         # Select a random insight for guidance
         import random
+
         insight = random.choice(CONTROL_INSIGHTS)
 
         prompt = f"""## CONTROL POLICY EVOLUTION TASK
@@ -313,9 +314,7 @@ Do not provide additional explanations beyond the required format.
         # Remove algorithm part before extracting code
         response_without_algorithm = response_str
         if algorithm:
-            response_without_algorithm = response_str.replace(
-                "{" + algorithm + "}", "", 1
-            )
+            response_without_algorithm = response_str.replace("{" + algorithm + "}", "", 1)
 
         # Extract Python code block
         patterns = [
@@ -327,9 +326,7 @@ Do not provide additional explanations beyond the required format.
 
         code = ""
         for pattern in patterns:
-            matches = re.findall(
-                pattern, response_without_algorithm, re.DOTALL | re.IGNORECASE
-            )
+            matches = re.findall(pattern, response_without_algorithm, re.DOTALL | re.IGNORECASE)
             if matches:
                 # Return the longest match (most complete implementation)
                 code = max(matches, key=len).strip()

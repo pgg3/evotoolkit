@@ -153,21 +153,15 @@ class CudaTask(BaseTask):
                     },
                 )
 
-            cuda_comparison_result = self.evaluator.compare_func_cuda_sandbox(
-                self.func_py_code, candidate_code
-            )
+            cuda_comparison_result = self.evaluator.compare_func_cuda_sandbox(self.func_py_code, candidate_code)
 
             additional_info = {
                 "code": candidate_code,
                 "temp_str": cuda_comparison_result.get("temp_str"),
                 "runtime": None,
                 "prof_string": None,
-                "compilation_error": cuda_comparison_result.get(
-                    "compilation_error", False
-                ),
-                "comparison_error": not cuda_comparison_result.get(
-                    "correctness", False
-                ),
+                "compilation_error": cuda_comparison_result.get("compilation_error", False),
+                "comparison_error": not cuda_comparison_result.get("correctness", False),
                 "error_msg": cuda_comparison_result.get("error_msg", None),
             }
 
@@ -182,16 +176,12 @@ class CudaTask(BaseTask):
 
                 score = -cuda_runtime_result.get("runtime")
                 valid = True
-                additional_info["error_msg"] = cuda_runtime_result.get(
-                    "error_msg", None
-                )
+                additional_info["error_msg"] = cuda_runtime_result.get("error_msg", None)
             else:
                 score = None
                 valid = False
 
-            return EvaluationResult(
-                valid=valid, score=score, additional_info=additional_info
-            )
+            return EvaluationResult(valid=valid, score=score, additional_info=additional_info)
 
         except Exception as e:
             return EvaluationResult(

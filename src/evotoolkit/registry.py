@@ -116,15 +116,11 @@ def get_algorithm_info(name: str) -> Dict[str, Any]:
     """
     if name not in _ALGORITHM_REGISTRY:
         available = ", ".join(_ALGORITHM_REGISTRY.keys())
-        raise ValueError(
-            f"Algorithm '{name}' not found. Available algorithms: {available}"
-        )
+        raise ValueError(f"Algorithm '{name}' not found. Available algorithms: {available}")
     return _ALGORITHM_REGISTRY[name]
 
 
-def get_interface_class(
-    algorithm_name: str, task: BaseTask
-) -> Type[BaseMethodInterface]:
+def get_interface_class(algorithm_name: str, task: BaseTask) -> Type[BaseMethodInterface]:
     """
     Automatically select and return the appropriate Interface class
     based on algorithm name and task type.
@@ -160,10 +156,7 @@ def get_interface_class(
 
     # Get interface class name prefix
     if algorithm_name not in _INTERFACE_PREFIX_MAP:
-        raise ValueError(
-            f"No interface mapping for algorithm '{algorithm_name}'. "
-            f"Available: {list(_INTERFACE_PREFIX_MAP.keys())}"
-        )
+        raise ValueError(f"No interface mapping for algorithm '{algorithm_name}'. Available: {list(_INTERFACE_PREFIX_MAP.keys())}")
 
     prefix = _INTERFACE_PREFIX_MAP[algorithm_name]
     interface_class_name = f"{prefix}{task_suffix}Interface"
@@ -176,10 +169,7 @@ def get_interface_class(
         interface_class = getattr(module, interface_class_name)
         return interface_class
     except (ImportError, AttributeError) as e:
-        raise ValueError(
-            f"Could not find interface '{interface_class_name}' in '{module_path}'. "
-            f"Error: {e}"
-        )
+        raise ValueError(f"Could not find interface '{interface_class_name}' in '{module_path}'. Error: {e}")
 
 
 def infer_algorithm_from_interface(interface: BaseMethodInterface) -> str:

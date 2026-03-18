@@ -12,9 +12,7 @@ class ResponseParser:
         """
         parse the convert response
         """
-        code_block_pattern = re.compile(
-            r"\s*```(?:\w+)?\s*\n?(.*?)\n?\s*```\s*$", re.DOTALL
-        )
+        code_block_pattern = re.compile(r"\s*```(?:\w+)?\s*\n?(.*?)\n?\s*```\s*$", re.DOTALL)
 
         # find match
         match_group = code_block_pattern.findall(response_to_parse)
@@ -37,9 +35,7 @@ class ResponseParser:
             return response_to_parse
         else:
             code = match.group(1)
-            code_block_pattern = re.compile(
-                r"\s*```(?:[\w+]+)?\s*\n?(.*?)\n?\s*```\s*$", re.DOTALL
-            )
+            code_block_pattern = re.compile(r"\s*```(?:[\w+]+)?\s*\n?(.*?)\n?\s*```\s*$", re.DOTALL)
             # find match
             match_group = code_block_pattern.findall(code)
             if match_group:
@@ -60,15 +56,11 @@ class ResponseParser:
         cleaned_code = ""
 
         # if surrounded by ```json ```
-        if proposed_content.strip().startswith("```json") and proposed_content.endswith(
-            "```"
-        ):
+        if proposed_content.strip().startswith("```json") and proposed_content.endswith("```"):
             content_inside = proposed_content.strip()[7:-3]
             try:
                 json_dict = json.loads(content_inside)
-                code_block_pattern = re.compile(
-                    r"\s*(?:```[^\n]*)?\n?(.*?)(```|$)", re.DOTALL
-                )
+                code_block_pattern = re.compile(r"\s*(?:```[^\n]*)?\n?(.*?)(```|$)", re.DOTALL)
 
                 cleaned_code = code_block_pattern.search(json_dict["code"]).group(1)
                 json_dict["code"] = cleaned_code
@@ -84,23 +76,17 @@ class ResponseParser:
         code_heading = r"(?:code|Code|CODE)\s*:?"
 
         # Extract name
-        name_pattern = re.compile(
-            r"" + name_heading + r"\s*(.*?)" + code_heading, re.DOTALL
-        )
+        name_pattern = re.compile(r"" + name_heading + r"\s*(.*?)" + code_heading, re.DOTALL)
         match = name_pattern.search(proposed_content)
         if match:
             name = match.group(1).strip()
 
         # Extract code
-        code_pattern = re.compile(
-            r"" + code_heading + r"\s*(.*)" + thought_heading, re.DOTALL
-        )
+        code_pattern = re.compile(r"" + code_heading + r"\s*(.*)" + thought_heading, re.DOTALL)
         match = code_pattern.search(proposed_content)
         if match:
             code = match.group(1).strip()
-            code_block_pattern = re.compile(
-                r"\s*(?:```[^\n]*)?\n?(.*?)(```|$)", re.DOTALL
-            )
+            code_block_pattern = re.compile(r"\s*(?:```[^\n]*)?\n?(.*?)(```|$)", re.DOTALL)
             code_match = code_block_pattern.search(code)
             if code_match:
                 cleaned_code = code_match.group(1)

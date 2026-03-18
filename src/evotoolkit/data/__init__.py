@@ -46,9 +46,7 @@ def get_dataset_path(category: str, data_dir: Optional[Path | str] = None) -> Pa
     """
     if category not in DATASET_CATEGORIES:
         available = list(DATASET_CATEGORIES.keys())
-        raise ValueError(
-            f"Unknown dataset category: {category}. Available categories: {available}"
-        )
+        raise ValueError(f"Unknown dataset category: {category}. Available categories: {available}")
 
     # Convert string to Path if needed
     if data_dir is not None and isinstance(data_dir, str):
@@ -99,8 +97,6 @@ def list_available_datasets(category: str) -> dict:
     """
     if category not in DATASET_CATEGORIES:
         available = list(DATASET_CATEGORIES.keys())
-        raise ValueError(
-            f"Unknown dataset category: {category}. Available categories: {available}"
-        )
+        raise ValueError(f"Unknown dataset category: {category}. Available categories: {available}")
 
     return DATASET_CATEGORIES[category]["datasets"].copy()

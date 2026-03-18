@@ -94,9 +94,7 @@ class PromptOptimizationTask(StringTask):
             return EvaluationResult(
                 valid=False,
                 score=float("-inf"),
-                additional_info={
-                    "error": "Prompt template must contain {question} placeholder"
-                },
+                additional_info={"error": "Prompt template must contain {question} placeholder"},
             )
 
         # Test the prompt on all test cases
@@ -137,9 +135,7 @@ class PromptOptimizationTask(StringTask):
                 )
 
             except Exception as e:
-                results.append(
-                    {"question": question, "error": str(e), "correct": False}
-                )
+                results.append({"question": question, "error": str(e), "correct": False})
 
         # Calculate score as correctness rate
         score = correct / total if total > 0 else 0.0
@@ -244,6 +240,4 @@ Score = (number of correct answers) / (total questions)
 
         eval_res = self.evaluate_code(init_template)
 
-        return Solution(
-            sol_string=init_template, evaluation_res=eval_res, other_info={}
-        )
+        return Solution(sol_string=init_template, evaluation_res=eval_res, other_info={})

@@ -204,9 +204,7 @@ FOLLOW EXACTLY THIS FORMAT. DO NOT ADD ANYTHING ELSE.
         # Find all matches using case insensitive search
         code = ""
         for pattern in patterns:
-            matches = re.findall(
-                pattern, response_without_algorithm, re.DOTALL | re.IGNORECASE
-            )
+            matches = re.findall(pattern, response_without_algorithm, re.DOTALL | re.IGNORECASE)
             if matches:
                 # Return the longest match (likely the most complete implementation)
                 code = max(matches, key=len).strip()

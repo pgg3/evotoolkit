@@ -27,9 +27,7 @@ def get_py_runtime(py_code: str, timing_dict: dict) -> dict:
         timing_dict["lock_acquired"] = True
         set_seed(0)
         init_inputs = ns["get_init_inputs"]()
-        init_inputs = [
-            x.cuda() if isinstance(x, torch.Tensor) else x for x in init_inputs
-        ]
+        init_inputs = [x.cuda() if isinstance(x, torch.Tensor) else x for x in init_inputs]
         with torch.no_grad():
             try:
                 model_inst = ns["Model"](*init_inputs)
@@ -66,9 +64,7 @@ def get_py_runtime(py_code: str, timing_dict: dict) -> dict:
         return result_dict
 
 
-def get_cuda_runtime(
-    func_code: str, cuda_code: str, temp_path: str, temp_str: str, timing_dict: dict
-) -> dict:
+def get_cuda_runtime(func_code: str, cuda_code: str, temp_path: str, temp_str: str, timing_dict: dict) -> dict:
     # Phase 1: Pre-lock work (counts toward timeout)
     result_dict = {
         "temp_str": temp_str,
@@ -113,9 +109,7 @@ def get_cuda_runtime(
         timing_dict["lock_acquired"] = True
         set_seed(0)
         init_inputs = func_ns["get_init_inputs"]()
-        init_inputs = [
-            x.cuda() if isinstance(x, torch.Tensor) else x for x in init_inputs
-        ]
+        init_inputs = [x.cuda() if isinstance(x, torch.Tensor) else x for x in init_inputs]
 
         with torch.no_grad():
             try:
@@ -171,15 +165,9 @@ def get_cuda_runtime(
 
         for event in key_averages:
             # Check for different attribute names for CUDA time
-            cuda_time = getattr(event, "cuda_time_total", None) or getattr(
-                event, "device_time_total", 0
-            )
-            cpu_time = getattr(event, "cpu_time_total", None) or getattr(
-                event, "cpu_time", 0
-            )
-            self_cuda_time = getattr(event, "self_cuda_time_total", None) or getattr(
-                event, "self_device_time_total", cuda_time
-            )
+            cuda_time = getattr(event, "cuda_time_total", None) or getattr(event, "device_time_total", 0)
+            cpu_time = getattr(event, "cpu_time_total", None) or getattr(event, "cpu_time", 0)
+            self_cuda_time = getattr(event, "self_cuda_time_total", None) or getattr(event, "self_device_time_total", cuda_time)
 
             if cuda_time > 0:  # Only include CUDA events
                 prof_data.append(
@@ -192,33 +180,23 @@ def get_cuda_runtime(
                         "cpu_time_us": cpu_time,
                         "cpu_time_ms": cpu_time / 1000.0,
                         "count": event.count,
-                        "input_shapes": str(getattr(event, "input_shapes", []))
-                        if hasattr(event, "input_shapes")
-                        else None,
+                        "input_shapes": str(getattr(event, "input_shapes", [])) if hasattr(event, "input_shapes") else None,
                         "cuda_memory_usage": getattr(event, "cuda_memory_usage", None),
                         # Hierarchy information
-                        "has_children": hasattr(event, "cpu_children")
-                        and len(getattr(event, "cpu_children", [])) > 0,
-                        "is_nested": cuda_time
-                        != self_cuda_time,  # If total != self, it contains nested operations
+                        "has_children": hasattr(event, "cpu_children") and len(getattr(event, "cpu_children", [])) > 0,
+                        "is_nested": cuda_time != self_cuda_time,  # If total != self, it contains nested operations
                     }
                 )
 
         # Sort by CUDA time and take top 10
-        prof_data = sorted(prof_data, key=lambda x: x["cuda_time_us"], reverse=True)[
-            :10
-        ]
+        prof_data = sorted(prof_data, key=lambda x: x["cuda_time_us"], reverse=True)[:10]
 
         # Create LLM-friendly description with hierarchy
         prof_string = "CUDA Performance Profile:\n"
         total_cuda_time = sum(item["cuda_time_us"] for item in prof_data)
 
         for i, item in enumerate(prof_data, 1):
-            percentage = (
-                (item["cuda_time_us"] / total_cuda_time * 100)
-                if total_cuda_time > 0
-                else 0
-            )
+            percentage = (item["cuda_time_us"] / total_cuda_time * 100) if total_cuda_time > 0 else 0
 
             # Show if operation contains nested children
             if item["is_nested"]:
@@ -240,12 +218,8 @@ def get_cuda_runtime(
         # Calculate actual non-nested time for more accurate total
         self_times_only = sum(item["self_cuda_time_us"] for item in prof_data)
 
-        prof_string += (
-            f"\nTotal CUDA time (including nested): {total_cuda_time / 1000.0:.3f}ms"
-        )
-        prof_string += (
-            f"\nActual execution time (self only): {self_times_only / 1000.0:.3f}ms"
-        )
+        prof_string += f"\nTotal CUDA time (including nested): {total_cuda_time / 1000.0:.3f}ms"
+        prof_string += f"\nActual execution time (self only): {self_times_only / 1000.0:.3f}ms"
         result_dict["prof_string"] = prof_string
 
         result_dict["error_msg"] = None

@@ -74,10 +74,7 @@ def download_with_progress(url: str, dest_path: Path, chunk_size: int = 8192) ->
 
     except urllib.error.HTTPError as e:
         if e.code == 404:
-            raise DownloadError(
-                f"Dataset not found at {url}. "
-                f"Please ensure the data release exists on GitHub."
-            ) from e
+            raise DownloadError(f"Dataset not found at {url}. Please ensure the data release exists on GitHub.") from e
         else:
             raise DownloadError(f"HTTP error {e.code}: {e.reason}") from e
     except urllib.error.URLError as e:
@@ -165,9 +162,7 @@ def download_dataset_category(category: str, target_dir: Path) -> Path:
     return target_dir
 
 
-def ensure_dataset_downloaded(
-    category: str, dataset_name: str, data_dir: Optional[Path] = None
-) -> Path:
+def ensure_dataset_downloaded(category: str, dataset_name: str, data_dir: Optional[Path] = None) -> Path:
     """
     Ensure dataset is downloaded and available.
 
@@ -202,9 +197,7 @@ def ensure_dataset_downloaded(
     # Need to download - check if we already have category but missing specific dataset
     if category_dir.exists():
         print(f"Dataset '{dataset_name}' not found in existing {category} directory.")
-        print(
-            "This might indicate incomplete download. Re-downloading entire category..."
-        )
+        print("This might indicate incomplete download. Re-downloading entire category...")
         # Clean up existing directory to ensure fresh download
         shutil.rmtree(category_dir)
 

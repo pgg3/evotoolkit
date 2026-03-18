@@ -41,9 +41,7 @@ class ProgramsDatabase:
         self.best_solutions_per_island: List[Optional[Solution]] = [None] * num_islands
         self.last_reset_time: float = time.time()
 
-    def register_solution(
-        self, solution: Solution, island_id: Optional[int] = None
-    ) -> None:
+    def register_solution(self, solution: Solution, island_id: Optional[int] = None) -> None:
         """Registers solution in the database."""
         if not solution.evaluation_res or not solution.evaluation_res.valid:
             return
@@ -63,9 +61,7 @@ class ProgramsDatabase:
             self.last_reset_time = time.time()
             self.reset_islands()
 
-    def _register_solution_in_island(
-        self, solution: Solution, island_id: int, score: float
-    ) -> None:
+    def _register_solution_in_island(self, solution: Solution, island_id: int, score: float) -> None:
         """Registers solution in the specified island."""
         self.islands[island_id].register_solution(solution, score)
 
@@ -91,10 +87,7 @@ class ProgramsDatabase:
     def reset_islands(self) -> None:
         """Resets the weaker half of islands."""
         # Sort islands by score with minor noise to break ties
-        scores_with_noise = (
-            np.array(self.best_scores_per_island)
-            + np.random.randn(self.num_islands) * 1e-6
-        )
+        scores_with_noise = np.array(self.best_scores_per_island) + np.random.randn(self.num_islands) * 1e-6
         indices_sorted_by_score = np.argsort(scores_with_noise)
 
         num_islands_to_reset = self.num_islands // 2
@@ -105,12 +98,8 @@ class ProgramsDatabase:
             # Reset the island
             self.islands[island_id] = Island(
                 solutions_per_prompt=self.solutions_per_prompt,
-                cluster_sampling_temperature_init=self.islands[
-                    island_id
-                ].cluster_sampling_temperature_init,
-                cluster_sampling_temperature_period=self.islands[
-                    island_id
-                ].cluster_sampling_temperature_period,
+                cluster_sampling_temperature_init=self.islands[island_id].cluster_sampling_temperature_init,
+                cluster_sampling_temperature_period=self.islands[island_id].cluster_sampling_temperature_period,
             )
             self.best_scores_per_island[island_id] = -float("inf")
 
@@ -120,9 +109,7 @@ class ProgramsDatabase:
             founder_score = self.best_scores_per_island[founder_island_id]
 
             if founder_solution:
-                self._register_solution_in_island(
-                    founder_solution, island_id, founder_score
-                )
+                self._register_solution_in_island(founder_solution, island_id, founder_score)
 
     def get_statistics(self) -> dict:
         """Returns database statistics."""
@@ -209,20 +196,14 @@ class ProgramsDatabase:
         )
 
         database.last_reset_time = data.get("last_reset_time", database.last_reset_time)
-        database.best_scores_per_island = data.get(
-            "best_scores_per_island", database.best_scores_per_island
-        )
+        database.best_scores_per_island = data.get("best_scores_per_island", database.best_scores_per_island)
 
         # Restore islands
         for i, island_data in enumerate(data["islands"]):
             island = Island(
                 solutions_per_prompt=island_data["solutions_per_prompt"],
-                cluster_sampling_temperature_init=island_data[
-                    "cluster_sampling_temperature_init"
-                ],
-                cluster_sampling_temperature_period=island_data[
-                    "cluster_sampling_temperature_period"
-                ],
+                cluster_sampling_temperature_init=island_data["cluster_sampling_temperature_init"],
+                cluster_sampling_temperature_period=island_data["cluster_sampling_temperature_period"],
             )
             island.num_programs = island_data["num_programs"]
 
@@ -264,8 +245,6 @@ class ProgramsDatabase:
             # Update best solution for this island
             if island.clusters:
                 best_score = max(island.clusters.keys())
-                database.best_solutions_per_island[i] = island.clusters[
-                    best_score
-                ].sample_solution()
+                database.best_solutions_per_island[i] = island.clusters[best_score].sample_solution()
 
         return database

@@ -105,6 +105,10 @@ include = ["src/evotoolkit"]
 [tool.ruff]
 line-length = 160
 target-version = "py310"
+exclude = [
+    "src/evotoolkit/evo_method/cann_initer",
+    "src/evotoolkit/task/cann_init",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]  # E: pycodestyle errors, F: pyflakes, I: isort

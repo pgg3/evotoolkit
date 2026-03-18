@@ -84,10 +84,7 @@ class ScientificRegressionTask(PythonTask):
             timeout_seconds: Execution timeout
         """
         if dataset_name not in DATASET_INFO:
-            raise ValueError(
-                f"Unknown dataset: {dataset_name}. "
-                f"Available: {list(DATASET_INFO.keys())}"
-            )
+            raise ValueError(f"Unknown dataset: {dataset_name}. Available: {list(DATASET_INFO.keys())}")
 
         self.dataset_name = dataset_name
         self.max_params = max_params
@@ -119,20 +116,15 @@ class ScientificRegressionTask(PythonTask):
 
         try:
             # Get dataset path, will auto-download if needed
-            base_dir = get_dataset_path(
-                "scientific_regression", data_dir=data_dir)
+            base_dir = get_dataset_path("scientific_regression", data_dir=data_dir)
             dataset_path = base_dir / dataset_name
         except DownloadError as e:
-            raise FileNotFoundError(
-                f"Failed to download dataset '{dataset_name}': {str(e)}"
-            ) from e
+            raise FileNotFoundError(f"Failed to download dataset '{dataset_name}': {str(e)}") from e
 
         # Verify dataset exists
         if not dataset_path.exists():
             raise FileNotFoundError(
-                f"Dataset '{dataset_name}' not found after download. "
-                f"This might be a bug - please report it at: "
-                f"https://github.com/pgg3/evotoolkit/issues"
+                f"Dataset '{dataset_name}' not found after download. This might be a bug - please report it at: https://github.com/pgg3/evotoolkit/issues"
             )
 
         # Load CSV files
@@ -204,22 +196,17 @@ class ScientificRegressionTask(PythonTask):
             return EvaluationResult(
                 valid=False,
                 score=float("-inf"),
-                additional_info={
-                    "error": 'Function "equation" not found in code'},
+                additional_info={"error": 'Function "equation" not found in code'},
             )
 
         equation_func = namespace["equation"]
 
         # Evaluate on training data
         try:
-            train_score, train_warnings = self._evaluate_equation(
-                equation_func, self.train_inputs, self.train_outputs
-            )
+            train_score, train_warnings = self._evaluate_equation(equation_func, self.train_inputs, self.train_outputs)
 
             # Evaluate on test data
-            test_score, test_warnings = self._evaluate_equation(
-                equation_func, self.test_inputs, self.test_outputs
-            )
+            test_score, test_warnings = self._evaluate_equation(equation_func, self.test_inputs, self.test_outputs)
 
             # Combine all warnings
             all_warnings = list(set(train_warnings + test_warnings))
@@ -274,15 +261,10 @@ class ScientificRegressionTask(PythonTask):
                 if inputs.shape[1] == 2:
                     y_pred = equation_func(inputs[:, 0], inputs[:, 1], params)
                 elif inputs.shape[1] == 4:
-                    y_pred = equation_func(
-                        inputs[:, 0], inputs[:, 1], inputs[:,
-                                                           2], inputs[:, 3], params
-                    )
+                    y_pred = equation_func(inputs[:, 0], inputs[:, 1], inputs[:, 2], inputs[:, 3], params)
                 else:
                     # Generic case
-                    y_pred = equation_func(
-                        *[inputs[:, i] for i in range(inputs.shape[1])], params
-                    )
+                    y_pred = equation_func(*[inputs[:, i] for i in range(inputs.shape[1])], params)
 
                 mse = np.mean((y_pred - outputs) ** 2)
                 return mse
@@ -329,16 +311,9 @@ class ScientificRegressionTask(PythonTask):
         if len(input_names) == 2:
             signature = f"{input_names[0]}: np.ndarray, {input_names[1]}: np.ndarray, params: np.ndarray"
         elif len(input_names) == 4:
-            signature = (
-                ", ".join([f"{name}: np.ndarray" for name in input_names])
-                + ", params: np.ndarray"
-            )
+            signature = ", ".join([f"{name}: np.ndarray" for name in input_names]) + ", params: np.ndarray"
         else:
-            signature = (
-                ", ".join(
-                    [f"input{i}: np.ndarray" for i in range(len(input_names))])
-                + ", params: np.ndarray"
-            )
+            signature = ", ".join([f"input{i}: np.ndarray" for i in range(len(input_names))]) + ", params: np.ndarray"
 
         return f"""You are an expert in scientific symbolic regression and mathematical modeling.
 
@@ -383,22 +358,13 @@ Fitness: Your equation will be evaluated by optimizing parameters to minimize MS
             equation_body = f"    return params[0] * {input_names[0]} + params[1] * {input_names[1]} + params[2]"
             signature = f"{input_names[0]}, {input_names[1]}, params"
         elif len(input_names) == 4:
-            terms = [f"params[{i}] * {name}" for i,
-                     name in enumerate(input_names)]
-            equation_body = (
-                f"    return {' + '.join(terms)} + params[{len(input_names)}]"
-            )
+            terms = [f"params[{i}] * {name}" for i, name in enumerate(input_names)]
+            equation_body = f"    return {' + '.join(terms)} + params[{len(input_names)}]"
             signature = ", ".join(input_names) + ", params"
         else:
-            terms = [
-                f"params[{i}] * input{i}" for i in range(len(input_names))]
-            equation_body = (
-                f"    return {' + '.join(terms)} + params[{len(input_names)}]"
-            )
-            signature = (
-                ", ".join([f"input{i}" for i in range(
-                    len(input_names))]) + ", params"
-            )
+            terms = [f"params[{i}] * input{i}" for i in range(len(input_names))]
+            equation_body = f"    return {' + '.join(terms)} + params[{len(input_names)}]"
+            signature = ", ".join([f"input{i}" for i in range(len(input_names))]) + ", params"
 
         initial_code = f'''import numpy as np
 

@@ -54,11 +54,7 @@ class AiCudaEngineerRunStateDict:
 
     def get_best_kernel(self) -> dict:
         """Get the best performing valid kernel from optimization history."""
-        valid_kernels = [
-            k
-            for k in self.optimization_history
-            if k.get("runtime") is not None and k["runtime"] != float("inf")
-        ]
+        valid_kernels = [k for k in self.optimization_history if k.get("runtime") is not None and k["runtime"] != float("inf")]
         if not valid_kernels:
             return None
         return min(valid_kernels, key=lambda x: x["runtime"])
@@ -75,17 +71,11 @@ class AiCudaEngineerRunStateDict:
         import os
 
         # Calculate statistics
-        valid_kernels = [
-            k
-            for k in self.current_stage_optimizations
-            if k.get("runtime") is not None and k["runtime"] != float("inf")
-        ]
+        valid_kernels = [k for k in self.current_stage_optimizations if k.get("runtime") is not None and k["runtime"] != float("inf")]
         statistics = {
             "total_kernels": len(self.current_stage_optimizations),
             "valid_kernels": len(valid_kernels),
-            "valid_rate": len(valid_kernels) / len(self.current_stage_optimizations)
-            if self.current_stage_optimizations
-            else 0,
+            "valid_rate": len(valid_kernels) / len(self.current_stage_optimizations) if self.current_stage_optimizations else 0,
         }
 
         if valid_kernels:
@@ -140,10 +130,7 @@ class AiCudaEngineerRunStateDict:
                 "data": value.tolist(),
             }
         elif isinstance(value, dict):
-            return {
-                k: AiCudaEngineerRunStateDict._serialize_value(v)
-                for k, v in value.items()
-            }
+            return {k: AiCudaEngineerRunStateDict._serialize_value(v) for k, v in value.items()}
         elif isinstance(value, (list, tuple)):
             return [AiCudaEngineerRunStateDict._serialize_value(item) for item in value]
         elif isinstance(value, (np.integer, np.floating)):
@@ -156,18 +143,11 @@ class AiCudaEngineerRunStateDict:
         """Convert serialized numpy arrays back to original format."""
         if isinstance(value, dict):
             if value.get("__numpy_array__"):
-                return np.array(value["data"], dtype=value["dtype"]).reshape(
-                    value["shape"]
-                )
+                return np.array(value["data"], dtype=value["dtype"]).reshape(value["shape"])
             else:
-                return {
-                    k: AiCudaEngineerRunStateDict._deserialize_value(v)
-                    for k, v in value.items()
-                }
+                return {k: AiCudaEngineerRunStateDict._deserialize_value(v) for k, v in value.items()}
         elif isinstance(value, list):
-            return [
-                AiCudaEngineerRunStateDict._deserialize_value(item) for item in value
-            ]
+            return [AiCudaEngineerRunStateDict._deserialize_value(item) for item in value]
         else:
             return value
 
@@ -200,9 +180,7 @@ class AiCudaEngineerRunStateDict:
         if current_best:
             optimization_history = [current_best]
         else:
-            optimization_history = data.get(
-                "top_10_kernels", data.get("optimization_history", [])
-            )
+            optimization_history = data.get("top_10_kernels", data.get("optimization_history", []))
 
         instance = cls(
             task_info=data["task_info"],

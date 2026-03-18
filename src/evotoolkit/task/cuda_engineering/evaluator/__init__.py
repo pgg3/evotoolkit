@@ -24,13 +24,9 @@ def _compare_py_code_worker(org_code, func_code, return_dict, timing_dict):
         }
 
 
-def _compare_func_cuda_worker(
-    func_code, cuda_code, temp_path, temp_str, return_dict, timing_dict
-):
+def _compare_func_cuda_worker(func_code, cuda_code, temp_path, temp_str, return_dict, timing_dict):
     try:
-        result_dict = compare_func_cuda(
-            func_code, cuda_code, temp_path, temp_str, timing_dict
-        )
+        result_dict = compare_func_cuda(func_code, cuda_code, temp_path, temp_str, timing_dict)
         return_dict["result"] = result_dict
     except Exception as e:
         return_dict["result"] = {
@@ -71,13 +67,9 @@ def _get_py_runtime_worker(py_code, return_dict, timing_dict):
         timing_dict["completed"] = True
 
 
-def _get_cuda_runtime_worker(
-    func_code, cuda_code, temp_path, temp_str, return_dict, timing_dict
-):
+def _get_cuda_runtime_worker(func_code, cuda_code, temp_path, temp_str, return_dict, timing_dict):
     try:
-        result_dict = get_cuda_runtime(
-            func_code, cuda_code, temp_path, temp_str, timing_dict
-        )
+        result_dict = get_cuda_runtime(func_code, cuda_code, temp_path, temp_str, timing_dict)
         return_dict["result"] = result_dict
         timing_dict["completed"] = True
     except Exception as e:
@@ -95,9 +87,7 @@ class Evaluator:
         self.temp_path = temp_path
 
     @staticmethod
-    def compare_py_code_sandbox(
-        org_code: str, func_code: str, execution_timeout: int = 300
-    ) -> dict:
+    def compare_py_code_sandbox(org_code: str, func_code: str, execution_timeout: int = 300) -> dict:
         return Evaluator.execute_with_phase_timeout(
             _compare_py_code_worker,
             (org_code, func_code),
@@ -159,9 +149,7 @@ class Evaluator:
             },
         )
 
-    def compile_cuda_code_sandbox(
-        self, cuda_code: str, execution_timeout: int = 300
-    ) -> dict:
+    def compile_cuda_code_sandbox(self, cuda_code: str, execution_timeout: int = 300) -> dict:
         return Evaluator.execute_with_phase_timeout(
             _compile_cuda_code_worker,
             (cuda_code, self.temp_path),
@@ -175,9 +163,7 @@ class Evaluator:
         )
 
     @staticmethod
-    def monitor_process_with_phase_timeout(
-        process, timing_dict, execution_timeout, timeout_error_result
-    ):
+    def monitor_process_with_phase_timeout(process, timing_dict, execution_timeout, timeout_error_result):
         """
         Monitor a process with timeout only counting actual execution time (excluding lock wait time)
 
@@ -274,13 +260,9 @@ class Evaluator:
         p.start()
 
         timeout_error_result = default_error_result.copy()
-        timeout_error_result["error_msg"] = timeout_msg_template.format(
-            timeout=execution_timeout
-        )
+        timeout_error_result["error_msg"] = timeout_msg_template.format(timeout=execution_timeout)
 
-        if not Evaluator.monitor_process_with_phase_timeout(
-            p, timing_dict, execution_timeout, timeout_error_result
-        ):
+        if not Evaluator.monitor_process_with_phase_timeout(p, timing_dict, execution_timeout, timeout_error_result):
             return timeout_error_result
 
         return return_dict.get("result", default_error_result)
