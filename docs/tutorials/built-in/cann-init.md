@@ -5,6 +5,9 @@ Learn how to use LLM-driven evolution to generate and optimize Ascend C operator
 !!! warning "Hardware Requirement"
     This task requires **Huawei Ascend NPU hardware** and the **CANN toolkit** to be installed. It cannot run in standard CPU/GPU environments.
 
+!!! note "Experimental Adjacent Workflow"
+    CANN Init is kept in EvoToolkit as an experimental adjacent workflow. It is documented for completeness, but it is not part of the primary reviewed surface for the MLOSS submission.
+
 !!! tip "Complete Example Code"
     See the example directory for scripts:
 

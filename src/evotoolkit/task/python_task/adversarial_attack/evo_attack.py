@@ -8,6 +8,8 @@ EvoAttack implementation for adversarial attacks with evolved proposal functions
 Based on L-AutoDA (https://arxiv.org/abs/2401.15335).
 """
 
+from __future__ import annotations
+
 import time
 from typing import Any, Optional, Union
 
@@ -26,9 +28,11 @@ try:
     FOOLBOX_AVAILABLE = True
 except ImportError:
     FOOLBOX_AVAILABLE = False
-    # Create placeholder for type hints
+    # Keep the module importable even when optional attack dependencies are absent.
     MinimizationAttack = object
     T = Any
+    Criterion = Any
+    Model = Any
 
 
 class EvoAttack(MinimizationAttack if FOOLBOX_AVAILABLE else object):

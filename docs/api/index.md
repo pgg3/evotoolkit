@@ -9,7 +9,7 @@ Welcome to the EvoToolkit API reference documentation. This section provides det
 EvoToolkit is organized into several main modules:
 
 - **[Core API](core.md)**: Core functionality including `evotoolkit.solve()`, `Solution`, `Task`, and base classes
-- **[Tasks](tasks.md)**: Built-in optimization tasks (Python and CUDA)
+- **[Tasks](tasks.md)**: Reference task APIs and domain adapters
 - **[Methods](methods.md)**: Evolutionary algorithms (EoH, EvoEngineer, FunSearch)
 - **[Interfaces](interfaces.md)**: Method interfaces that connect tasks to algorithms
 - **[Tools](tools.md)**: Utilities and LLM API clients
@@ -43,13 +43,13 @@ See [Core API: evotoolkit.solve()](core/solve.md) for details.
 | `Task` | Base class for optimization tasks | [Core API](core/base-task.md) |
 | `MethodInterface` | Base class for algorithm interfaces | [Interfaces](interfaces.md) |
 
-### Built-in Tasks
+### Reference Tasks
 
 | Task | Description | Documentation |
 |------|-------------|---------------|
 | `ScientificRegressionTask` | Scientific symbolic regression task | [Tasks](tasks.md#scientificregressiontask) |
 | `PythonTask` | Generic Python task | [Tasks](tasks.md#pythontask) |
-| `CudaTask` | GPU kernel optimization task | [Tasks](tasks.md#cudatask) |
+| `CudaTask` | Hardware-backed CUDA reference task shell | [Tasks](tasks.md#cudatask) |
 
 ### Evolutionary Algorithms
 
@@ -137,10 +137,10 @@ evotoolkit/
 │   ├── eoh/               # EoH implementation
 │   ├── evoengineer/       # EvoEngineer implementation
 │   └── funsearch/         # FunSearch implementation
-├── task/                   # Task implementations
-│   ├── python_task/       # Python task framework
-│   ├── cuda_engineering/  # CUDA task framework
-│   └── string_optimization/ # String optimization tasks
+├── task/                   # Reference task implementations
+│   ├── python_task/       # Python reference task framework
+│   ├── cuda_engineering/  # Optional hardware-backed CUDA adapters
+│   └── string_optimization/ # String optimization adapters
 ├── tools/                  # Utilities
 │   └── llm.py             # LLM API client (HttpsApi)
 └── data/                   # Data management utilities
@@ -205,7 +205,7 @@ Check the current version:
 
 ```python
 import evotoolkit
-print(evotoolkit.__version__)  # e.g., "1.0.0rc6"
+print(evotoolkit.__version__)  # e.g., "1.0.0"
 ```
 
 ---

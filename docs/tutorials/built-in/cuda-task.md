@@ -17,6 +17,9 @@ Learn how to optimize CUDA kernels using LLM-driven evolution to reduce runtime 
     }
     ```
 
+!!! note "Reference Task Family"
+    CUDA support is presented as an optional hardware-backed reference task family. The MLOSS reviewed surface focuses on the reusable task shell, fake-mode paths, and prompt interfaces rather than the runtime-bound compilation and benchmarking helpers.
+
 !!! tip "Complete Example Code"
     This tutorial provides complete, runnable examples (click to view/download):
 

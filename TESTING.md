@@ -1,35 +1,40 @@
-# Testing and Coverage
+# Testing And Coverage
 
-EvoToolkit maintains two complementary testing views:
+EvoToolkit maintains three complementary validation views.
 
-- **Portable reviewed scope**: the CPU-only test suite and default coverage view used in public CI, excluding hardware-coupled CUDA and Ascend modules that are not runnable in standard cross-platform jobs.
-- **Full source-tree view**: a stricter audit used to understand how much of the entire reviewed package is exercised, including optional modules that are not always runnable in CI.
+## 1. Routine CI Subset
 
-## Portable CI Subset
-
-Run the same subset used for routine cross-platform validation:
+This is the portable CPU-only subset used for routine cross-platform validation:
 
 ```bash
 uv run pytest tests/ -m "not cuda and not llm and not slow"
 ```
 
-To measure portable reviewed-scope coverage with the default repository configuration:
+## 2. Primary Reviewed Surface
+
+This is the reviewer-facing coverage metric for the MLOSS submission. It measures the core framework plus CPU-reviewable reference-task layers defined in [`REVIEWED_SURFACE.md`](REVIEWED_SURFACE.md).
 
 ```bash
-uv run pytest tests/ --cov --cov-report=term -m "not cuda and not llm and not slow"
+uv run pytest tests/ --cov --cov-config=coverage-reviewed.ini --cov-report=term-missing -m "not cuda and not llm and not slow"
 ```
 
-## Full Source-Tree Coverage
+This primary metric excludes:
 
-To audit coverage across the entire package source tree, use the alternate coverage config:
+- `examples/**`
+- experimental CANN modules
+- hardware-runtime CUDA compilation / benchmarking helpers
+
+## 3. Full-Package Audit
+
+This stricter audit is retained for transparency across the entire source tree, including optional and hardware-coupled modules:
 
 ```bash
 uv run pytest tests/ --cov --cov-config=coverage-full.ini --cov-report=term -m "not cuda and not llm and not slow"
 ```
 
-This view is intentionally stricter than the portable reviewed-scope metric and helps track how much of the reviewed package surface is covered, including optional or hardware-coupled code paths.
+The full-package audit is not the headline MLOSS quality metric. It is a transparency view for the whole repository.
 
-## Packaging and Docs Checks
+## Packaging And Docs Checks
 
 ```bash
 uv run mkdocs build

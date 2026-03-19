@@ -5,6 +5,9 @@
 !!! warning "硬件要求"
     此任务需要 **华为昇腾 NPU 硬件** 以及已安装的 **CANN 工具包**。无法在标准 CPU/GPU 环境中运行。
 
+!!! note "实验性相邻工作流"
+    CANN Init 保留在 EvoToolkit 仓库中用于完整性和复现参考，但在本次 MLOSS 投稿中，它不属于 primary reviewed surface。
+
 !!! tip "完整示例代码"
     查看示例目录中的脚本：
 

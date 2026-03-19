@@ -86,6 +86,9 @@ class EvoEngineer(Method):
 
         # Keep generating until we have pop_size valid solutions or hit sample limit
         while self.run_state_dict.tot_sample_nums < initial_sample_limit:
+            prev_sample_count = self.run_state_dict.tot_sample_nums
+            prev_valid_count = len(self._get_valid_population(self.run_state_dict.population))
+
             # Apply init operators in parallel
             self._apply_operators_parallel(self.config.get_init_operators(), "Init")
 
@@ -95,6 +98,10 @@ class EvoEngineer(Method):
             self._save_run_state_dict()
 
             if valid_count >= self.config.interface.valid_require:
+                break
+
+            if self.run_state_dict.tot_sample_nums == prev_sample_count and valid_count == prev_valid_count:
+                self.verbose_info("Warning: Initialization made no progress; stopping early to avoid an infinite loop")
                 break
 
         valid_population = self._get_valid_population(self.run_state_dict.population)

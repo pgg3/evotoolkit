@@ -1,18 +1,18 @@
 # Tasks API
 
-Tasks define optimization problems and how to evaluate candidate solutions.
+Tasks define optimization problems and how to evaluate candidate solutions. In EvoToolkit, these modules act as reference task APIs and domain adapters around the reusable framework.
 
 ---
 
 ## Overview
 
-EvoToolkit provides five categories of tasks:
+EvoToolkit provides five categories of reference task APIs:
 
 - **Python Tasks** - Optimize Python code functions
 - **String Tasks** - Optimize text/string solutions (e.g., prompts)
-- **CUDA Tasks** - Optimize GPU kernel code
+- **CUDA Tasks** - Optional hardware-backed reference adapters for GPU kernel code
 - **Control Tasks** - Evolve interpretable control policies (Box2D environments)
-- **CANN Init Tasks** - Generate Ascend C operator kernel code (Ascend NPU)
+- **CANN Init Tasks** - Experimental adjacent workflow for Ascend C operator generation (Ascend NPU)
 
 ---
 

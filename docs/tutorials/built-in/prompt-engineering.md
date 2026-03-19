@@ -6,14 +6,14 @@ Learn how to use LLM-driven evolution to optimize prompt templates for better do
     If you use EvoToolkit in your research, please cite:
 
     ```bibtex
-    @software{guo2026evotoolkit,
+@software{guo2026evotoolkit,
       author = {Guo, Ping and Zhang, Qingfu},
       title = {evotoolkit},
       year = {2026},
       url = {https://github.com/pgg3/evotoolkit},
-      version = {1.0.0rc6}
+      version = {1.0.0}
     }
-    ```
+```
 
 !!! tip "Complete Example Code"
     This tutorial provides complete, runnable examples (click to view/download):

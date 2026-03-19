@@ -87,7 +87,7 @@ plugins:
             Try Other Algorithms: 尝试不同算法
             Next Steps & Help: 下一步与帮助
             Tutorials: 教程
-            Built-in Tasks: 内置任务
+            Reference Task Families: 参考任务族
             Customization: 自定义与扩展
             Advanced: 高级主题
             Scientific Regression: 科学符号回归
@@ -198,7 +198,7 @@ nav:
       - Next Steps & Help: getting-started/next-steps.md
   - Tutorials:
       - tutorials/index.md
-      - Built-in Tasks:
+      - Reference Task Families:
           - Overview: tutorials/built-in-overview.md
           - Scientific Regression: tutorials/built-in/scientific-regression.md
           - Prompt Engineering: tutorials/built-in/prompt-engineering.md

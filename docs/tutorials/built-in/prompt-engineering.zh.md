@@ -6,14 +6,14 @@
     如果您在研究中使用 EvoToolkit，请引用：
 
     ```bibtex
-    @software{guo2026evotoolkit,
+@software{guo2026evotoolkit,
       author = {Guo, Ping and Zhang, Qingfu},
       title = {evotoolkit},
       year = {2026},
       url = {https://github.com/pgg3/evotoolkit},
-      version = {1.0.0rc6}
+      version = {1.0.0}
     }
-    ```
+```
 
 !!! tip "完整示例代码"
     本教程提供完整可运行的示例（点击查看/下载）：

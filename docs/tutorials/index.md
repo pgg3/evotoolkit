@@ -16,16 +16,16 @@ New to EvoToolkit? Start here:
 
 ## Tutorial Categories
 
-### Built-in Tasks
+### Reference Task Families
 
-Learn how to use EvoToolkit's pre-built optimization tasks:
+Learn how EvoToolkit's built-in reference adapters validate the framework across different solution spaces:
 
 - **[Scientific Regression](built-in/scientific-regression.md)** - Discover mathematical equations from data
 - **[Prompt Engineering](built-in/prompt-engineering.md)** - Optimize LLM prompts for better performance
 - **[Adversarial Attack](built-in/adversarial-attack.md)** - Generate adversarial examples
-- **[CUDA Tasks](built-in/cuda-task.md)** - Optimize GPU kernels for performance
+- **[CUDA Tasks](built-in/cuda-task.md)** - Optional hardware-backed reference task family for GPU kernels
 - **[Control Box2D](built-in/control-box2d.md)** - Evolve interpretable control policies (LunarLander)
-- **[CANN Init](built-in/cann-init.md)** - Generate Ascend C operators for Huawei NPU (requires hardware)
+- **[CANN Init](built-in/cann-init.md)** - Experimental adjacent workflow for Huawei Ascend NPU (requires hardware)
 
 ### Customization
 
@@ -103,7 +103,7 @@ algorithm.run()
 
 ## Downloadable Examples
 
-All tutorial code is available as standalone Python scripts in the `examples/` directory:
+All tutorial code is available as standalone Python scripts in the `examples/` directory. These scripts are tutorial and reproducibility assets rather than the core framework itself:
 
 - `examples/scientific_regression/` - Scientific equation discovery
 - `examples/custom_task/my_custom_task.py` - Custom task implementation
@@ -111,7 +111,7 @@ All tutorial code is available as standalone Python scripts in the `examples/` d
 - `examples/advanced/low_level_api.py` - Low-level API usage
 - `examples/adversarial_attack/` - Adversarial attack examples
 - `examples/lunar_lander/` - Control Box2D (LunarLander) examples
-- `examples/cann_init/` - CANN Init operator generation examples
+- `examples/cann_init/` - Experimental CANN Init operator generation examples
 - `examples/prompt_optimization/` - Prompt optimization examples
 
 Clone the repository to get started:

@@ -17,6 +17,9 @@
     }
     ```
 
+!!! note "参考任务族"
+    CUDA 支持在 EvoToolkit 中作为可选的硬件相关参考任务族提供。MLOSS 的主 reviewed surface 聚焦于可复用的任务壳层、fake-mode 路径与提示接口，而不是依赖真实编译和 benchmark 的运行时辅助代码。
+
 !!! tip "完整示例代码"
     本教程提供完整可运行的示例（点击查看/下载）：
 

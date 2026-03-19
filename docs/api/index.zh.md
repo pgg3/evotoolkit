@@ -9,7 +9,7 @@
 EvoToolkit 组织为几个主要模块：
 
 - **[核心 API](core.md)**: 核心功能，包括 `evotoolkit.solve()`、`Solution`、`Task` 和基类
-- **[任务](tasks.md)**: 内置优化任务（Python 和 CUDA）
+- **[任务](tasks.md)**: 参考任务 API 与领域适配层
 - **[方法](methods.md)**: 进化算法（EoH、EvoEngineer、FunSearch）
 - **[接口](interfaces.md)**: 连接任务和算法的方法接口
 - **[工具](tools.md)**: 实用工具和 LLM API 客户端
@@ -43,13 +43,13 @@ result = evotoolkit.solve(
 | `Task` | 优化任务基类 | [核心 API](core/base-task.md) |
 | `MethodInterface` | 算法接口基类 | [接口](interfaces.md) |
 
-### 内置任务
+### 参考任务
 
 | 任务 | 描述 | 文档 |
 |------|-------------|---------------|
 | `ScientificRegressionTask` | 科学符号回归任务 | [任务](tasks.md#scientificregressiontask) |
 | `PythonTask` | 通用 Python 任务 | [任务](tasks.md#pythontask) |
-| `CudaTask` | GPU 内核优化任务 | [任务](tasks.md#cudatask) |
+| `CudaTask` | 面向 CUDA 的硬件相关参考任务壳层 | [任务](tasks.md#cudatask) |
 
 ### 进化算法
 
@@ -205,7 +205,7 @@ EvoToolkit 遵循[语义化版本](https://semver.org/lang/zh-CN/)：
 
 ```python
 import evotoolkit
-print(evotoolkit.__version__)  # 例如 "1.0.0rc6"
+print(evotoolkit.__version__)  # 例如 "1.0.0"
 ```
 
 ---

@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "evotoolkit"
-version = "1.0.0rc6"
-description = "LLM-driven code evolution method library."
+version = "1.0.0"
+description = "LLM-driven evolutionary framework for executable solutions."
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
@@ -102,7 +102,7 @@ all_tasks = [
 [project.urls]
 Homepage = "https://github.com/pgg3/evotoolkit"
 Repository = "https://github.com/pgg3/evotoolkit"
-Documentation = "https://pgg3.github.io/evotoolkit/"
+Documentation = "https://evotoolkit.readthedocs.io/"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/evotoolkit"]

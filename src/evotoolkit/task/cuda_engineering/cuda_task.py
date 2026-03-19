@@ -14,7 +14,13 @@ from typing import Any, Dict, Optional
 
 from evotoolkit.core import BaseTask, EvaluationResult, Solution
 
-from .evaluator import Evaluator
+try:
+    from .evaluator import Evaluator
+
+    CUDA_EVALUATOR_AVAILABLE = True
+except Exception:
+    Evaluator = None
+    CUDA_EVALUATOR_AVAILABLE = False
 
 
 class CudaTaskInfoMaker:
@@ -52,6 +58,11 @@ class CudaTaskInfoMaker:
             }
             task_info["cuda_info"] = info_dict
             return task_info
+        if not CUDA_EVALUATOR_AVAILABLE:
+            raise ImportError(
+                "CUDA evaluator dependencies are required to build runtime-backed CUDA task info. "
+                "Install the cuda_engineering extra and the relevant toolchain, or use fake_mode=True."
+            )
         cuda_info_dict = evaluator.get_cuda_runtime_sandbox(func_py_code, cuda_code)
         info_dict = {
             "name": "baseline",
@@ -93,7 +104,12 @@ class CudaTask(BaseTask):
         self.fake_mode = fake_mode
         super().__init__(data)
 
-        self.evaluator = Evaluator(self.temp_path)
+        if not self.fake_mode and not CUDA_EVALUATOR_AVAILABLE:
+            raise ImportError(
+                "CUDA evaluator dependencies are required for runtime-backed CUDA tasks. "
+                "Install the cuda_engineering extra and the relevant toolchain, or use fake_mode=True."
+            )
+        self.evaluator = Evaluator(self.temp_path) if CUDA_EVALUATOR_AVAILABLE else None
 
     def _process_data(self, data):
         """Process CUDA task data."""

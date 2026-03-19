@@ -16,16 +16,16 @@
 
 ## 教程分类
 
-### 内置任务
+### 参考任务族
 
-学习如何使用 EvoToolkit 的预构建优化任务：
+了解 EvoToolkit 如何通过内置参考适配层验证框架在不同解空间上的可移植性：
 
 - **[科学符号回归](built-in/scientific-regression.zh.md)** - 从数据中发现数学方程
 - **[提示词工程](built-in/prompt-engineering.zh.md)** - 优化 LLM 提示词以提升性能
 - **[对抗攻击](built-in/adversarial-attack.zh.md)** - 生成对抗样本
-- **[CUDA 任务](built-in/cuda-task.zh.md)** - 优化 GPU 内核性能
+- **[CUDA 任务](built-in/cuda-task.zh.md)** - 面向 GPU 内核的可选硬件相关参考任务族
 - **[控制任务 (Box2D)](built-in/control-box2d.zh.md)** - 进化可解释控制策略（LunarLander）
-- **[CANN 算子初始化](built-in/cann-init.zh.md)** - 为华为昇腾 NPU 生成 Ascend C 算子（需要硬件）
+- **[CANN 算子初始化](built-in/cann-init.zh.md)** - 面向华为昇腾 NPU 的实验性相邻工作流（需要硬件）
 
 ### 自定义
 
@@ -103,7 +103,7 @@ algorithm.run()
 
 ## 可下载示例
 
-所有教程代码都可以作为 `examples/` 目录中的独立 Python 脚本使用：
+所有教程代码都可以作为 `examples/` 目录中的独立 Python 脚本使用。这些脚本属于教程与复现实例，而不是核心框架本体：
 
 - `examples/scientific_regression/` - 科学方程发现
 - `examples/custom_task/my_custom_task.py` - 自定义任务实现
@@ -111,7 +111,7 @@ algorithm.run()
 - `examples/advanced/low_level_api.py` - 低级 API 用法
 - `examples/adversarial_attack/` - 对抗攻击示例
 - `examples/lunar_lander/` - 控制任务 (LunarLander) 示例
-- `examples/cann_init/` - CANN Init 算子生成示例
+- `examples/cann_init/` - 实验性 CANN Init 算子生成示例
 - `examples/prompt_optimization/` - 提示词优化示例
 
 克隆仓库开始：

@@ -2,39 +2,43 @@
 
 This document is intended for reviewers of the EvoToolkit software package.
 
-The underlying application ideas used in this repository were previously presented in domain papers such as EvoEngineer, CoEvo, and L-AutoDA. Those papers focused on individual research results in specific domains. The `evotoolkit` package contributes a reusable software system that generalizes and productizes those ideas.
+## Non-Claims
 
-## What Is New in EvoToolkit
+This MLOSS submission does **not** claim:
 
-- A unified `Method -> Interface -> Task` abstraction that decouples evolutionary search, LLM interaction, and domain evaluation.
-- A shared top-level API, `evotoolkit.solve(...)`, that dispatches algorithms from interface types instead of requiring application-specific runners.
-- Reusable implementations of three LLM-guided evolutionary algorithms in one package: EoH, EvoEngineer, and FunSearch.
-- A common output/history format for run state, checkpointing, summaries, and experiment artifacts.
-- A pip-installable Python package with task-specific optional extras.
-- Public bilingual documentation covering installation, tutorials, API reference, and contributor workflows.
-- A cross-platform CI workflow spanning Linux, macOS, and Windows on Python 3.10-3.12.
-- An automated test suite that covers the portable CPU-reviewed portion of the package and integration paths built around mocked LLM interactions.
+- a new theoretical evolutionary algorithm beyond the cited method papers
+- a new scientific result replacing EvoEngineer, CoEvo, or L-AutoDA
+- that the `examples/` directory is itself the core software contribution
 
-## How This Differs from the Prior Papers
+Instead, the submission claims a reusable software framework that packages earlier domain-specific ideas into a shared, reviewable system.
 
-### EvoEngineer
+## Framework-Level Additions
 
-- The EvoEngineer paper is centered on CUDA kernel optimization results.
-- EvoToolkit extracts the method into a reusable library component and exposes it through shared task and interface abstractions.
-- The package adds packaging, documentation, tests, and a top-level API that were not the focus of the paper.
+| Software Claim | What EvoToolkit Adds | Reviewer-Visible Evidence |
+|---|---|---|
+| Unified framework | A shared `Method -> Interface -> Task` abstraction spanning multiple LLM-driven evolutionary methods | `src/evotoolkit/core/`, `paper/secs/1_framework.tex`, architecture figure |
+| Shared execution substrate | A single top-level `evotoolkit.solve(...)` entry point, algorithm registry, run-state handling, and history output | `src/evotoolkit/__init__.py`, `src/evotoolkit/registry.py`, `src/evotoolkit/core/history_manager.py` |
+| Multi-method software release | Reusable implementations of EoH, EvoEngineer, and FunSearch in one package | `src/evotoolkit/evo_method/`, public API docs, package README |
+| Reference task adapters | Built-in task families that validate portability across Python, string, control, adversarial, and selected CUDA shells | `src/evotoolkit/task/`, tutorials, API reference |
+| Public packaging | Pip-installable package metadata, optional extras, changelog, and release artifacts | `pyproject.toml`, `CHANGELOG.md`, PyPI metadata |
+| Reviewable engineering evidence | Automated tests, CI, docs, and explicit reviewed-surface coverage guidance | `tests/`, GitHub Actions, `TESTING.md`, `REVIEWED_SURFACE.md` |
+| Bilingual user-facing docs | English and Chinese installation guides, tutorials, and API pages | `docs/`, MkDocs site |
 
-### CoEvo
+## Relation To Prior Domain Papers
 
-- The CoEvo paper focuses on scientific equation discovery.
-- EvoToolkit recasts that workflow as a task implementation inside the same framework used by unrelated domains.
-- Dataset management, task reuse, and software packaging are standardized across the library rather than being application-specific.
+| Prior Artifact | Original Scope | What EvoToolkit Adds As Software |
+|---|---|---|
+| EvoEngineer | CUDA kernel optimization results and workflow | Extracts the method into a reusable algorithm implementation with shared interfaces, packaging, tests, docs, and top-level dispatch |
+| CoEvo | Scientific equation discovery workflow | Recasts the domain pipeline as a reusable reference task inside the same framework used by unrelated domains |
+| L-AutoDA | Black-box adversarial attack evolution | Integrates the task as another reference adapter under the same framework and release infrastructure |
 
-### L-AutoDA
+## Relation To Reference Tasks And Examples
 
-- L-AutoDA studies adversarial attack evolution as a domain application.
-- EvoToolkit reuses the same method/task composition model for adversarial attacks, symbolic regression, prompts, and other domains.
-- The package adds framework-level documentation, testing, and public distribution practices absent from the standalone research artifact.
+- `task/**` is part of the package, but these modules are **reference task implementations** rather than the product definition of EvoToolkit.
+- `examples/**` contains runnable tutorial and reproducibility scripts. These scripts help users reproduce workflows, but they are not the primary software contribution.
+- CUDA remains a hardware-backed reference task family. Its reviewed surface focuses on CPU-reviewable task and interface layers rather than runtime-bound benchmarking helpers.
+- CANN is kept in the repository as an experimental adjacent workflow and is not part of the primary reviewed surface for this submission.
 
-## Reviewer-Oriented Summary
+## Reviewer Summary
 
-Reviewers should treat EvoToolkit as a software unification and engineering contribution built on previously published application ideas. The novelty of this submission is not a new single-domain result; it is the reusable framework, packaging, documentation, and software engineering work that makes those ideas portable across domains.
+Reviewers should evaluate EvoToolkit as a reusable software framework with shared abstractions, execution infrastructure, packaging, testing, and documentation. The framework is validated through reference task families and case studies derived from prior application domains, but the novelty claim is the software system itself.
