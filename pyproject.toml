@@ -146,8 +146,6 @@ omit = [
     "*/evo_method/eoh/eoh.py",
     "*/evo_method/evoengineer/evoengineer.py",
     "*/evo_method/funsearch/funsearch.py",
-    "*/evo_method/funsearch/island.py",
-    "*/evo_method/funsearch/programs_database.py",
     "*/task/python_task/adversarial_attack/*",
     "*/task/python_task/control_box2d/*",
     "*/task/python_task/scientific_regression/*",
