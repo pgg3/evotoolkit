@@ -79,6 +79,12 @@ control_box2d = [
     "gymnasium[box2d]",  # Gymnasium with Box2D environments
 ]
 
+# Huawei Ascend / CANN operator generation helpers
+# Note: the vendor CANN toolkit must still be installed manually.
+cann_init = [
+    "pybind11",
+]
+
 # All experimental tasks
 all_tasks = [
     "ninja",
@@ -90,11 +96,13 @@ all_tasks = [
     "pandas",
     "foolbox",
     "gymnasium[box2d]",
+    "pybind11",
 ]
 
 [project.urls]
 Homepage = "https://github.com/pgg3/evotoolkit"
 Repository = "https://github.com/pgg3/evotoolkit"
+Documentation = "https://pgg3.github.io/evotoolkit/"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/evotoolkit"]
@@ -137,19 +145,11 @@ markers = [
 source = ["src/evotoolkit"]
 omit = [
     "*/cann_initer/*",
+    "*\\cann_initer\\*",
     "*/cann_init/*",
+    "*\\cann_init\\*",
     "*/cuda_engineering/*",
-    "*/data/__init__.py",
-    "*/data/downloader.py",
-    "*/data/constants.py",
-    "*/tools/llm.py",
-    "*/evo_method/eoh/eoh.py",
-    "*/evo_method/evoengineer/evoengineer.py",
-    "*/evo_method/funsearch/funsearch.py",
-    "*/task/python_task/adversarial_attack/*",
-    "*/task/python_task/control_box2d/*",
-    "*/task/python_task/scientific_regression/*",
-    "*/task/string_optimization/prompt_optimization/*",
+    "*\\cuda_engineering\\*",
 ]
 
 [tool.coverage.report]
@@ -159,4 +159,3 @@ exclude_lines = [
     "if __name__",
     "raise NotImplementedError",
 ]
-

@@ -166,7 +166,7 @@ test_cases = [
 ## Architecture
 
 ```
-src/evotool/task/
+src/evotoolkit/task/
 ├── python_task/          # Python code optimization
 ├── cuda_engineering/     # CUDA kernel optimization
 └── string_optimization/  # String optimization (NEW!)

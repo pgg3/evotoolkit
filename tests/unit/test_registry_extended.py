@@ -28,28 +28,25 @@ class TestGetTaskClass:
 
 
 class TestGetInterfaceClass:
-    def test_get_interface_class_eoh_python_raises_or_succeeds(self, minimal_task):
-        """get_interface_class has a bug with module path ('evotool' vs 'evotoolkit').
-        Test that it either succeeds or raises ValueError (not other errors)."""
-        try:
-            iface_cls = get_interface_class("eoh", minimal_task)
-            assert iface_cls is not None
-        except ValueError:
-            pass  # Expected due to wrong module path in registry
+    def test_get_interface_class_eoh_python(self, minimal_task):
+        iface_cls = get_interface_class("eoh", minimal_task)
+        assert iface_cls.__name__ == "EoHPythonInterface"
 
-    def test_get_interface_class_evoengineer_python_raises_or_succeeds(self, minimal_task):
-        try:
-            iface_cls = get_interface_class("evoengineer", minimal_task)
-            assert iface_cls is not None
-        except ValueError:
-            pass
+    def test_get_interface_class_evoengineer_python(self, minimal_task):
+        iface_cls = get_interface_class("evoengineer", minimal_task)
+        assert iface_cls.__name__ == "EvoEngineerPythonInterface"
 
-    def test_get_interface_class_funsearch_python_raises_or_succeeds(self, minimal_task):
-        try:
-            iface_cls = get_interface_class("funsearch", minimal_task)
-            assert iface_cls is not None
-        except ValueError:
-            pass
+    def test_get_interface_class_funsearch_python(self, minimal_task):
+        iface_cls = get_interface_class("funsearch", minimal_task)
+        assert iface_cls.__name__ == "FunSearchPythonInterface"
+
+    def test_get_interface_class_string_task(self):
+        from evotoolkit.task.string_optimization import PromptOptimizationTask
+
+        task = PromptOptimizationTask(test_cases=[{"question": "What is 2+2?", "expected": "4"}], use_mock=True)
+        iface_cls = get_interface_class("eoh", task)
+
+        assert iface_cls.__name__ == "EoHStringInterface"
 
     def test_get_interface_class_unknown_algorithm_raises(self, minimal_task):
         with pytest.raises(ValueError, match="No interface mapping"):

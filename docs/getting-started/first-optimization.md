@@ -22,8 +22,8 @@ Let's use EvoToolkit to discover mathematical equations from real scientific dat
 ## Step 1: Create a New Project
 
 ```bash
-mkdir my-evotool-project
-cd my-evotool-project
+mkdir my-evotoolkit-project
+cd my-evotoolkit-project
 ```
 
 ## Step 2: Write Your First Script

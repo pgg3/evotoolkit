@@ -260,7 +260,7 @@ The dataset is not included in the main repository and needs to be downloaded se
 
 ```bash
 # Method 1: Using wget
-cd /path/to/evotool/project/root
+cd /path/to/evotoolkit/project/root
 wget https://github.com/pgg3/evotoolkit/releases/download/data-v1.0.0/rtx4090_cu12_4_py311_torch_2_4_0.json
 
 # Method 2: Using curl

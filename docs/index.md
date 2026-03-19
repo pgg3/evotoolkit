@@ -1,136 +1,132 @@
 # EvoToolkit
 
-**LLM-driven solution evolutionary optimization toolkit**
+**LLM-driven evolutionary optimization for executable solutions**
 
-EvoToolkit is a Python library that leverages Large Language Models (LLMs) to evolve solutions for optimization problems. It combines the power of evolutionary algorithms with LLM-based solution generation and refinement, supporting code, text, and other evaluable representations.
-
----
-
-## ✨ Key Features
-
-- **🤖 LLM-Driven Evolution**: Use state-of-the-art language models to generate and evolve solutions
-- **🔬 Multiple Algorithms**: Support for EoH, EvoEngineer, and FunSearch evolutionary methods
-- **🌍 Task-Agnostic**: Supports any evaluable optimization task (code, text, math expressions, etc.)
-- **🎯 Extensible Framework**: Easy-to-extend task system for custom optimization problems
-- **🔌 Simple API**: High-level `evotoolkit.solve()` function for quick prototyping
-- **🛠️ Advanced Customization**: Low-level API for fine-grained control
-
-### Built-in Task Types
-
-| Task Type | Description | Details |
-|-----------|-------------|---------|
-| **🔬 Scientific Regression** | Symbolic regression on real scientific datasets | [Scientific Regression Tutorial](tutorials/built-in/scientific-regression.md) |
-| **💬 Prompt Engineering** | Optimize LLM prompts for downstream tasks | [Prompt Engineering Tutorial](tutorials/built-in/prompt-engineering.md) |
-| **🛡️ Adversarial Attacks** | Evolve adversarial attack algorithms | [Adversarial Attack Tutorial](tutorials/built-in/adversarial-attack.md) |
-| **⚡ CUDA Code Evolution** | Evolve and optimize CUDA kernels | [CUDA Task Tutorial](tutorials/built-in/cuda-task.md) |
+EvoToolkit is a Python framework for evolving code, symbolic expressions, prompts, and other executable text with large language models. It exposes a reusable `Method -> Interface -> Task` architecture so that algorithms and application domains can be composed instead of rebuilt from scratch.
 
 ---
 
-## 🚀 Quick Start
+## Key Features
+
+- **LLM-driven evolution** for generating and refining candidate solutions
+- **Multiple algorithms**: EoH, EvoEngineer, and FunSearch
+- **Reusable architecture** across Python, string, CUDA, control, and CANN tasks
+- **Simple top-level API** via `evotoolkit.solve(...)`
+- **Bilingual documentation** with tutorials and API reference
+
+### Built-in Task Families
+
+| Task Family | Description | Details |
+|-------------|-------------|---------|
+| Scientific regression | Symbolic regression on curated datasets | [Scientific Regression Tutorial](tutorials/built-in/scientific-regression.md) |
+| Prompt engineering | Optimize prompt templates for downstream tasks | [Prompt Engineering Tutorial](tutorials/built-in/prompt-engineering.md) |
+| Adversarial attacks | Evolve proposal-generation algorithms | [Adversarial Attack Tutorial](tutorials/built-in/adversarial-attack.md) |
+| CUDA engineering | Evolve and optimize CUDA kernels | [CUDA Task Tutorial](tutorials/built-in/cuda-task.md) |
+| Control (Box2D) | Evolve interpretable control policies | [Control Box2D Tutorial](tutorials/built-in/control-box2d.md) |
+| CANN init | Generate Ascend C operator kernels | [CANN Init Tutorial](tutorials/built-in/cann-init.md) |
+
+---
+
+## Quick Start
 
 ### Installation
 
 ```bash
 pip install evotoolkit
 
-# Or install with all dependencies
-pip install evotoolkit[all]
+# Optional extras
+pip install "evotoolkit[scientific_regression]"
+pip install "evotoolkit[prompt_engineering]"
+pip install "evotoolkit[adversarial_attack]"
+pip install "evotoolkit[cuda_engineering]"
+pip install "evotoolkit[control_box2d]"
+pip install "evotoolkit[cann_init]"
+pip install "evotoolkit[all_tasks]"
 ```
 
-For detailed installation instructions, see the [Installation Guide](installation.md).
+The public package is tested on Python 3.10-3.12. Optional CUDA and CANN workflows additionally require the corresponding hardware/toolchains.
 
 ### Your First Optimization
 
 ```python
 import evotoolkit
-from evotoolkit.task.python_task.scientific_regression import ScientificRegressionTask
 from evotoolkit.task.python_task import EvoEngineerPythonInterface
+from evotoolkit.task.python_task.scientific_regression import ScientificRegressionTask
 from evotoolkit.tools import HttpsApi
 
-# 1. Create a task
 task = ScientificRegressionTask(dataset_name="bactgrow")
-
-# 2. Create an interface
 interface = EvoEngineerPythonInterface(task)
 
-# 3. Solve with LLM
 llm_api = HttpsApi(
     api_url="https://api.openai.com/v1/chat/completions",
     key="your-api-key-here",
-    model="gpt-4o"
+    model="gpt-4o",
 )
+
 result = evotoolkit.solve(
     interface=interface,
-    output_path='./results',
+    output_path="./results",
     running_llm=llm_api,
-    max_generations=5
+    max_generations=5,
 )
 ```
 
-That's it! EvoToolkit will use the LLM to evolve mathematical equations to fit your scientific data.
-
-For a complete walkthrough, check out the [Getting Started Guide](getting-started.md).
+For a full walkthrough, see [Getting Started](getting-started.md).
 
 ---
 
-## 📚 Available Algorithms
+## Algorithms
 
 | Algorithm | Description |
 |-----------|-------------|
-| **EvoEngineer** | Main LLM-driven evolutionary algorithm |
-| **FunSearch** | Function search optimization method |
-| **EoH** | Evolution of Heuristics |
-
-See the [Tutorials](tutorials/index.md) section for more usage examples.
+| **EvoEngineer** | LLM-driven evolutionary search with structured operators |
+| **FunSearch** | Program search with an island-model database |
+| **EoH** | Evolution of Heuristics with crossover and mutation operators |
 
 ---
 
-## 📖 Documentation
+## Documentation
 
-- **[Installation](installation.md)**: Installation instructions and setup
-- **[Getting Started](getting-started.md)**: Quick start guide and basic usage
-- **[Tutorials](tutorials/index.md)**: Step-by-step tutorials for common tasks
-- **[API Reference](api/index.md)**: Detailed API documentation
-- **[Development](development/contributing.md)**: Contributing guidelines and architecture
+- **[Installation](installation.md)** for environment setup
+- **[Getting Started](getting-started.md)** for the first runnable workflow
+- **[Tutorials](tutorials/index.md)** for end-to-end examples
+- **[API Reference](api/index.md)** for public interfaces and tasks
+- **[Development](development/contributing.md)** for contributor workflows
 
 ---
 
-## 🔗 Links
+## Links
 
 - **GitHub**: [https://github.com/pgg3/evotoolkit](https://github.com/pgg3/evotoolkit)
 - **PyPI**: [https://pypi.org/project/evotoolkit/](https://pypi.org/project/evotoolkit/)
-- **Paper**: arXiv (submitted)
+- **Changelog**: [CHANGELOG.md](https://github.com/pgg3/evotoolkit/blob/master/CHANGELOG.md)
+- **Prior-work improvements**: [SOFTWARE_IMPROVEMENTS_FROM_PRIOR_WORK.md](https://github.com/pgg3/evotoolkit/blob/master/SOFTWARE_IMPROVEMENTS_FROM_PRIOR_WORK.md)
 
 ---
 
-## 📄 License
+## License
 
-EvoToolkit is dual-licensed:
-
-- **Academic & Open Source Use**: Free for academic research, education, and open source projects. **Citation required** for academic publications.
-- **Commercial Use**: Requires a separate commercial license. Contact pguo6680@gmail.com for licensing.
-
-See [LICENSE](https://github.com/pgg3/evotoolkit/blob/master/LICENSE) for full terms.
+EvoToolkit is released under the MIT License. Optional hardware-oriented workflows may depend on separately installed third-party toolchains; see each task guide for those external requirements.
 
 ---
 
-## 🙏 Citation
+## Citation
 
-If you use EvoToolkit in your research, please cite:
+If you use EvoToolkit in research, please cite the software version or repository snapshot you used. A repository citation entry is:
 
 ```bibtex
-@article{guo2025evotoolkit,
-  title={evotoolkit: A Unified LLM-Driven Evolutionary Framework for Generalized Solution Search},
-  author={Guo, Ping and Zhang, Qingfu},
-  journal={arXiv preprint arXiv:XXXX.XXXXX},
-  year={2025},
-  note={Submitted to arXiv}
+@software{guo2026evotoolkit,
+  author = {Guo, Ping and Zhang, Qingfu},
+  title = {evotoolkit},
+  year = {2026},
+  url = {https://github.com/pgg3/evotoolkit},
+  version = {1.0.0rc6}
 }
 ```
 
 ---
 
-## 💬 Getting Help
+## Getting Help
 
 - **Issues**: [GitHub Issues](https://github.com/pgg3/evotoolkit/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/pgg3/evotoolkit/discussions)

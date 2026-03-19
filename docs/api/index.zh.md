@@ -125,7 +125,7 @@ best_solution = algorithm._get_best_sol(algorithm.run_state_dict.sol_history)
 ## 模块组织
 
 ```
-evotool/
+evotoolkit/
 ├── __init__.py              # 高级 API (solve 函数)
 ├── core/                    # 核心抽象
 │   ├── base_task.py        # Task 基类
@@ -205,19 +205,15 @@ EvoToolkit 遵循[语义化版本](https://semver.org/lang/zh-CN/)：
 
 ```python
 import evotoolkit
-print(evotoolkit.__version__)  # 例如 "1.0.0"
+print(evotoolkit.__version__)  # 例如 "1.0.0rc6"
 ```
 
 ---
 
 ## 类型提示
 
-EvoToolkit 在整个代码库中使用类型提示。使用 `mypy` 等类型检查器进行静态分析：
-
-```bash
-pip install mypy
-mypy your_script.py
-```
+EvoToolkit 的公开 API 提供了完整类型提示，便于 IDE 补全与下游集成。
+项目当前使用 Ruff 统一格式化与 import 规则；是否额外使用类型检查器由使用者自行决定。
 
 ---
 

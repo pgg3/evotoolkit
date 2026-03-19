@@ -110,7 +110,7 @@ class BaseMethod:
 ## 模块组织
 
 ```
-evotool/
+evotoolkit/
 ├── __init__.py              # 高级 API
 ├── core/                    # 基类和抽象
 │   ├── base_task.py        # Task 基类

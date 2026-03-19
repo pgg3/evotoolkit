@@ -262,7 +262,7 @@ task = AdversarialAttackTask(
 ## Architecture
 
 ```
-src/evotool/task/python_task/
+src/evotoolkit/task/python_task/
 ├── adversarial_attack/
 │   ├── __init__.py
 │   ├── adversarial_attack_task.py  # Task implementation

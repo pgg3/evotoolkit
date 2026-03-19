@@ -6,12 +6,12 @@
     如果您在研究中使用 EvoToolkit，请引用：
 
     ```bibtex
-    @article{guo2025evotoolkit,
-    title={evotoolkit: A Unified LLM-Driven Evolutionary Framework for Generalized Solution Search},
-    author={Guo, Ping and Zhang, Qingfu},
-    journal={arXiv preprint arXiv:XXXX.XXXXX},
-    year={2025},
-    note={Submitted to arXiv}
+    @software{guo2026evotoolkit,
+      author = {Guo, Ping and Zhang, Qingfu},
+      title = {evotoolkit},
+      year = {2026},
+      url = {https://github.com/pgg3/evotoolkit},
+      version = {1.0.0rc6}
     }
     ```
 

@@ -369,7 +369,7 @@ print(datasets.keys())  # dict_keys(['bactgrow', 'oscillator1', 'oscillator2', '
 - `get_dataset_path(category, data_dir=None)` - Get dataset path, auto-download if needed
 - `list_available_datasets(category)` - List all datasets in a category
 
-**Default Location:** `~/.evotool/data/`
+**Default Location:** `~/.evotoolkit/data/`
 
 ---
 

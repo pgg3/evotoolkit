@@ -125,7 +125,7 @@ See [Advanced Usage Tutorial](../tutorials/advanced-overview.md) for details.
 ## Module Organization
 
 ```
-evotool/
+evotoolkit/
 ├── __init__.py              # High-level API (solve function)
 ├── core/                    # Core abstractions
 │   ├── base_task.py        # Task base class
@@ -205,19 +205,15 @@ Check the current version:
 
 ```python
 import evotoolkit
-print(evotoolkit.__version__)  # e.g., "1.0.0"
+print(evotoolkit.__version__)  # e.g., "1.0.0rc6"
 ```
 
 ---
 
 ## Type Hints
 
-EvoToolkit uses type hints throughout the codebase. Use a type checker like `mypy` for static analysis:
-
-```bash
-pip install mypy
-mypy your_script.py
-```
+EvoToolkit includes type hints throughout the public API to improve IDE support and downstream integration.
+Project formatting and import sorting are enforced with Ruff; external type-checker usage is optional for users.
 
 ---
 

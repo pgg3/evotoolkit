@@ -1,137 +1,133 @@
 # EvoToolkit
 
-**LLM驱动的解进化优化工具包**
+**面向可执行解的 LLM 驱动进化优化框架**
 
-EvoToolkit 是一个 Python 库，利用大语言模型（LLM）来进化优化问题的解决方案。它结合了进化算法的强大能力与基于 LLM 的解生成和改进，支持代码、文本及其他可评估的表示形式。
-
----
-
-## ✨ 主要特性
-
-- **🤖 LLM 驱动进化**: 使用最先进的语言模型生成和进化解决方案
-- **🔬 多种算法**: 支持 EoH、EvoEngineer 和 FunSearch 进化方法
-- **🌍 任务无关**: 支持任何可评估的优化任务（代码、文本、数学表达式等）
-- **🎯 可扩展框架**: 易于扩展的任务系统，支持自定义优化问题
-- **🔌 简单 API**: 高级 `evotoolkit.solve()` 函数，快速原型开发
-- **🛠️ 高级定制**: 低级 API，提供精细化控制
-
-### 内置任务类型
-
-| 任务类型 | 描述 | 详情 |
-|---------|------|------|
-| **🔬 科学符号回归** | 在真实科学数据集上进行符号回归 | [科学回归教程](tutorials/built-in/scientific-regression.zh.md) |
-| **💬 提示词工程** | 优化 LLM prompts 以提升下游任务性能 | [提示词工程教程](tutorials/built-in/prompt-engineering.zh.md) |
-| **🛡️ 对抗攻击** | 进化对抗攻击算法 | [对抗攻击教程](tutorials/built-in/adversarial-attack.zh.md) |
-| **⚡ CUDA 代码进化** | 进化和优化 CUDA kernels | [CUDA 任务教程](tutorials/built-in/cuda-task.zh.md) |
+EvoToolkit 是一个 Python 框架，用大语言模型来进化代码、符号表达式、提示词以及其他可执行文本。它把系统拆成可复用的 `Method -> Interface -> Task` 三层结构，让算法和应用领域能够自由组合，而不是每个项目都从零重写基础设施。
 
 ---
 
-## 🚀 快速开始
+## 核心特性
+
+- **LLM 驱动进化**：用语言模型生成、修改并筛选候选解
+- **多算法支持**：内置 EoH、EvoEngineer、FunSearch
+- **统一架构**：覆盖 Python、字符串、CUDA、控制、CANN 等任务
+- **简洁顶层 API**：通过 `evotoolkit.solve(...)` 直接运行
+- **双语文档**：提供教程、安装说明和 API 参考
+
+### 内置任务族
+
+| 任务类型 | 说明 | 入口 |
+|----------|------|------|
+| 科学回归 | 在真实数据集上做符号回归 | [科学回归教程](tutorials/built-in/scientific-regression.zh.md) |
+| Prompt 优化 | 优化提示模板 | [Prompt 工程教程](tutorials/built-in/prompt-engineering.zh.md) |
+| 对抗攻击 | 进化黑盒攻击算法 | [对抗攻击教程](tutorials/built-in/adversarial-attack.zh.md) |
+| CUDA 工程 | 进化 CUDA 内核 | [CUDA 教程](tutorials/built-in/cuda-task.zh.md) |
+| 控制任务 | 进化可解释控制策略 | [Control Box2D 教程](tutorials/built-in/control-box2d.zh.md) |
+| CANN Init | 生成 Ascend C 算子内核 | [CANN Init 教程](tutorials/built-in/cann-init.zh.md) |
+
+---
+
+## 快速开始
 
 ### 安装
 
 ```bash
 pip install evotoolkit
 
-# 或安装全部依赖
-pip install evotoolkit[all]
+# 可选任务依赖
+pip install "evotoolkit[scientific_regression]"
+pip install "evotoolkit[prompt_engineering]"
+pip install "evotoolkit[adversarial_attack]"
+pip install "evotoolkit[cuda_engineering]"
+pip install "evotoolkit[control_box2d]"
+pip install "evotoolkit[cann_init]"
+pip install "evotoolkit[all_tasks]"
 ```
 
-详细安装说明请参阅[安装指南](installation.md)。
+公开发布的 Python 包当前在 Python 3.10-3.12 上测试通过。CUDA 与 CANN 工作流除了这些 Python 依赖外，还需要对应的硬件和厂商工具链。
 
 ### 第一个优化任务
 
 ```python
 import evotoolkit
-from evotoolkit.task.python_task.scientific_regression import ScientificRegressionTask
 from evotoolkit.task.python_task import EvoEngineerPythonInterface
+from evotoolkit.task.python_task.scientific_regression import ScientificRegressionTask
 from evotoolkit.tools import HttpsApi
 
-# 1. 创建任务
 task = ScientificRegressionTask(dataset_name="bactgrow")
-
-# 2. 创建接口
 interface = EvoEngineerPythonInterface(task)
 
-# 3. 使用 LLM 求解
 llm_api = HttpsApi(
     api_url="https://api.openai.com/v1/chat/completions",
     key="your-api-key-here",
-    model="gpt-4o"
+    model="gpt-4o",
 )
+
 result = evotoolkit.solve(
     interface=interface,
-    output_path='./results',
+    output_path="./results",
     running_llm=llm_api,
-    max_generations=5
+    max_generations=5,
 )
 ```
 
-就是这么简单！EvoToolkit 将使用 LLM 进化数学方程来拟合您的科学数据。
-
-完整的演示请查看[快速开始指南](getting-started.md)。
+完整上手流程见 [快速开始](getting-started.zh.md)。
 
 ---
 
-## 📚 可用算法
+## 算法
 
-| 算法 | 描述 |
+| 算法 | 说明 |
 |------|------|
-| **EvoEngineer** | 主要的 LLM 驱动进化算法 |
-| **FunSearch** | 函数搜索优化方法 |
-| **EoH** | 启发式进化 |
-
-查看[教程](tutorials/index.md)了解更多使用示例。
+| **EvoEngineer** | 结构化算子驱动的 LLM 进化搜索 |
+| **FunSearch** | 带 island database 的程序搜索 |
+| **EoH** | 以启发式进化为核心的多算子方法 |
 
 ---
 
-## 📖 文档
+## 文档导航
 
-- **[安装](installation.md)**: 安装说明和设置
-- **[快速开始](getting-started.md)**: 快速入门指南和基本用法
-- **[教程](tutorials/index.md)**: 常见任务的分步教程
-- **[API 参考](api/index.md)**: 详细的 API 文档
-- **[开发](development/contributing.md)**: 贡献指南和架构
+- **[安装](installation.md)**：环境与依赖说明
+- **[快速开始](getting-started.zh.md)**：第一个可运行示例
+- **[教程](tutorials/index.md)**：端到端任务教程
+- **[API 参考](api/index.md)**：公开接口与任务说明
+- **[开发文档](development/contributing.zh.md)**：贡献与维护流程
 
 ---
 
-## 🔗 链接
+## 链接
 
 - **GitHub**: [https://github.com/pgg3/evotoolkit](https://github.com/pgg3/evotoolkit)
 - **PyPI**: [https://pypi.org/project/evotoolkit/](https://pypi.org/project/evotoolkit/)
-- **论文**: arXiv（已提交）
+- **更新日志**: [CHANGELOG.md](https://github.com/pgg3/evotoolkit/blob/master/CHANGELOG.md)
+- **相对既有工作的软件改进**: [SOFTWARE_IMPROVEMENTS_FROM_PRIOR_WORK.md](https://github.com/pgg3/evotoolkit/blob/master/SOFTWARE_IMPROVEMENTS_FROM_PRIOR_WORK.md)
 
 ---
 
-## 📄 许可证
+## 许可证
 
-EvoToolkit 采用双重许可：
-
-- **学术与开源使用**: 免费用于学术研究、教育和开源项目。学术出版物中 **需要引用**。
-- **商业使用**: 需要单独的商业许可证。请联系 pguo6680@gmail.com 获取许可。
-
-详细条款请参阅 [LICENSE](https://github.com/pgg3/evotoolkit/blob/master/LICENSE)。
+EvoToolkit 核心框架使用 MIT License。部分面向硬件的可选工作流依赖外部厂商工具链，相关外部要求请查看各任务的安装说明。
 
 ---
 
-## 🙏 引用
+## 引用
 
-如果您在研究中使用 EvoToolkit，请引用：
+如果你在研究中使用 EvoToolkit，建议引用你实际使用的软件版本或仓库快照。一个可用的仓库引用条目如下：
 
 ```bibtex
-@article{guo2025evotoolkit,
-  title={evotoolkit: A Unified LLM-Driven Evolutionary Framework for Generalized Solution Search},
-  author={Guo, Ping and Zhang, Qingfu},
-  journal={arXiv preprint arXiv:XXXX.XXXXX},
-  year={2025},
-  note={Submitted to arXiv}
+@software{guo2026evotoolkit,
+  author = {Guo, Ping and Zhang, Qingfu},
+  title = {evotoolkit},
+  year = {2026},
+  url = {https://github.com/pgg3/evotoolkit},
+  version = {1.0.0rc6}
 }
 ```
 
 ---
 
-## 💬 获取帮助
+## 获取帮助
 
-- **问题**: [GitHub Issues](https://github.com/pgg3/evotoolkit/issues)
-- **讨论**: [GitHub Discussions](https://github.com/pgg3/evotoolkit/discussions)
-- **邮箱**: pguo6680@gmail.com
+- **Issues**: [GitHub Issues](https://github.com/pgg3/evotoolkit/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/pgg3/evotoolkit/discussions)
+- **Email**: pguo6680@gmail.com

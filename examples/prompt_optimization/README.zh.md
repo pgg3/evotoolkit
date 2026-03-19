@@ -166,7 +166,7 @@ test_cases = [
 ## 架构
 
 ```
-src/evotool/task/
+src/evotoolkit/task/
 ├── python_task/          # Python 代码优化
 ├── cuda_engineering/     # CUDA 内核优化
 └── string_optimization/  # 字符串优化（新功能！）

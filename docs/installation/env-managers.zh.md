@@ -11,8 +11,8 @@
 pip install uv
 
 # 创建新项目
-uv init my-evotool-project
-cd my-evotool-project
+uv init my-evotoolkit-project
+cd my-evotoolkit-project
 
 # 添加 evotoolkit
 uv add evotoolkit
@@ -40,8 +40,8 @@ pip install evotoolkit
 
 ```bash
 # 创建 conda 环境
-conda create -n evotool python=3.11
-conda activate evotool
+conda create -n evotoolkit python=3.11
+conda activate evotoolkit
 
 # 安装 evotoolkit
 pip install evotoolkit

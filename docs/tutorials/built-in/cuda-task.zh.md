@@ -260,7 +260,7 @@ EvoToolkit 提供了预定义的 CUDA 优化数据集，包含多种常见的深
 
 ```bash
 # 方式 1: 使用 wget
-cd /path/to/evotool/project/root
+cd /path/to/evotoolkit/project/root
 wget https://github.com/pgg3/evotoolkit/releases/download/data-v1.0.0/rtx4090_cu12_4_py311_torch_2_4_0.json
 
 # 方式 2: 使用 curl

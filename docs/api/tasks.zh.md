@@ -369,7 +369,7 @@ print(datasets.keys())  # dict_keys(['bactgrow', 'oscillator1', 'oscillator2', '
 - `get_dataset_path(category, data_dir=None)` - 获取数据集路径，如需要则自动下载
 - `list_available_datasets(category)` - 列出类别中的所有数据集
 
-**默认位置：** `~/.evotool/data/`
+**默认位置：** `~/.evotoolkit/data/`
 
 ---
 

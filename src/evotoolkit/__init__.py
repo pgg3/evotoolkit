@@ -2,11 +2,7 @@
 # Licensed under the MIT License
 
 
-"""
-EvoTool - Evolutionary Optimization Toolkit
-
-A Python library for LLM-driven code evolutionary optimization.
-"""
+"""EvoToolkit public package entry points."""
 
 from typing import Any
 
@@ -39,7 +35,7 @@ def solve(interface: BaseMethodInterface, output_path: str = "./results", **kwar
     """
     Factory method to create and run an evolutionary optimization workflow.
 
-    This is the main entry point for using evotool with an explicit, unambiguous API.
+    This is the main entry point for using evotoolkit with an explicit, unambiguous API.
     Users must explicitly create task and interface instances before calling solve().
 
     Args:
@@ -63,7 +59,7 @@ def solve(interface: BaseMethodInterface, output_path: str = "./results", **kwar
         interface = EoHPythonInterface(task)
 
         # Call solve with explicit interface
-        result = evotool.solve(
+        result = evotoolkit.solve(
             interface=interface,
             output_path='./results',
             running_llm=llm_api,

@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import Literal
 
 import numpy as np
-import pandas as pd
 
 from evotoolkit.core import EvaluationResult, Solution
 from evotoolkit.registry import register_task
@@ -79,7 +78,7 @@ class ScientificRegressionTask(PythonTask):
 
         Args:
             dataset_name: Name of the scientific dataset
-            data_dir: Custom data directory (optional, defaults to ~/.evotool/data/)
+            data_dir: Custom data directory (optional, defaults to ~/.evotoolkit/data/)
             max_params: Maximum number of optimizable parameters
             timeout_seconds: Execution timeout
         """
@@ -128,6 +127,8 @@ class ScientificRegressionTask(PythonTask):
             )
 
         # Load CSV files
+        import pandas as pd
+
         info = self.dataset_info
         train_df = pd.read_csv(dataset_path / "train.csv")
         # Use in-distribution test

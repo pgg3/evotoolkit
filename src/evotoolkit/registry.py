@@ -136,23 +136,25 @@ def get_interface_class(algorithm_name: str, task: BaseTask) -> Type[BaseMethodI
         ValueError: If interface cannot be found for the algorithm-task combination
     """
     from evotoolkit.task.python_task import PythonTask
+    from evotoolkit.task.string_optimization import StringTask
+
+    try:
+        from evotoolkit.task.cuda_engineering import CudaTask
+    except Exception:  # pragma: no cover - optional dependency import
+        CudaTask = None
 
     # Determine task type suffix
     if isinstance(task, PythonTask):
         task_suffix = "Python"
-        module_path = "evotool.task.python_task"
+        module_path = "evotoolkit.task.python_task"
+    elif isinstance(task, StringTask):
+        task_suffix = "String"
+        module_path = "evotoolkit.task.string_optimization"
+    elif CudaTask is not None and isinstance(task, CudaTask):
+        task_suffix = "Cuda"
+        module_path = "evotoolkit.task.cuda_engineering"
     else:
-        # Check if it's a CUDA task
-        try:
-            from evotoolkit.task.cuda_engineering import CudaTaskConfig
-
-            if isinstance(task, CudaTaskConfig):
-                task_suffix = "Cuda"
-                module_path = "evotool.task.cuda_engineering"
-            else:
-                raise ValueError(f"Unknown task type: {type(task)}")
-        except ImportError:
-            raise ValueError(f"Unknown task type: {type(task)}")
+        raise ValueError(f"Unknown task type: {type(task)}")
 
     # Get interface class name prefix
     if algorithm_name not in _INTERFACE_PREFIX_MAP:

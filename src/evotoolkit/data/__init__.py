@@ -17,6 +17,16 @@ from .downloader import DownloadError, ensure_dataset_downloaded
 __all__ = ["get_dataset_path", "DownloadError", "list_available_datasets"]
 
 
+def _default_data_dir() -> Path:
+    """Return the default dataset directory with backward compatibility."""
+    new_dir = Path.home() / ".evotoolkit" / "data"
+    legacy_dir = Path.home() / ".evotool" / "data"
+
+    if legacy_dir.exists() and not new_dir.exists():
+        return legacy_dir
+    return new_dir
+
+
 def get_dataset_path(category: str, data_dir: Optional[Path | str] = None) -> Path:
     """
     Get path to dataset category, downloading if necessary.
@@ -28,7 +38,7 @@ def get_dataset_path(category: str, data_dir: Optional[Path | str] = None) -> Pa
 
     Args:
         category: Dataset category name (e.g., "scientific_regression")
-        data_dir: Custom data directory. If None, defaults to ~/.evotool/data/
+        data_dir: Custom data directory. If None, defaults to ~/.evotoolkit/data/
 
     Returns:
         Path to the category base directory containing all datasets
@@ -54,7 +64,7 @@ def get_dataset_path(category: str, data_dir: Optional[Path | str] = None) -> Pa
 
     # Determine base directory
     if data_dir is None:
-        base_dir = Path.home() / ".evotool" / "data"
+        base_dir = _default_data_dir()
     else:
         base_dir = Path(data_dir)
 

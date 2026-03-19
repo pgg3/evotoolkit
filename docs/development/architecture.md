@@ -31,7 +31,7 @@ Automatic discovery and registration of tasks and algorithms.
 ## Module Organization
 
 ```
-evotool/
+evotoolkit/
 ├── core/               # Base classes and abstractions
 ├── evo_method/         # Algorithm implementations
 ├── task/               # Task implementations

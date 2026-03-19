@@ -22,8 +22,8 @@
 ## 步骤 1: 创建新项目
 
 ```bash
-mkdir my-evotool-project
-cd my-evotool-project
+mkdir my-evotoolkit-project
+cd my-evotoolkit-project
 ```
 
 ## 步骤 2: 编写第一个脚本

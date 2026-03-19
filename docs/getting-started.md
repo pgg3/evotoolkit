@@ -9,8 +9,8 @@ This guide will walk you through your first optimization task using EvoToolkit.
 Create a new project and run your first optimization in minutes:
 
 ```bash
-mkdir my-evotool-project
-cd my-evotool-project
+mkdir my-evotoolkit-project
+cd my-evotoolkit-project
 ```
 
 Then follow the guide below to create your first optimization script.

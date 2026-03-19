@@ -23,6 +23,16 @@ class DownloadError(Exception):
     pass
 
 
+def _default_data_dir() -> Path:
+    """Return the default dataset directory with backward compatibility."""
+    new_dir = Path.home() / ".evotoolkit" / "data"
+    legacy_dir = Path.home() / ".evotool" / "data"
+
+    if legacy_dir.exists() and not new_dir.exists():
+        return legacy_dir
+    return new_dir
+
+
 def download_with_progress(url: str, dest_path: Path, chunk_size: int = 8192) -> None:
     """
     Download file from URL with progress indication.
@@ -171,7 +181,7 @@ def ensure_dataset_downloaded(category: str, dataset_name: str, data_dir: Option
     Args:
         category: Dataset category (e.g., "scientific_regression")
         dataset_name: Name of the dataset (e.g., "bactgrow")
-        data_dir: Custom data directory (defaults to ~/.evotool/data/)
+        data_dir: Custom data directory (defaults to ~/.evotoolkit/data/)
 
     Returns:
         Path to the specific dataset directory
@@ -182,7 +192,7 @@ def ensure_dataset_downloaded(category: str, dataset_name: str, data_dir: Option
     """
     # Determine data directory
     if data_dir is None:
-        data_dir = Path.home() / ".evotool" / "data"
+        data_dir = _default_data_dir()
     else:
         data_dir = Path(data_dir)
 

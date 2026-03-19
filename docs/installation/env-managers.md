@@ -11,8 +11,8 @@ Manage your Python environment with your preferred tool.
 pip install uv
 
 # Create a new project
-uv init my-evotool-project
-cd my-evotool-project
+uv init my-evotoolkit-project
+cd my-evotoolkit-project
 
 # Add evotoolkit
 uv add evotoolkit
@@ -40,8 +40,8 @@ pip install evotoolkit
 
 ```bash
 # Create conda environment
-conda create -n evotool python=3.11
-conda activate evotool
+conda create -n evotoolkit python=3.11
+conda activate evotoolkit
 
 # Install evotoolkit
 pip install evotoolkit
