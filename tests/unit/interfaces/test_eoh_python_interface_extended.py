@@ -3,7 +3,6 @@
 
 """Tests for EoHPythonInterface — covering uncovered prompt/parse methods."""
 
-
 from evotoolkit.core import EvaluationResult, Solution
 from evotoolkit.task.python_task.method_interface.eoh_interface import EoHPythonInterface
 

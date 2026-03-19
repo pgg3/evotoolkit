@@ -3,7 +3,6 @@
 
 """Tests for FunSearch ProgramsDatabase."""
 
-
 from evotoolkit.core import EvaluationResult, Solution
 from evotoolkit.evo_method.funsearch.programs_database import ProgramsDatabase
 

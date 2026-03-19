@@ -3,7 +3,6 @@
 
 """Tests for HistoryManager — covering uncovered lines (75, 82-83, 140, 147-148)."""
 
-
 from evotoolkit.core import EvaluationResult, Solution
 from evotoolkit.core.history_manager import HistoryManager
 

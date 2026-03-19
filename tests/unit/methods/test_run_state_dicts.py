@@ -3,7 +3,6 @@
 
 """Tests for EvoEngineer and FunSearch run state dicts (missing coverage)."""
 
-
 from evotoolkit.core import EvaluationResult, Solution
 from evotoolkit.evo_method.evoengineer.run_state_dict import EvoEngineerRunStateDict
 from evotoolkit.evo_method.funsearch.run_state_dict import FunSearchRunStateDict
