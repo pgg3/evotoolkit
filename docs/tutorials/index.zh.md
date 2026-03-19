@@ -24,6 +24,8 @@
 - **[提示词工程](built-in/prompt-engineering.zh.md)** - 优化 LLM 提示词以提升性能
 - **[对抗攻击](built-in/adversarial-attack.zh.md)** - 生成对抗样本
 - **[CUDA 任务](built-in/cuda-task.zh.md)** - 优化 GPU 内核性能
+- **[控制任务 (Box2D)](built-in/control-box2d.zh.md)** - 进化可解释控制策略（LunarLander）
+- **[CANN 算子初始化](built-in/cann-init.zh.md)** - 为华为昇腾 NPU 生成 Ascend C 算子（需要硬件）
 
 ### 自定义
 
@@ -48,6 +50,8 @@
 | [提示词工程](built-in/prompt-engineering.zh.md) | 初级-中级 | 20 分钟 | LLM prompt 优化、任务性能提升 |
 | [对抗攻击](built-in/adversarial-attack.zh.md) | 中级 | 25 分钟 | 进化对抗样本、攻击算法设计 |
 | [CUDA 任务](built-in/cuda-task.zh.md) | 高级 | 30 分钟 | GPU 优化、CUDA 内核、性能 |
+| [控制任务 (Box2D)](built-in/control-box2d.zh.md) | 中级 | 20 分钟 | 控制策略进化、LunarLander 环境 |
+| [CANN 算子初始化](built-in/cann-init.zh.md) | 高级 | 30 分钟 | Ascend C 生成、CANN 工具包、NPU 硬件 |
 | [自定义任务](customization/custom-task.zh.md) | 中级 | 20 分钟 | 创建任务、评估、自定义适应度 |
 | [自定义进化方法](customization/customizing-evolution.zh.md) | 中级-高级 | 30 分钟 | Prompt 工程、自定义算法、Interface 开发 |
 | [高级用法](advanced-overview.zh.md) | 高级 | 25 分钟 | 低级 API、自定义配置、调试 |
@@ -105,12 +109,16 @@ algorithm.run()
 - `examples/custom_task/my_custom_task.py` - 自定义任务实现
 - `examples/cuda_task/kernel_optimization.py` - CUDA 内核优化
 - `examples/advanced/low_level_api.py` - 低级 API 用法
+- `examples/adversarial_attack/` - 对抗攻击示例
+- `examples/lunar_lander/` - 控制任务 (LunarLander) 示例
+- `examples/cann_init/` - CANN Init 算子生成示例
+- `examples/prompt_optimization/` - 提示词优化示例
 
 克隆仓库开始：
 
 ```bash
-git clone https://github.com/pgg3/evotoolkitkit.git
-cd evotool/examples
+git clone https://github.com/pgg3/evotoolkit.git
+cd evotoolkit/examples
 ```
 
 ---

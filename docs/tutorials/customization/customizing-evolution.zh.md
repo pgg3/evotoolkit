@@ -358,7 +358,7 @@ class MyAlgorithm(Method):
         self._save_run_state_dict()
 ```
 
-**文件位置：** 您可以将算法文件放在任何位置。如果要贡献到 EvoToolkit 库，建议放在 `src/evotool/evo_method/my_algorithm/` 目录下。
+**文件位置：** 您可以将算法文件放在任何位置。如果要贡献到 EvoToolkit 库，建议放在 `src/evotoolkit/evo_method/my_algorithm/` 目录下。
 
 #### 步骤 2：创建通用 Interface 基类 (第 2 层)
 
@@ -419,7 +419,7 @@ class MyAlgorithmInterface(BaseMethodInterface):
         pass
 ```
 
-**文件位置：** 您可以将 Interface 文件放在任何位置。如果要贡献到 EvoToolkit 库，建议放在 `src/evotool/core/method_interface/my_algorithm_interface.py`。
+**文件位置：** 您可以将 Interface 文件放在任何位置。如果要贡献到 EvoToolkit 库，建议放在 `src/evotoolkit/core/method_interface/my_algorithm_interface.py`。
 
 !!! note "设计原则"
     - **必需方法**：只有 `make_init_sol()` 和 `parse_response()` 是必需的
@@ -491,7 +491,7 @@ class MyAlgorithmPythonInterface(MyAlgorithmInterface):
         return [{"role": "user", "content": prompt}]
 ```
 
-**文件位置：** 您可以将任务专用 Interface 文件放在任何位置。如果要贡献到 EvoToolkit 库，建议放在 `src/evotool/task/python_task/method_interface/my_algorithm_interface.py`。
+**文件位置：** 您可以将任务专用 Interface 文件放在任何位置。如果要贡献到 EvoToolkit 库，建议放在 `src/evotoolkit/task/python_task/method_interface/my_algorithm_interface.py`。
 
 !!! tip "Prompt 中的代码块"
     在 prompt 字符串中引用代码时，直接插入代码文本即可，不要使用 markdown 代码块标记。LLM 能够理解代码结构，而 markdown 标记可能导致混淆。
@@ -568,19 +568,19 @@ result = evotoolkit.solve(
 **推荐阅读顺序：**
 
 1. **EvoEngineer 算法**（最完整的示例）
-   - 算法类：`src/evotool/evo_method/evoengineer/evoengineer.py`
-   - Config：`src/evotool/evo_method/evoengineer/run_config.py`
-   - 通用 Interface：`src/evotool/core/method_interface/evoengineer_interface.py`
-   - Python Interface：`src/evotool/task/python_task/method_interface/evoengineer_interface.py`
+   - 算法类：`src/evotoolkit/evo_method/evoengineer/evoengineer.py`
+   - Config：`src/evotoolkit/evo_method/evoengineer/run_config.py`
+   - 通用 Interface：`src/evotoolkit/core/method_interface/evoengineer_interface.py`
+   - Python Interface：`src/evotoolkit/task/python_task/method_interface/evoengineer_interface.py`
 
 2. **EoH 算法**（更简单的示例）
-   - 算法类：`src/evotool/evo_method/eoh/`
-   - 通用 Interface：`src/evotool/core/method_interface/eoh_interface.py`
-   - Python Interface：`src/evotool/task/python_task/method_interface/eoh_interface.py`
+   - 算法类：`src/evotoolkit/evo_method/eoh/`
+   - 通用 Interface：`src/evotoolkit/core/method_interface/eoh_interface.py`
+   - Python Interface：`src/evotoolkit/task/python_task/method_interface/eoh_interface.py`
 
 3. **FunSearch 算法**（不同的进化策略）
-   - 算法类：`src/evotool/evo_method/funsearch/`
-   - 通用 Interface：`src/evotool/core/method_interface/funsearch_interface.py`
+   - 算法类：`src/evotoolkit/evo_method/funsearch/`
+   - 通用 Interface：`src/evotoolkit/core/method_interface/funsearch_interface.py`
 
 **关键要点：**
 

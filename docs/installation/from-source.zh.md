@@ -7,8 +7,8 @@
 ## 克隆仓库
 
 ```bash
-git clone https://github.com/pgg3/evotoolkitkit.git
-cd evotool
+git clone https://github.com/pgg3/evotoolkit.git
+cd evotoolkit
 ```
 
 ---

@@ -6,11 +6,13 @@ Tasks define optimization problems and how to evaluate candidate solutions.
 
 ## Overview
 
-EvoToolkit provides three categories of tasks:
+EvoToolkit provides five categories of tasks:
 
 - **Python Tasks** - Optimize Python code functions
 - **String Tasks** - Optimize text/string solutions (e.g., prompts)
 - **CUDA Tasks** - Optimize GPU kernel code
+- **Control Tasks** - Evolve interpretable control policies (Box2D environments)
+- **CANN Init Tasks** - Generate Ascend C operator kernel code (Ascend NPU)
 
 ---
 
@@ -238,6 +240,106 @@ See [CUDA Task Tutorial](../tutorials/built-in/cuda-task.md) for a complete exam
 
 ---
 
+## Control Tasks (Box2D)
+
+### LunarLanderTask
+
+Evolve interpretable Python control policies for the Gymnasium LunarLander-v3 environment.
+
+**Installation:**
+
+```bash
+pip install evotoolkit[control_box2d]
+```
+
+**Usage:**
+
+```python
+from evotoolkit.task.python_task.control_box2d import LunarLanderTask
+
+task = LunarLanderTask(
+    num_episodes=5,
+    max_steps=1000,
+    seed=42,
+)
+
+result = task.evaluate_code(policy_code)
+print(f"Score: {result.score:.2f}")  # Average reward
+```
+
+**Parameters:**
+
+- `num_episodes` (`int`): Number of evaluation episodes (default: 10)
+- `max_steps` (`int`): Maximum steps per episode (default: 1000)
+- `render_mode` (`str | None`): Render mode; `"human"` to visualize (default: None)
+- `use_mock` (`bool`): Return random score for testing (default: False)
+- `seed` (`int | None`): Random seed for reproducibility (default: None)
+- `timeout_seconds` (`float`): Execution timeout (default: 60.0)
+
+**Methods:**
+
+- `evaluate_code(code: str) -> EvaluationResult`: Evaluate policy code; score = average reward per episode
+
+See [Control Box2D Tutorial](../tutorials/built-in/control-box2d.md) for details.
+
+---
+
+## CANN Init Tasks (Ascend NPU)
+
+### CANNInitTask
+
+Generate and evaluate Ascend C operator kernel code for Huawei Ascend NPU hardware.
+
+**Installation:**
+
+```bash
+pip install evotoolkit[cann_init]
+```
+
+**Usage:**
+
+```python
+from evotoolkit.task.cann_init import CANNInitTask
+
+task = CANNInitTask(
+    data={
+        "op_name": "relu",
+        "python_reference": PYTHON_REF,
+        "npu_type": "Ascend910B2",
+        "cann_version": "8.0",
+    },
+    project_path="/tmp/cann_projects",
+)
+
+result = task.evaluate_code(kernel_src)
+print(f"Score: {result.score:.4f}")
+```
+
+**`data` dictionary parameters:**
+
+- `op_name` (`str`): Operator name (e.g., `"relu"`, `"layer_norm"`)
+- `python_reference` (`str`): Python reference implementation
+- `npu_type` (`str`): NPU model (default: `"Ascend910B2"`)
+- `cann_version` (`str`): CANN version (default: `"8.0"`)
+
+**Constructor parameters:**
+
+- `data` (`dict`): Task configuration (see above)
+- `project_path` (`str | None`): Default directory for compiled artifacts (default: None — uses temp dir)
+- `fake_mode` (`bool`): Skip evaluation for testing (default: False)
+
+**Methods:**
+
+- `evaluate_code(kernel_src: str) -> EvaluationResult`: Compile and evaluate kernel code
+- `evaluate_solution(solution: Solution) -> EvaluationResult`: Advanced evaluation with `other_info` options
+
+!!! warning "Hardware Required"
+    `CANNInitTask` requires Huawei Ascend NPU hardware and the CANN toolkit installed.
+
+See [CANN Init Tutorial](../tutorials/built-in/cann-init.md) for details.
+
+---
+
 ## Data Management
 
 Datasets are automatically downloaded from GitHub releases when first accessed.
@@ -345,6 +447,8 @@ See [Custom Task Tutorial](../tutorials/customization/custom-task.md) for detail
 | Scientific equation discovery | `ScientificRegressionTask` | Discover mathematical models from data |
 | Adversarial attacks | `AdversarialAttackTask` | Evolve attack algorithms |
 | Prompt optimization | `PromptOptimizationTask` | Optimize LLM prompts |
+| Control policy | `LunarLanderTask` | Evolve interpretable control strategies |
+| Ascend C operator | `CANNInitTask` | Generate NPU kernels (requires hardware) |
 | Python code | `PythonTask` | General Python optimization |
 | String optimization | `StringTask` | Text/configuration optimization |
 | GPU kernels | `CudaTask` | CUDA performance optimization |

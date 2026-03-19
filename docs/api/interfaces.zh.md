@@ -172,20 +172,18 @@ prompt = """
 
 ```python
 response = llm_api.call(prompt)
-solution = interface.parse_llm_response(response)
+solution = interface.parse_response(response)
 # solution.sol_string 现在包含提取的 Python/CUDA 代码
 ```
 
-### 3. 算子应用
+### 3. 算子提示
 
-接口应用进化算子：
+接口为每个算子（如 init、mutation、crossover）生成特定于算法的提示。LLM 接收这些提示并返回新解：
 
 ```python
-# 变异
-mutated = interface.mutate(solution)
-
-# 交叉
-offspring = interface.crossover(parent1, parent2)
+# 接口内部调用 get_operator_prompt() 构建提示
+# 并调用 parse_response() 从 LLM 输出中提取解
+operator_prompt = interface.get_operator_prompt(operator, population)
 ```
 
 ---
@@ -195,33 +193,22 @@ offspring = interface.crossover(parent1, parent2)
 为专门的算法或任务创建自定义接口：
 
 ```python
-from evotoolkit.core.method_interface import BaseMethodInterface
+from evotoolkit.task.python_task import EvoEngineerPythonInterface
 from evotoolkit.core import Solution
 
-class MySpecializedInterface(BaseMethodInterface):
+class MySpecializedInterface(EvoEngineerPythonInterface):
     def __init__(self, task):
         super().__init__(task)
         self.custom_config = self.load_custom_config()
 
-    def generate_prompt(self, generation, population):
+    def get_operator_prompt(self, operator, population, **kwargs):
         # 具有领域特定指令的自定义提示
-        best_sol = max(population, key=lambda s: s.evaluation_res.score if s.evaluation_res.valid else float('-inf'))
+        valid_sols = [s for s in population if s.evaluation_res and s.evaluation_res.valid]
+        best_sol = max(valid_sols, key=lambda s: s.evaluation_res.score) if valid_sols else None
 
-        prompt = f"""
-        领域特定上下文: {self.custom_config['context']}
-
-        进化一个改进以下内容的解:
-        {best_sol.sol_string}
-
-        当前最佳得分: {best_sol.evaluation_res.score}
-        代数: {generation}
-        """
-        return prompt
-
-    def parse_llm_response(self, response):
-        # 自定义解析逻辑
-        code = self.extract_code_with_custom_markers(response)
-        return Solution(code=code)
+        base_prompt = super().get_operator_prompt(operator, population, **kwargs)
+        domain_context = f"\n领域特定上下文: {self.custom_config['context']}\n"
+        return domain_context + base_prompt
 
     def load_custom_config(self):
         # 加载领域特定配置

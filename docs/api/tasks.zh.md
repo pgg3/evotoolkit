@@ -6,11 +6,13 @@
 
 ## 概览
 
-EvoToolkit 提供三类任务：
+EvoToolkit 提供五类任务：
 
 - **Python 任务** - 优化 Python 代码函数
 - **String 任务** - 优化文本/字符串解（如提示词）
 - **CUDA 任务** - 优化 GPU 内核代码
+- **控制任务** - 进化可解释控制策略（Box2D 环境）
+- **CANN Init 任务** - 生成 Ascend C 算子内核代码（昇腾 NPU）
 
 ---
 
@@ -238,6 +240,106 @@ pip install evotoolkit[cuda_engineering]
 
 ---
 
+## 控制任务 (Box2D)
+
+### LunarLanderTask
+
+为 Gymnasium LunarLander-v3 环境进化可解释的 Python 控制策略。
+
+**安装：**
+
+```bash
+pip install evotoolkit[control_box2d]
+```
+
+**用法：**
+
+```python
+from evotoolkit.task.python_task.control_box2d import LunarLanderTask
+
+task = LunarLanderTask(
+    num_episodes=5,
+    max_steps=1000,
+    seed=42,
+)
+
+result = task.evaluate_code(policy_code)
+print(f"得分: {result.score:.2f}")  # 平均奖励
+```
+
+**参数：**
+
+- `num_episodes` (`int`): 评估回合数（默认：10）
+- `max_steps` (`int`): 每回合最大步数（默认：1000）
+- `render_mode` (`str | None`): 渲染模式；`"human"` 可视化（默认：None）
+- `use_mock` (`bool`): 返回随机得分用于测试（默认：False）
+- `seed` (`int | None`): 可重现性的随机种子（默认：None）
+- `timeout_seconds` (`float`): 执行超时（默认：60.0）
+
+**方法：**
+
+- `evaluate_code(code: str) -> EvaluationResult`: 评估策略代码；得分 = 每回合平均奖励
+
+详见 [控制任务教程](../tutorials/built-in/control-box2d.zh.md)。
+
+---
+
+## CANN Init 任务 (昇腾 NPU)
+
+### CANNInitTask
+
+为华为昇腾 NPU 硬件生成并评估 Ascend C 算子内核代码。
+
+**安装：**
+
+```bash
+pip install evotoolkit[cann_init]
+```
+
+**用法：**
+
+```python
+from evotoolkit.task.cann_init import CANNInitTask
+
+task = CANNInitTask(
+    data={
+        "op_name": "relu",
+        "python_reference": PYTHON_REF,
+        "npu_type": "Ascend910B2",
+        "cann_version": "8.0",
+    },
+    project_path="/tmp/cann_projects",
+)
+
+result = task.evaluate_code(kernel_src)
+print(f"得分: {result.score:.4f}")
+```
+
+**`data` 字典参数：**
+
+- `op_name` (`str`): 算子名称（如 `"relu"`、`"layer_norm"`）
+- `python_reference` (`str`): Python 参考实现
+- `npu_type` (`str`): NPU 型号（默认：`"Ascend910B2"`）
+- `cann_version` (`str`): CANN 版本（默认：`"8.0"`）
+
+**构造函数参数：**
+
+- `data` (`dict`): 任务配置（见上文）
+- `project_path` (`str | None`): 编译产物的默认目录（默认：None — 使用临时目录）
+- `fake_mode` (`bool`): 跳过评估用于测试（默认：False）
+
+**方法：**
+
+- `evaluate_code(kernel_src: str) -> EvaluationResult`: 编译并评估内核代码
+- `evaluate_solution(solution: Solution) -> EvaluationResult`: 支持 `other_info` 选项的高级评估
+
+!!! warning "需要硬件"
+    `CANNInitTask` 需要华为昇腾 NPU 硬件以及已安装的 CANN 工具包。
+
+详见 [CANN Init 教程](../tutorials/built-in/cann-init.zh.md)。
+
+---
+
 ## 数据管理
 
 首次访问时，数据集会自动从 GitHub releases 下载。
@@ -345,6 +447,8 @@ class MyOptimizationTask(PythonTask):
 | 科学方程发现 | `ScientificRegressionTask` | 从数据中发现数学模型 |
 | 对抗攻击 | `AdversarialAttackTask` | 进化攻击算法 |
 | 提示词优化 | `PromptOptimizationTask` | 优化 LLM 提示词 |
+| 控制策略 | `LunarLanderTask` | 进化可解释控制策略 |
+| 昇腾 C 算子 | `CANNInitTask` | 生成 NPU 内核（需要硬件）|
 | Python 代码 | `PythonTask` | 通用 Python 优化 |
 | 字符串优化 | `StringTask` | 文本/配置优化 |
 | GPU 内核 | `CudaTask` | CUDA 性能优化 |

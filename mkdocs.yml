@@ -92,6 +92,8 @@ plugins:
             Advanced: 高级主题
             Scientific Regression: 科学符号回归
             Prompt Engineering: 提示词工程
+            CANN Init: CANN 算子初始化
+            Control Box2D: 控制任务 (Box2D)
             Adversarial Attack: 对抗攻击
             Custom Tasks: 自定义任务
             Customizing Evolution: 自定义进化方法
@@ -202,6 +204,8 @@ nav:
           - Prompt Engineering: tutorials/built-in/prompt-engineering.md
           - Adversarial Attack: tutorials/built-in/adversarial-attack.md
           - CUDA Tasks: tutorials/built-in/cuda-task.md
+          - Control Box2D: tutorials/built-in/control-box2d.md
+          - CANN Init: tutorials/built-in/cann-init.md
       - Customization:
           - Overview: tutorials/customization-overview.md
           - Custom Tasks: tutorials/customization/custom-task.md

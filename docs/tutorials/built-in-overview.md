@@ -65,6 +65,36 @@ Optimize GPU kernels using LLM-driven evolution.
 
 ---
 
+### Control Box2D (Lunar Lander)
+**[→ Start Tutorial](built-in/control-box2d.md)**
+
+Evolve interpretable control policies for the Gymnasium LunarLander-v3 environment.
+
+**You'll Learn:**
+- Creating control tasks for physical simulation
+- Evolving human-readable Python policies
+- Understanding the `policy(state) -> action` interface
+- Evaluating policies across multiple episodes
+
+**Prerequisites:** Basic Python knowledge
+
+---
+
+### CANN Init (Ascend NPU)
+**[→ Start Tutorial](built-in/cann-init.md)**
+
+Generate Ascend C operator kernel code for Huawei Ascend NPUs.
+
+**You'll Learn:**
+- Creating CANN Init tasks with Python references
+- Evolving Ascend C kernel implementations
+- Understanding the template system
+- Compiling and evaluating on Ascend hardware
+
+**Prerequisites:** Huawei CANN toolkit, Ascend NPU hardware
+
+---
+
 ## Task Comparison
 
 | Task | Domain | Difficulty | Best For |
@@ -73,6 +103,8 @@ Optimize GPU kernels using LLM-driven evolution.
 | Prompt Engineering | NLP/LLM | Intermediate | Optimizing LLM interactions |
 | Adversarial Attack | Security/ML | Intermediate | Security research, robustness testing |
 | CUDA Tasks | GPU Computing | Advanced | Performance optimization |
+| Control Box2D | Robotics/Control | Intermediate | Interpretable control policy discovery |
+| CANN Init | Ascend NPU | Advanced | Ascend C operator generation (requires hardware) |
 
 ---
 

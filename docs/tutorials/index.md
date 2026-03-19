@@ -24,6 +24,8 @@ Learn how to use EvoToolkit's pre-built optimization tasks:
 - **[Prompt Engineering](built-in/prompt-engineering.md)** - Optimize LLM prompts for better performance
 - **[Adversarial Attack](built-in/adversarial-attack.md)** - Generate adversarial examples
 - **[CUDA Tasks](built-in/cuda-task.md)** - Optimize GPU kernels for performance
+- **[Control Box2D](built-in/control-box2d.md)** - Evolve interpretable control policies (LunarLander)
+- **[CANN Init](built-in/cann-init.md)** - Generate Ascend C operators for Huawei NPU (requires hardware)
 
 ### Customization
 
@@ -48,6 +50,8 @@ Master the low-level APIs:
 | [Prompt Engineering](built-in/prompt-engineering.md) | Beginner-Intermediate | 20 min | LLM prompt optimization, task performance |
 | [Adversarial Attack](built-in/adversarial-attack.md) | Intermediate | 25 min | Evolving adversarial examples, attack algorithms |
 | [CUDA Tasks](built-in/cuda-task.md) | Advanced | 30 min | GPU optimization, CUDA kernels, performance |
+| [Control Box2D](built-in/control-box2d.md) | Intermediate | 20 min | Control policy evolution, LunarLander environment |
+| [CANN Init](built-in/cann-init.md) | Advanced | 30 min | Ascend C generation, CANN toolkit, NPU hardware |
 | [Custom Tasks](customization/custom-task.md) | Intermediate | 20 min | Creating tasks, evaluation, custom fitness |
 | [Customizing Evolution](customization/customizing-evolution.md) | Intermediate-Advanced | 30 min | Prompt engineering, custom algorithms, Interface development |
 | [Advanced Usage](advanced-overview.md) | Advanced | 25 min | Low-level API, custom configs, debugging |
@@ -105,12 +109,16 @@ All tutorial code is available as standalone Python scripts in the `examples/` d
 - `examples/custom_task/my_custom_task.py` - Custom task implementation
 - `examples/cuda_task/kernel_optimization.py` - CUDA kernel optimization
 - `examples/advanced/low_level_api.py` - Low-level API usage
+- `examples/adversarial_attack/` - Adversarial attack examples
+- `examples/lunar_lander/` - Control Box2D (LunarLander) examples
+- `examples/cann_init/` - CANN Init operator generation examples
+- `examples/prompt_optimization/` - Prompt optimization examples
 
 Clone the repository to get started:
 
 ```bash
-git clone https://github.com/pgg3/evotoolkitkit.git
-cd evotool/examples
+git clone https://github.com/pgg3/evotoolkit.git
+cd evotoolkit/examples
 ```
 
 ---

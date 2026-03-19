@@ -63,30 +63,26 @@ Base class for all method interfaces. See the reference page:
 
 **Key Methods:**
 
-- `generate_prompt(generation, population)`: Creates LLM prompts
-- `parse_llm_response(response)`: Parses LLM output into solutions
-- `mutate(solution)`: Applies mutation operator
-- `crossover(parent1, parent2)`: Applies crossover operator
+- `make_init_sol()`: Create initial solution
+- `parse_response(response_str)`: Parse LLM response into Solution
+- `get_operator_prompt(operator, population, **kwargs)`: Generate LLM prompt for a given operator
 
 **Creating Custom Interfaces:**
 
 ```python
-from evotoolkit.core.method_interface import BaseMethodInterface
+from evotoolkit.task.python_task import EvoEngineerPythonInterface
 from evotoolkit.core import Solution
 
-class MyCustomInterface(BaseMethodInterface):
-    def generate_prompt(self, generation, population):
-        # Your custom prompt generation
-        return prompt_string
-
-    def parse_llm_response(self, response):
-        # Parse LLM response
-        code = self.extract_code(response)
-        return Solution(code=code)
-
-    def mutate(self, solution):
-        # Your custom mutation logic
-        return mutated_solution
+class MyCustomInterface(EvoEngineerPythonInterface):
+    def get_operator_prompt(self, operator, population, **kwargs):
+        # Your custom prompt generation logic
+        best_sol = max(
+            (s for s in population if s.evaluation_res and s.evaluation_res.valid),
+            key=lambda s: s.evaluation_res.score,
+            default=None,
+        )
+        prompt = f"Improve this solution:\n{best_sol.sol_string if best_sol else 'No solution yet'}"
+        return prompt
 ```
 
 ---
@@ -136,20 +132,18 @@ Interfaces extract code from LLM responses:
 
 ```python
 response = llm_api.call(prompt)
-solution = interface.parse_llm_response(response)
+solution = interface.parse_response(response)
 # solution.sol_string now contains the extracted Python/CUDA code
 ```
 
-### 3. Operator Application
+### 3. Operator Prompts
 
-Interfaces apply evolutionary operators:
+Interfaces generate algorithm-specific prompts for each operator (e.g., init, mutation, crossover). The LLM receives these prompts and returns a new solution:
 
 ```python
-# Mutation
-mutated = interface.mutate(solution)
-
-# Crossover
-offspring = interface.crossover(parent1, parent2)
+# Internally, interfaces call get_operator_prompt() to build prompts
+# and parse_response() to extract solutions from LLM output
+operator_prompt = interface.get_operator_prompt(operator, population)
 ```
 
 ---
@@ -159,33 +153,22 @@ offspring = interface.crossover(parent1, parent2)
 Create a custom interface for specialized algorithms or tasks:
 
 ```python
-from evotoolkit.core.method_interface import BaseMethodInterface
+from evotoolkit.task.python_task import EvoEngineerPythonInterface
 from evotoolkit.core import Solution
 
-class MySpecializedInterface(BaseMethodInterface):
+class MySpecializedInterface(EvoEngineerPythonInterface):
     def __init__(self, task):
         super().__init__(task)
         self.custom_config = self.load_custom_config()
 
-    def generate_prompt(self, generation, population):
+    def get_operator_prompt(self, operator, population, **kwargs):
         # Custom prompt with domain-specific instructions
-        best_sol = max(population, key=lambda s: s.evaluation_res.score if s.evaluation_res.valid else float('-inf'))
+        valid_sols = [s for s in population if s.evaluation_res and s.evaluation_res.valid]
+        best_sol = max(valid_sols, key=lambda s: s.evaluation_res.score) if valid_sols else None
 
-        prompt = f"""
-        Domain-specific context: {self.custom_config['context']}
-
-        Evolve a solution that improves upon:
-        {best_sol.sol_string}
-
-        Current best score: {best_sol.evaluation_res.score}
-        Generation: {generation}
-        """
-        return prompt
-
-    def parse_llm_response(self, response):
-        # Custom parsing logic
-        code = self.extract_code_with_custom_markers(response)
-        return Solution(code=code)
+        base_prompt = super().get_operator_prompt(operator, population, **kwargs)
+        domain_context = f"\nDomain-specific context: {self.custom_config['context']}\n"
+        return domain_context + base_prompt
 
     def load_custom_config(self):
         # Load domain-specific configuration

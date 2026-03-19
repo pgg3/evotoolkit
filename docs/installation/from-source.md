@@ -7,8 +7,8 @@ For development or to get the latest features from the repository.
 ## Clone the Repository
 
 ```bash
-git clone https://github.com/pgg3/evotoolkitkit.git
-cd evotool
+git clone https://github.com/pgg3/evotoolkit.git
+cd evotoolkit
 ```
 
 ---
