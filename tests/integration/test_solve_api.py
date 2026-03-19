@@ -22,6 +22,9 @@ class MockLLM:
     def __call__(self, messages, **kwargs):
         return {"content": MOCK_EoH_RESPONSE}
 
+    def get_response(self, messages, **kwargs):
+        return MOCK_EoH_RESPONSE, {}
+
 
 # ---------------------------------------------------------------------------
 # Tests
