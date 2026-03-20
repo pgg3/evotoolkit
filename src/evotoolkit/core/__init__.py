@@ -4,30 +4,22 @@
 
 """Core runtime types for EvoToolkit."""
 
-from .base_method import Method
-from .base_task import BaseTask
-from .method_interface import (
-    BaseMethodInterface,
-    EoHInterface,
-    EvoEngineerInterface,
-    FunSearchInterface,
-)
-from .method_state import MethodState, PopulationMethodState
-from .operator import Operator
-from .run_store import RunStore
-from .solution import EvaluationResult, Solution
+from .interface import MethodInterface
+from .method import Method
+from .solution import EvaluationResult, Solution, SolutionMetadata
+from .state import MethodState, PopulationState
+from .store import RunStore
+from .task import Task, TaskSpec
 
 __all__ = [
     "Solution",
+    "SolutionMetadata",
     "EvaluationResult",
-    "Operator",
-    "BaseTask",
+    "Task",
+    "TaskSpec",
     "Method",
     "MethodState",
-    "PopulationMethodState",
+    "PopulationState",
     "RunStore",
-    "BaseMethodInterface",
-    "EoHInterface",
-    "FunSearchInterface",
-    "EvoEngineerInterface",
+    "MethodInterface",
 ]

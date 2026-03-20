@@ -4,11 +4,9 @@
 
 """Generic Python-task SDK for building extensions on top of EvoToolkit."""
 
-from .method_interface import (
-    EoHPythonInterface,
-    EvoEngineerPythonInterface,
-    FunSearchPythonInterface,
-)
+from .eoh_interface import EoHPythonInterface
+from .evoengineer_interface import EvoEngineerPythonInterface
+from .funsearch_interface import FunSearchPythonInterface
 from .python_task import PythonTask
 
 __all__ = [

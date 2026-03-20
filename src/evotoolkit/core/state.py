@@ -2,24 +2,27 @@
 # Licensed under the MIT License
 
 
+"""Serializable runtime state containers."""
+
 from dataclasses import dataclass, field
 
 from .solution import Solution
+from .task import TaskSpec
 
 
 @dataclass
 class MethodState:
     """Serializable runtime state shared by all methods."""
 
-    task_info: dict = field(default_factory=dict)
+    task_spec: TaskSpec = field(default_factory=TaskSpec)
     sol_history: list[Solution] = field(default_factory=list)
     usage_history: dict[str, list[dict]] = field(default_factory=lambda: {"sample": []})
     status: str = "created"
-    bootstrapped: bool = False
+    initialized: bool = False
 
 
 @dataclass
-class PopulationMethodState(MethodState):
+class PopulationState(MethodState):
     """Common runtime state for population-based evolutionary methods."""
 
     generation: int = 0

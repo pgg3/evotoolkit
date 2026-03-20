@@ -3,8 +3,9 @@
 
 
 import concurrent.futures
+import math
 
-from evotoolkit.core import Method, Solution
+from evotoolkit.core import Method, Solution, SolutionMetadata
 from evotoolkit.registry import register_algorithm
 
 from .programs_database import ProgramsDatabase
@@ -46,11 +47,11 @@ class FunSearch(Method):
 
     def _create_state(self) -> FunSearchState:
         return FunSearchState(
-            task_info=dict(self.task.task_info),
+            task_spec=self.task.spec.copy(),
             batch_size=max(self.num_samplers, 1),
         )
 
-    def _bootstrap(self) -> None:
+    def _initialize(self) -> None:
         self.verbose_title("FUNSEARCH ALGORITHM STARTED")
 
         if self.state.programs_database is None:
@@ -62,15 +63,38 @@ class FunSearch(Method):
             self.verbose_info("Initialized new programs database")
 
         if not self.state.sol_history:
-            init_sol = self._create_seed_solution()
-            if init_sol is None:
+            try:
+                if not self.task.spec.initial_solution.strip():
+                    raise ValueError("Task spec must define initial_solution")
+                init_sol = Solution(
+                    self.task.spec.initial_solution,
+                    metadata=SolutionMetadata(
+                        name=self.task.spec.initial_name,
+                        description=self.task.spec.initial_description,
+                        extras=dict(self.task.spec.initial_extras),
+                    ),
+                )
+                if init_sol.evaluation_res is None:
+                    init_sol.evaluation_res = self.task.evaluate(init_sol)
+            except Exception as exc:
+                self.verbose_info(f"Failed to create initial solution: {exc}")
+                self.state.status = "failed"
+                return
+
+            score = None if init_sol.evaluation_res is None else init_sol.evaluation_res.score
+            if (
+                init_sol.evaluation_res is None
+                or not init_sol.evaluation_res.valid
+                or score is None
+                or not math.isfinite(score)
+            ):
+                self.verbose_info("Failed to create a valid initial solution.")
                 self.state.status = "failed"
                 return
 
             self.state.programs_database.register_solution(init_sol)
             self.state.sol_history.append(init_sol)
-            score = init_sol.evaluation_res.score if init_sol.evaluation_res else "None"
-            self.verbose_info(f"Initialized with seed program (score: {score})")
+            self.verbose_info(f"Initialized with initial program (score: {score})")
         else:
             self.verbose_info(
                 f"Continuing from sample {self.state.tot_sample_nums} with {len(self.state.sol_history)} solutions in history"
@@ -102,7 +126,7 @@ class FunSearch(Method):
                     new_program, usage = future.result()
                     self.state.usage_history["sample"].append(usage)
                     self.state.current_batch_usage.append(usage)
-                    eval_futures.append((executor.submit(self.task.evaluate_code, new_program.sol_string), new_program))
+                    eval_futures.append((executor.submit(self.task.evaluate, new_program), new_program))
                 except Exception as exc:
                     self.verbose_info(f"Program generation failed: {exc}")
 

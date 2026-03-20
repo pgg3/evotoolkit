@@ -13,10 +13,10 @@ import traceback
 from abc import abstractmethod
 from typing import Any
 
-from evotoolkit.core import BaseTask, EvaluationResult
+from evotoolkit.core import EvaluationResult, Solution, Task, TaskSpec
 
 
-class StringTask(BaseTask):
+class StringTask(Task):
     """
     Abstract base class for string-based evolutionary optimization tasks.
 
@@ -35,25 +35,13 @@ class StringTask(BaseTask):
         self.timeout_seconds = timeout_seconds
         super().__init__(data)
 
-    def get_task_type(self) -> str:
-        """Get task type as 'String'."""
-        return "String"
+    def build_spec(self, data: Any) -> TaskSpec:
+        return self.build_string_spec(data)
 
-    def evaluate_code(self, candidate_string: str) -> EvaluationResult:
-        """
-        Evaluate a candidate string solution.
-
-        Note: For compatibility with the framework, we keep the method name
-        'evaluate_code', but it actually evaluates strings, not code.
-
-        Args:
-            candidate_string: String solution to evaluate
-
-        Returns:
-            EvaluationResult: Result of the evaluation
-        """
+    def evaluate(self, solution: Solution) -> EvaluationResult:
+        """Evaluate a candidate string solution."""
         try:
-            return self._evaluate_string_impl(candidate_string)
+            return self._evaluate_string_impl(solution.sol_string)
         except Exception as e:
             return EvaluationResult(
                 valid=False,
@@ -65,12 +53,16 @@ class StringTask(BaseTask):
             )
 
     @abstractmethod
+    def build_string_spec(self, data: Any) -> TaskSpec:
+        """Build the task specification for this string task."""
+
+    @abstractmethod
     def _evaluate_string_impl(self, candidate_string: str) -> EvaluationResult:
         """
         Implement specific string evaluation logic.
 
         Subclasses must implement this method with their specific
-        evaluation logic. This method is called by evaluate_code
+        evaluation logic. This method is called by evaluate()
         within a try-catch block.
 
         Args:
@@ -80,7 +72,3 @@ class StringTask(BaseTask):
             EvaluationResult: Result of the evaluation
         """
         pass
-
-    # Abstract methods from BaseTask are still required:
-    # - get_base_task_description() -> str
-    # - make_init_sol_wo_other_info() -> Solution

@@ -5,9 +5,9 @@
 
 import pytest
 
-from evotoolkit.core import EvaluationResult, Solution
-from evotoolkit.task.string_optimization.method_interface.evoengineer_interface import EvoEngineerStringInterface
-from evotoolkit.task.string_optimization.method_interface.funsearch_interface import FunSearchStringInterface
+from evotoolkit.core import EvaluationResult, Solution, TaskSpec
+from evotoolkit.task.string_optimization.evoengineer_interface import EvoEngineerStringInterface
+from evotoolkit.task.string_optimization.funsearch_interface import FunSearchStringInterface
 from evotoolkit.task.string_optimization.string_task import StringTask
 
 # ---------------------------------------------------------------------------
@@ -18,18 +18,27 @@ from evotoolkit.task.string_optimization.string_task import StringTask
 class LengthStringTask(StringTask):
     """StringTask: score = length of string."""
 
-    def _process_data(self, data):
-        self.data = data
-        self.task_info = {"name": "length_task"}
+    def build_string_spec(self, data) -> TaskSpec:
+        return TaskSpec(
+            name="length_task",
+            prompt="Generate a string. Longer strings score higher.",
+            modality="string",
+            initial_solution="start string",
+            initial_name="init",
+            initial_description="Initial solution",
+        )
 
     def _evaluate_string_impl(self, candidate_string: str) -> EvaluationResult:
         return EvaluationResult(valid=True, score=float(len(candidate_string)), additional_info={})
 
-    def get_base_task_description(self) -> str:
-        return "Generate a string. Longer strings score higher."
 
-    def make_init_sol_wo_other_info(self) -> Solution:
-        return Solution("start string", other_info={"name": "init", "thought": "Initial solution"})
+def _make_initial_solution(interface) -> Solution:
+    return interface.make_solution(
+        interface.task.spec.initial_solution,
+        name=interface.task.spec.initial_name,
+        description=interface.task.spec.initial_description,
+        extras=interface.task.spec.initial_extras,
+    )
 
 
 @pytest.fixture
@@ -44,18 +53,14 @@ def ee_iface(str_task):
 
 @pytest.fixture
 def fs_iface(str_task):
-    class ConcreteFunSearchStringInterface(FunSearchStringInterface):
-        def parse_response(self, response_str: str) -> Solution:
-            return Solution(response_str.strip())
-
-    return ConcreteFunSearchStringInterface(str_task)
+    return FunSearchStringInterface(str_task)
 
 
 @pytest.fixture
 def best_sol():
     return Solution(
         sol_string="The quick brown fox jumps",
-        other_info={"name": "best", "thought": "Use long vivid words"},
+        metadata={"name": "best", "description": "Use long vivid words"},
         evaluation_res=EvaluationResult(valid=True, score=25.0, additional_info={}),
     )
 
@@ -65,12 +70,12 @@ def parent_sols():
     return [
         Solution(
             sol_string="Hello world",
-            other_info={"name": "hello", "thought": "Simple greeting"},
+            metadata={"name": "hello", "description": "Simple greeting"},
             evaluation_res=EvaluationResult(valid=True, score=11.0, additional_info={}),
         ),
         Solution(
             sol_string="Goodbye cruel world",
-            other_info={"name": "bye", "thought": "Dramatic farewell"},
+            metadata={"name": "bye", "description": "Dramatic farewell"},
             evaluation_res=EvaluationResult(valid=True, score=19.0, additional_info={}),
         ),
     ]
@@ -122,11 +127,11 @@ class TestEvoEngineerStringInterfacePrompts:
         content = msgs[0]["content"]
         assert "longer words" in content
 
-    def test_make_baseline_solution(self, ee_iface):
-        sol = ee_iface._make_baseline_solution()
+    def test_make_initial_solution(self, ee_iface):
+        sol = ee_iface._make_initial_solution()
         assert isinstance(sol, Solution)
-        assert sol.other_info["name"] == "init"
-        assert sol.other_info["thought"] == "Initial solution"
+        assert sol.metadata.name == "init"
+        assert sol.metadata.description == "Initial solution"
 
     def test_parse_response_returns_solution(self, ee_iface):
         response = "name: my_string\nThe answer is a long sentence with many words.\nthought: more words = higher score"
@@ -161,6 +166,6 @@ class TestFunSearchStringInterfacePrompts:
         assert isinstance(msgs, list)
         assert len(msgs) == 1
 
-    def test_task_init_solution(self, fs_iface):
-        sol = fs_iface.task.make_init_sol_wo_other_info()
+    def test_task_initial_solution(self, fs_iface):
+        sol = _make_initial_solution(fs_iface)
         assert isinstance(sol, Solution)

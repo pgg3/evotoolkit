@@ -1,12 +1,12 @@
-# Archived API Index
+# API Docs Status
 
-This API index belongs to the archived `docs/` tree and still reflects pre-`3.0.0` structure in many pages.
+This API section still contains pages that originated before `3.0.0`, so some details may lag behind the current core runtime.
 
-For the current core runtime API, use the active documentation under `docs_core/`, especially:
+For the current public surface, start with:
 
-- `docs_core/quickstart.md`
-- `docs_core/extensions.md`
-- `docs_core/migration.md`
+- `../quickstart.md`
+- `../extensions.md`
+- `../migration.md`
 
 The current public surface is centered on:
 
@@ -16,6 +16,6 @@ The current public surface is centered on:
 - explicit checkpoint restore via `load_checkpoint()`
 
 - Browse the [Core API](core.md) documentation
-- Explore [Tasks API](tasks.md) for built-in tasks
+- Explore [Tasks API](tasks.md) for generic task abstractions
 - Check [Methods API](methods.md) for evolutionary algorithms
 - Learn about [Interfaces API](interfaces.md) for algorithm integration

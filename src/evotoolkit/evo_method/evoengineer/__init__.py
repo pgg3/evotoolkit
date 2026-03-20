@@ -3,6 +3,8 @@
 
 
 from .evoengineer import EvoEngineer
+from .interface import EvoEngineerInterface
+from .operator import Operator
 from .state import EvoEngineerState
 
-__all__ = ["EvoEngineer", "EvoEngineerState"]
+__all__ = ["EvoEngineer", "EvoEngineerState", "EvoEngineerInterface", "Operator"]

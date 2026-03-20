@@ -6,7 +6,8 @@ import json
 import re
 from typing import List
 
-from evotoolkit.core import EvoEngineerInterface, Operator, Solution
+from evotoolkit.core import Solution
+from evotoolkit.evo_method.evoengineer import EvoEngineerInterface, Operator
 from evotoolkit.task.string_optimization.string_task import StringTask
 
 
@@ -33,22 +34,22 @@ class EvoEngineerStringInterface(EvoEngineerInterface):
         operator_name: str,
         selected_individuals: List[Solution],
         current_best_sol: Solution,
-        random_thoughts: List[str],
+        random_descriptions: List[str],
         **kwargs,
     ) -> List[dict]:
         """Generate prompt for any operator"""
-        task_description = self.task.get_base_task_description()
+        task_description = self.task.spec.prompt
 
         if current_best_sol is None:
-            current_best_sol = self._make_baseline_solution()
+            current_best_sol = self._make_initial_solution()
 
         current_best_score = self._format_solution_score(current_best_sol)
 
         if operator_name == "init":
             # Build the thoughts section if available
             thoughts_section = ""
-            if random_thoughts and len(random_thoughts) > 0:
-                thoughts_list = "\n".join([f"- {thought}" for thought in random_thoughts])
+            if random_descriptions:
+                thoughts_list = "\n".join([f"- {thought}" for thought in random_descriptions])
                 thoughts_section = f"""
 
 Reference insights (consider if relevant):
@@ -66,7 +67,7 @@ Here is the current best solution:
 <score>{current_best_score}</score>
 </current_solution>{thoughts_section}
 
-Think deeply about how to improve this solution. {"Reference insights are provided above - use them as inspiration if they seem relevant to your optimization approach." if random_thoughts and len(random_thoughts) > 0 else ""} Propose a new solution that:
+Think deeply about how to improve this solution. {"Reference insights are provided above - use them as inspiration if they seem relevant to your optimization approach." if random_descriptions else ""} Propose a new solution that:
 1. Analyzes the current solution to identify improvement opportunities
 2. Applies proven techniques and principles
 3. Explains your rationale clearly
@@ -86,8 +87,8 @@ thought: The rationale for the improvement idea.
         elif operator_name == "mutation":
             # Build the thoughts section if available
             thoughts_section = ""
-            if random_thoughts and len(random_thoughts) > 0:
-                thoughts_list = "\n".join([f"- {thought}" for thought in random_thoughts])
+            if random_descriptions:
+                thoughts_list = "\n".join([f"- {thought}" for thought in random_descriptions])
                 thoughts_section = f"""
 
 Mutation insights (consider if relevant):
@@ -106,7 +107,7 @@ Current best solution (Score: {current_best_score}):
 Solution to mutate (Score: {self._format_solution_score(individual)}):
 {individual.sol_string}{thoughts_section}
 
-Create a substantially modified version of the solution to mutate. {"Use the mutation insights above if they seem relevant." if random_thoughts and len(random_thoughts) > 0 else ""} Your mutation should:
+Create a substantially modified version of the solution to mutate. {"Use the mutation insights above if they seem relevant." if random_descriptions else ""} Your mutation should:
 1. Preserve good aspects of the current solution
 2. Introduce meaningful variations
 3. Aim to improve the score
@@ -126,8 +127,8 @@ thought: The rationale for this mutation.
         elif operator_name == "crossover":
             # Build the thoughts section if available
             thoughts_section = ""
-            if random_thoughts and len(random_thoughts) > 0:
-                thoughts_list = "\n".join([f"- {thought}" for thought in random_thoughts])
+            if random_descriptions:
+                thoughts_list = "\n".join([f"- {thought}" for thought in random_descriptions])
                 thoughts_section = f"""
 
 Crossover insights (consider if relevant):
@@ -150,7 +151,7 @@ Parent 1 (Score: {self._format_solution_score(parent1)}):
 Parent 2 (Score: {self._format_solution_score(parent2)}):
 {parent2.sol_string}{thoughts_section}
 
-Create a new solution by combining elements from both parents. {"Use the crossover insights above if they seem relevant." if random_thoughts and len(random_thoughts) > 0 else ""} Your crossover should:
+Create a new solution by combining elements from both parents. {"Use the crossover insights above if they seem relevant." if random_descriptions else ""} Your crossover should:
 1. Identify and combine the best features from both parents
 2. Create a coherent solution that is better than either parent
 3. Explain which elements you took from each parent and why
@@ -187,23 +188,23 @@ thought: The rationale for this crossover, explaining which elements came from w
         result = self._parse_json_format(content)
         if result and result[1]:
             cleaned_solution = self._clean_solution_string(result[1])
-            return Solution(cleaned_solution, other_info={"name": result[0], "thought": result[2]})
+            return self.make_solution(cleaned_solution, name=result[0], description=result[2])
 
         # Strategy 2: Standard format parsing (expected format)
         result = self._parse_standard_format(content)
         if result and result[1]:  # Ensure we have solution
             # Clean up the solution string
             cleaned_solution = self._clean_solution_string(result[1])
-            return Solution(cleaned_solution, other_info={"name": result[0], "thought": result[2]})
+            return self.make_solution(cleaned_solution, name=result[0], description=result[2])
 
         # Strategy 3: Flexible format parsing (lenient fallback)
         result = self._parse_flexible_format(content)
         if result and result[1]:
             cleaned_solution = self._clean_solution_string(result[1])
-            return Solution(cleaned_solution, other_info={"name": result[0], "thought": result[2]})
+            return self.make_solution(cleaned_solution, name=result[0], description=result[2])
 
         # Strategy 4: Raw content (last resort)
-        return Solution(content, other_info={"name": "raw", "thought": "Failed to parse"})
+        return self.make_solution(content, name="raw", description="Failed to parse")
 
     def _parse_standard_format(self, content: str) -> tuple:
         """Parse standard format: name -> solution -> thought order"""

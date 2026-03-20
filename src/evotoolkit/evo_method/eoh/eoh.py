@@ -3,9 +3,10 @@
 
 
 import concurrent.futures
+import math
 from typing import List
 
-from evotoolkit.core import Method, Solution
+from evotoolkit.core import Method, Solution, SolutionMetadata
 from evotoolkit.registry import register_algorithm
 
 from .state import EoHState
@@ -51,20 +52,44 @@ class EoH(Method):
         )
 
     def _create_state(self) -> EoHState:
-        return EoHState(task_info=dict(self.task.task_info))
+        return EoHState(task_spec=self.task.spec.copy())
 
-    def _bootstrap(self) -> None:
+    def _initialize(self) -> None:
         self.verbose_title("EOH ALGORITHM STARTED")
 
         if not self.state.sol_history:
-            init_sol = self._create_seed_solution()
-            if init_sol is None:
+            try:
+                if not self.task.spec.initial_solution.strip():
+                    raise ValueError("Task spec must define initial_solution")
+                init_sol = Solution(
+                    self.task.spec.initial_solution,
+                    metadata=SolutionMetadata(
+                        name=self.task.spec.initial_name,
+                        description=self.task.spec.initial_description,
+                        extras=dict(self.task.spec.initial_extras),
+                    ),
+                )
+                if init_sol.evaluation_res is None:
+                    init_sol.evaluation_res = self.task.evaluate(init_sol)
+            except Exception as exc:
+                self.verbose_info(f"Failed to create initial solution: {exc}")
                 self.state.status = "failed"
                 return
+
+            score = None if init_sol.evaluation_res is None else init_sol.evaluation_res.score
+            if (
+                init_sol.evaluation_res is None
+                or not init_sol.evaluation_res.valid
+                or score is None
+                or not math.isfinite(score)
+            ):
+                self.verbose_info("Failed to create a valid initial solution.")
+                self.state.status = "failed"
+                return
+
             self.state.sol_history.append(init_sol)
             self.state.population.append(init_sol)
-            score = init_sol.evaluation_res.score if init_sol.evaluation_res else "None"
-            self.verbose_info(f"Initialized with baseline solution (score: {score})")
+            self.verbose_info(f"Initialized with initial solution (score: {score})")
 
         if self.state.generation == 0:
             self._initialize_population()
@@ -191,7 +216,7 @@ class EoH(Method):
                     self.state.current_generation_usage.append(usage)
 
                     if new_sol.sol_string.strip():
-                        eval_futures.append((executor.submit(self.task.evaluate_code, new_sol.sol_string), new_sol))
+                        eval_futures.append((executor.submit(self.task.evaluate, new_sol), new_sol))
                     else:
                         evaluated_solutions.append(new_sol)
                 except Exception as exc:
@@ -276,7 +301,7 @@ class EoH(Method):
                     self.state.current_generation_usage.append(usage)
 
                     if solution.sol_string.strip():
-                        eval_futures.append((executor.submit(self.task.evaluate_code, solution.sol_string), solution, operator_name))
+                        eval_futures.append((executor.submit(self.task.evaluate, solution), solution, operator_name))
                     else:
                         new_solutions.append(solution)
                         self.verbose_info(f"{operator_name} Gen {self.state.generation} - Score: None (Invalid)")

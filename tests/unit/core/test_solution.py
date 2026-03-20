@@ -3,7 +3,7 @@
 
 """Tests for Solution and EvaluationResult data structures."""
 
-from evotoolkit.core import EvaluationResult, Solution
+from evotoolkit.core import EvaluationResult, Solution, SolutionMetadata
 
 
 class TestEvaluationResult:
@@ -36,13 +36,13 @@ class TestSolution:
     def test_create_minimal(self):
         sol = Solution("def f(x): return x")
         assert sol.sol_string == "def f(x): return x"
-        assert sol.other_info is None
+        assert sol.metadata == SolutionMetadata()
         assert sol.evaluation_res is None
 
-    def test_create_with_other_info(self):
-        sol = Solution("code", other_info={"algorithm": "linear", "score": 1.0})
-        assert sol.other_info["algorithm"] == "linear"
-        assert sol.other_info["score"] == 1.0
+    def test_create_with_metadata(self):
+        sol = Solution("code", metadata={"description": "linear", "score": 1.0})
+        assert sol.metadata.description == "linear"
+        assert sol.metadata.extras["score"] == 1.0
 
     def test_create_with_evaluation_res(self):
         res = EvaluationResult(valid=True, score=2.5, additional_info={})
@@ -52,9 +52,9 @@ class TestSolution:
 
     def test_create_fully_populated(self):
         res = EvaluationResult(valid=True, score=9.9, additional_info={"runtime": 0.1})
-        sol = Solution("code", other_info={"name": "best"}, evaluation_res=res)
+        sol = Solution("code", metadata={"name": "best"}, evaluation_res=res)
         assert sol.sol_string == "code"
-        assert sol.other_info["name"] == "best"
+        assert sol.metadata.name == "best"
         assert sol.evaluation_res.valid is True
 
     def test_empty_sol_string(self):
@@ -73,7 +73,7 @@ class TestSolution:
         assert sol.evaluation_res is not None
         assert sol.evaluation_res.valid is True
 
-    def test_other_info_mutation(self):
-        sol = Solution("code", other_info={"key": "value"})
-        sol.other_info["key"] = "updated"
-        assert sol.other_info["key"] == "updated"
+    def test_metadata_mutation(self):
+        sol = Solution("code", metadata={"key": "value"})
+        sol.metadata.extras["key"] = "updated"
+        assert sol.metadata.extras["key"] == "updated"

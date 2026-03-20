@@ -4,11 +4,9 @@
 
 """Generic string-task SDK for building EvoToolkit extensions."""
 
-from .method_interface import (
-    EoHStringInterface,
-    EvoEngineerStringInterface,
-    FunSearchStringInterface,
-)
+from .eoh_interface import EoHStringInterface
+from .evoengineer_interface import EvoEngineerStringInterface
+from .funsearch_interface import FunSearchStringInterface
 from .string_task import StringTask
 
 __all__ = [

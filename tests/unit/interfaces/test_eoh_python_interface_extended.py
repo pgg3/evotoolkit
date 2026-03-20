@@ -4,13 +4,13 @@
 """Tests for EoHPythonInterface — covering uncovered prompt/parse methods."""
 
 from evotoolkit.core import EvaluationResult, Solution
-from evotoolkit.task.python_task.method_interface.eoh_interface import EoHPythonInterface
+from evotoolkit.task.python_task.eoh_interface import EoHPythonInterface
 
 
 def _make_algo_solution(code: str, score: float, algorithm: str = "test algo") -> Solution:
     return Solution(
         sol_string=code,
-        other_info={"algorithm": algorithm},
+        metadata={"description": algorithm},
         evaluation_res=EvaluationResult(valid=True, score=score, additional_info={}),
     )
 
@@ -18,7 +18,7 @@ def _make_algo_solution(code: str, score: float, algorithm: str = "test algo") -
 def _make_no_algo_solution(code: str, score: float) -> Solution:
     return Solution(
         sol_string=code,
-        other_info={},
+        metadata={},
         evaluation_res=EvaluationResult(valid=True, score=score, additional_info={}),
     )
 
@@ -108,7 +108,7 @@ class TestEoHPythonInterfaceParseResponse:
         response = "{linear function}\n```python\ndef f(x):\n    return x * 2\n```"
         sol = iface.parse_response(response)
         assert "def f(x)" in sol.sol_string
-        assert sol.other_info["algorithm"] is not None
+        assert sol.metadata.description != ""
 
     def test_parse_response_uppercase_python_block(self, minimal_task):
         iface = EoHPythonInterface(minimal_task)
@@ -133,7 +133,7 @@ class TestEoHPythonInterfaceParseResponse:
         iface = EoHPythonInterface(minimal_task)
         response = "```python\ndef f(x):\n    return x\n```"
         sol = iface.parse_response(response)
-        assert sol.other_info["algorithm"] is None
+        assert sol.metadata.description == ""
 
     def test_parse_response_exception_in_algorithm_extraction(self, minimal_task):
         iface = EoHPythonInterface(minimal_task)

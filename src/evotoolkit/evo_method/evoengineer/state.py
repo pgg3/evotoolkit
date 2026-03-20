@@ -4,9 +4,9 @@
 
 from dataclasses import dataclass
 
-from evotoolkit.core import PopulationMethodState
+from evotoolkit.core import PopulationState
 
 
 @dataclass
-class EvoEngineerState(PopulationMethodState):
+class EvoEngineerState(PopulationState):
     """Runtime state for EvoEngineer."""

@@ -7,7 +7,6 @@ Shared fixtures and helpers for the evotoolkit test suite.
 Provides:
 - Concrete minimal task implementations (no external dependencies)
 - Concrete minimal interface implementations
-- MockLLM that returns preset code responses
 - Common pytest fixtures
 """
 
@@ -15,24 +14,24 @@ from typing import List
 
 import pytest
 
-from evotoolkit.core import EvaluationResult, Solution
-from evotoolkit.core.base_task import BaseTask
-from evotoolkit.core.method_interface import EoHInterface, EvoEngineerInterface, FunSearchInterface
-from evotoolkit.core.operator import Operator
+from evotoolkit.core import EvaluationResult, Solution, Task, TaskSpec
+from evotoolkit.evo_method.eoh import EoHInterface
+from evotoolkit.evo_method.evoengineer import EvoEngineerInterface, Operator
+from evotoolkit.evo_method.funsearch import FunSearchInterface
 from evotoolkit.task.python_task.python_task import PythonTask
 from evotoolkit.task.string_optimization.string_task import StringTask
-
-# ---------------------------------------------------------------------------
-# Minimal concrete task implementations
-# ---------------------------------------------------------------------------
 
 
 class MinimalPythonTask(PythonTask):
     """Simplest possible PythonTask: evaluates whether code defines a function 'f'."""
 
-    def _process_data(self, data):
-        self.data = data
-        self.task_info = {"name": "minimal", "description": "Test task"}
+    def build_python_spec(self, data) -> TaskSpec:
+        return TaskSpec(
+            name="minimal",
+            prompt="Implement a Python function f(x) that returns a numeric value.",
+            modality="python",
+            initial_solution="def f(x):\n    return x",
+        )
 
     def _evaluate_code_impl(self, candidate_code: str) -> EvaluationResult:
         namespace = {}
@@ -42,71 +41,44 @@ class MinimalPythonTask(PythonTask):
         score = float(namespace["f"](1))
         return EvaluationResult(valid=True, score=score, additional_info={})
 
-    def get_base_task_description(self) -> str:
-        return "Implement a Python function f(x) that returns a numeric value."
 
-    def make_init_sol_wo_other_info(self) -> Solution:
-        return Solution("def f(x):\n    return x")
-
-
-class AlwaysValidTask(BaseTask):
+class AlwaysValidTask(Task):
     """Task that always returns a valid result with a fixed score."""
 
-    def _process_data(self, data):
-        self.data = data
-        self.task_info = {"name": "always_valid"}
+    def build_spec(self, data) -> TaskSpec:
+        return TaskSpec(name="always_valid", prompt="Always valid task.", modality="generic", initial_solution="code_string")
 
-    def evaluate_code(self, candidate_code: str) -> EvaluationResult:
-        return EvaluationResult(valid=True, score=1.0, additional_info={"code": candidate_code})
-
-    def get_base_task_description(self) -> str:
-        return "Always valid task."
-
-    def make_init_sol_wo_other_info(self) -> Solution:
-        return Solution("code_string")
+    def evaluate(self, solution: Solution) -> EvaluationResult:
+        return EvaluationResult(valid=True, score=1.0, additional_info={"code": solution.sol_string})
 
 
-class AlwaysInvalidTask(BaseTask):
+class AlwaysInvalidTask(Task):
     """Task that always returns an invalid result."""
 
-    def _process_data(self, data):
-        self.data = data
-        self.task_info = {}
+    def build_spec(self, data) -> TaskSpec:
+        return TaskSpec(name="always_invalid", prompt="Always invalid task.", modality="generic", initial_solution="bad_code")
 
-    def evaluate_code(self, candidate_code: str) -> EvaluationResult:
+    def evaluate(self, solution: Solution) -> EvaluationResult:
         return EvaluationResult(valid=False, score=float("-inf"), additional_info={"error": "always invalid"})
-
-    def get_base_task_description(self) -> str:
-        return "Always invalid task."
-
-    def make_init_sol_wo_other_info(self) -> Solution:
-        return Solution("bad_code")
 
 
 class MinimalStringTask(StringTask):
     """Minimal StringTask used to exercise generic string interfaces."""
 
-    def _process_data(self, data):
-        self.data = data
-        self.task_info = {"name": "minimal_string", "description": "Test string task"}
+    def build_string_spec(self, data) -> TaskSpec:
+        return TaskSpec(
+            name="minimal_string",
+            prompt="Return a concise string solution.",
+            modality="string",
+            initial_solution="baseline string",
+        )
 
     def _evaluate_string_impl(self, candidate_string: str) -> EvaluationResult:
         score = float(len(candidate_string))
         return EvaluationResult(valid=True, score=score, additional_info={"length": len(candidate_string)})
 
-    def get_base_task_description(self) -> str:
-        return "Return a concise string solution."
-
-    def make_init_sol_wo_other_info(self) -> Solution:
-        return Solution("baseline string")
-
-
-# ---------------------------------------------------------------------------
-# Minimal concrete interface implementations
-# ---------------------------------------------------------------------------
 
 MOCK_PYTHON_CODE = "def f(x):\n    return x * 2"
-MOCK_RESPONSE = "{Simple linear function}\n```python\ndef f(x):\n    return x * 2\n```"
 
 
 class MinimalEoHInterface(EoHInterface):
@@ -131,7 +103,7 @@ class MinimalEoHInterface(EoHInterface):
         return [{"role": "user", "content": "Parameter mutate."}]
 
     def parse_response(self, response_str: str) -> Solution:
-        return Solution(MOCK_PYTHON_CODE, other_info={"algorithm": "test"})
+        return self.make_solution(MOCK_PYTHON_CODE, description="test")
 
 
 class MinimalEvoEngineerInterface(EvoEngineerInterface):
@@ -146,11 +118,18 @@ class MinimalEvoEngineerInterface(EvoEngineerInterface):
     def get_offspring_operators(self) -> List[Operator]:
         return [Operator("crossover", selection_size=2), Operator("mutate", selection_size=1)]
 
-    def get_operator_prompt(self, operator_name, selected_individuals, current_best_sol, random_thoughts, **kwargs) -> List[dict]:
+    def get_operator_prompt(
+        self,
+        operator_name,
+        selected_individuals,
+        current_best_sol,
+        random_thoughts,
+        **kwargs,
+    ) -> List[dict]:
         return [{"role": "user", "content": f"Operator: {operator_name}"}]
 
     def parse_response(self, response_str: str) -> Solution:
-        return Solution(MOCK_PYTHON_CODE, other_info={"name": "test", "thought": "test"})
+        return self.make_solution(MOCK_PYTHON_CODE, name="test", description="test")
 
 
 class MinimalFunSearchInterface(FunSearchInterface):
@@ -163,12 +142,7 @@ class MinimalFunSearchInterface(FunSearchInterface):
         return [{"role": "user", "content": "Generate next solution."}]
 
     def parse_response(self, response_str: str) -> Solution:
-        return Solution(MOCK_PYTHON_CODE)
-
-
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
+        return self.make_solution(MOCK_PYTHON_CODE)
 
 
 @pytest.fixture
@@ -195,7 +169,7 @@ def minimal_string_task():
 def valid_solution():
     return Solution(
         sol_string="def f(x): return x",
-        other_info={"algorithm": "linear"},
+        metadata={"description": "linear"},
         evaluation_res=EvaluationResult(valid=True, score=1.0, additional_info={}),
     )
 
@@ -204,7 +178,7 @@ def valid_solution():
 def invalid_solution():
     return Solution(
         sol_string="invalid code !!",
-        other_info={},
+        metadata={},
         evaluation_res=EvaluationResult(valid=False, score=float("-inf"), additional_info={"error": "invalid"}),
     )
 

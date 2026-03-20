@@ -3,9 +3,10 @@
 
 
 import concurrent.futures
+import math
 from typing import List
 
-from evotoolkit.core import Method, Solution
+from evotoolkit.core import Method, Solution, SolutionMetadata
 from evotoolkit.registry import register_algorithm
 
 from .state import EvoEngineerState
@@ -53,20 +54,44 @@ class EvoEngineer(Method):
         )
 
     def _create_state(self) -> EvoEngineerState:
-        return EvoEngineerState(task_info=dict(self.task.task_info))
+        return EvoEngineerState(task_spec=self.task.spec.copy())
 
-    def _bootstrap(self) -> None:
+    def _initialize(self) -> None:
         self.verbose_title("EVOENGINEER ALGORITHM STARTED")
 
         if not self.state.sol_history:
-            init_sol = self._create_seed_solution()
-            if init_sol is None:
+            try:
+                if not self.task.spec.initial_solution.strip():
+                    raise ValueError("Task spec must define initial_solution")
+                init_sol = Solution(
+                    self.task.spec.initial_solution,
+                    metadata=SolutionMetadata(
+                        name=self.task.spec.initial_name,
+                        description=self.task.spec.initial_description,
+                        extras=dict(self.task.spec.initial_extras),
+                    ),
+                )
+                if init_sol.evaluation_res is None:
+                    init_sol.evaluation_res = self.task.evaluate(init_sol)
+            except Exception as exc:
+                self.verbose_info(f"Failed to create initial solution: {exc}")
                 self.state.status = "failed"
                 return
+
+            score = None if init_sol.evaluation_res is None else init_sol.evaluation_res.score
+            if (
+                init_sol.evaluation_res is None
+                or not init_sol.evaluation_res.valid
+                or score is None
+                or not math.isfinite(score)
+            ):
+                self.verbose_info("Failed to create a valid initial solution.")
+                self.state.status = "failed"
+                return
+
             self.state.sol_history.append(init_sol)
             self.state.population.append(init_sol)
-            score = init_sol.evaluation_res.score if init_sol.evaluation_res else "None"
-            self.verbose_info(f"Initialized with baseline solution (score: {score})")
+            self.verbose_info(f"Initialized with initial solution (score: {score})")
 
         if self.state.generation == 0:
             self._initialize_population()
@@ -91,11 +116,7 @@ class EvoEngineer(Method):
         self.state.generation += 1
 
     def _should_stop(self) -> bool:
-        return (
-            self.state.status == "failed"
-            or self.state.generation >= self.max_generations
-            or self.state.tot_sample_nums >= self.max_sample_nums
-        )
+        return self.state.status == "failed" or self.state.generation >= self.max_generations or self.state.tot_sample_nums >= self.max_sample_nums
 
     def _select_best_solution(self) -> Solution | None:
         return self._get_best_sol(self.state.sol_history)
@@ -210,7 +231,7 @@ class EvoEngineer(Method):
                     self.state.current_generation_usage.append(usage)
 
                     if solution.sol_string.strip():
-                        eval_futures.append((executor.submit(self.task.evaluate_code, solution.sol_string), solution, operator_name))
+                        eval_futures.append((executor.submit(self.task.evaluate, solution), solution, operator_name))
                     else:
                         self._register_solution(solution)
                         self.verbose_info(f"{operator_name} {generation_label} - Score: None (Invalid)")
@@ -283,8 +304,8 @@ class EvoEngineer(Method):
     def _generate_single_solution(self, operator, selected_individuals: List[Solution], sampler_id: int) -> tuple[Solution, dict]:
         try:
             current_best_sol = self._get_best_sol(self.state.population)
-            random_thoughts = self._get_n_random_thought(3)
-            prompt_content = self.interface.get_operator_prompt(operator.name, selected_individuals, current_best_sol, random_thoughts)
+            random_descriptions = self._sample_random_descriptions(3)
+            prompt_content = self.interface.get_operator_prompt(operator.name, selected_individuals, current_best_sol, random_descriptions)
             response, usage = self.running_llm.get_response(prompt_content)
             new_sol = self.interface.parse_response(response)
             self.verbose_info(f"Sampler {sampler_id}: Generated {operator.name} solution")
@@ -293,14 +314,14 @@ class EvoEngineer(Method):
             self.verbose_info(f"Sampler {sampler_id}: Failed to generate {operator.name} solution - {exc}")
             return Solution(""), {}
 
-    def _get_n_random_thought(self, n: int) -> List[str]:
+    def _sample_random_descriptions(self, n: int) -> List[str]:
         import random
 
-        thoughts = []
+        descriptions = []
         for sol in self.state.population:
-            if sol.other_info and "thought" in sol.other_info and sol.other_info["thought"]:
-                thoughts.append(sol.other_info["thought"])
+            if sol.metadata.description:
+                descriptions.append(sol.metadata.description)
 
-        if len(thoughts) <= n:
-            return thoughts
-        return random.sample(thoughts, n)
+        if len(descriptions) <= n:
+            return descriptions
+        return random.sample(descriptions, n)

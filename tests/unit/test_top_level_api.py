@@ -4,6 +4,7 @@
 """Tests for evotoolkit top-level API and version info."""
 
 import evotoolkit
+import evotoolkit.core as runtime_core
 
 
 class TestTopLevelAPI:
@@ -37,3 +38,22 @@ class TestTopLevelAPI:
     def test_all_exports(self):
         for name in evotoolkit.__all__:
             assert hasattr(evotoolkit, name), f"Missing export: {name}"
+
+    def test_core_exports_only_neutral_runtime_types(self):
+        expected_exports = {
+            "Solution",
+            "SolutionMetadata",
+            "EvaluationResult",
+            "Task",
+            "TaskSpec",
+            "Method",
+            "MethodInterface",
+            "MethodState",
+            "PopulationState",
+            "RunStore",
+        }
+        assert set(runtime_core.__all__) == expected_exports
+        assert not hasattr(runtime_core, "Operator")
+        assert not hasattr(runtime_core, "EoHInterface")
+        assert not hasattr(runtime_core, "EvoEngineerInterface")
+        assert not hasattr(runtime_core, "FunSearchInterface")

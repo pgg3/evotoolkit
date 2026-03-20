@@ -5,8 +5,7 @@
 
 import pytest
 
-from evotoolkit.core.base_task import BaseTask
-from evotoolkit.core.solution import EvaluationResult, Solution
+from evotoolkit.core import EvaluationResult, Solution, Task, TaskSpec
 from evotoolkit.registry import (
     get_algorithm_info,
     get_task_class,
@@ -25,15 +24,12 @@ class TestTaskRegistry:
         unique_name = "_TestRegisteredTask_" + str(id(object()))
 
         @register_task(unique_name)
-        class TmpTask(BaseTask):
-            def evaluate_code(self, code):
+        class TmpTask(Task):
+            def build_spec(self, data) -> TaskSpec:
+                return TaskSpec(name=unique_name, prompt="tmp", modality="generic")
+
+            def evaluate(self, solution: Solution) -> EvaluationResult:
                 return EvaluationResult(True, 0.0, {})
-
-            def get_base_task_description(self):
-                return "tmp"
-
-            def make_init_sol_wo_other_info(self):
-                return Solution("code")
 
         tasks = list_tasks()
         assert unique_name in tasks
@@ -43,37 +39,30 @@ class TestTaskRegistry:
             get_task_class("NonExistentTask_xyz_abc")
 
     def test_register_task_duplicate_raises(self):
-        # Use a unique name to avoid conflicts
         unique_name = "_TestDuplicateTask_" + str(id(object()))
 
         @register_task(unique_name)
-        class TmpTask(BaseTask):
-            def evaluate_code(self, code):
+        class TmpTask(Task):
+            def build_spec(self, data) -> TaskSpec:
+                return TaskSpec(name=unique_name, prompt="tmp", modality="generic")
+
+            def evaluate(self, solution: Solution) -> EvaluationResult:
                 return EvaluationResult(True, 0.0, {})
-
-            def get_base_task_description(self):
-                return "tmp"
-
-            def make_init_sol_wo_other_info(self):
-                return Solution("code")
 
         with pytest.raises(ValueError, match="already registered"):
 
             @register_task(unique_name)
-            class TmpTask2(BaseTask):
-                def evaluate_code(self, code):
+            class TmpTask2(Task):
+                def build_spec(self, data) -> TaskSpec:
+                    return TaskSpec(name=unique_name, prompt="tmp2", modality="generic")
+
+                def evaluate(self, solution: Solution) -> EvaluationResult:
                     return EvaluationResult(True, 0.0, {})
-
-                def get_base_task_description(self):
-                    return "tmp2"
-
-                def make_init_sol_wo_other_info(self):
-                    return Solution("code")
 
 
 class TestAlgorithmRegistry:
     def test_list_algorithms_returns_list(self):
-        import evotoolkit  # noqa: F401 - triggers algorithm registration
+        import evotoolkit  # noqa: F401
 
         algos = list_algorithms()
         assert isinstance(algos, list)

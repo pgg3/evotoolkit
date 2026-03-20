@@ -5,7 +5,8 @@
 import re
 from typing import List
 
-from evotoolkit.core import EvoEngineerInterface, Operator, Solution
+from evotoolkit.core import Solution
+from evotoolkit.evo_method.evoengineer import EvoEngineerInterface, Operator
 from evotoolkit.task.python_task.python_task import PythonTask
 
 
@@ -13,7 +14,7 @@ class EvoEngineerPythonInterface(EvoEngineerInterface):
     """EvoEngineer Adapter for Python code optimization tasks.
 
     This class provides EvoEngineer algorithm logic for Python tasks.
-    Subclasses should implement _get_base_task_description() to define task-specific instructions.
+    Task behavior is driven by the bound task specification.
     """
 
     def __init__(self, task: PythonTask):
@@ -32,32 +33,31 @@ class EvoEngineerPythonInterface(EvoEngineerInterface):
         operator_name: str,
         selected_individuals: List[Solution],
         current_best_sol: Solution,
-        random_thoughts: List[str],
+        random_descriptions: List[str],
         **kwargs,
     ) -> List[dict]:
         """Generate prompt for any operator"""
-        task_description = self.task.get_base_task_description()
+        task_description = self.task.spec.prompt
 
         if current_best_sol is None:
-            current_best_sol = self._make_baseline_solution()
+            current_best_sol = self._make_initial_solution()
 
-        current_best_info = self._get_solution_metadata(current_best_sol)
         current_best_score = self._format_solution_score(current_best_sol)
 
         if operator_name == "init":
             # Build the thoughts section if available
             thoughts_section = ""
-            if random_thoughts and len(random_thoughts) > 0:
-                thoughts_list = "\n".join([f"- {thought}" for thought in random_thoughts])
+            if random_descriptions:
+                thoughts_list = "\n".join([f"- {thought}" for thought in random_descriptions])
                 thoughts_section = f"""{thoughts_list}"""
 
             prompt = f"""# PYTHON FUNCTION OPTIMIZATION TASK
 {task_description}
 
-## BASELINE CODE
-**Name:** {current_best_info.get("name", "Baseline")}
+## INITIAL SOLUTION
+**Name:** {current_best_sol.metadata.name or "Initial"}
 **Score:** {current_best_score}
-**Current Approach:** {current_best_info.get("thought", "Baseline")}
+**Current Approach:** {current_best_sol.metadata.description or "Initial"}
 **Function Code:**
 ```python
 {current_best_sol.sol_string}
@@ -67,7 +67,7 @@ class EvoEngineerPythonInterface(EvoEngineerInterface):
 {thoughts_section}
 
 ## OPTIMIZATION STRATEGY
-{"Use the insights above if relevant as optimization guidance." if random_thoughts and len(random_thoughts) > 0 else ""}
+{"Use the insights above if relevant as optimization guidance." if random_descriptions else ""}
 Propose a new Python function that aims to improve the score while ensuring it returns the correct result.
 
 ## RESPONSE FORMAT:
@@ -86,19 +86,18 @@ thought: [The rationale for the improvement idea.]
         elif operator_name == "crossover":
             # Build the thoughts section if available
             thoughts_section = ""
-            if random_thoughts and len(random_thoughts) > 0:
-                thoughts_list = "\n".join([f"- {thought}" for thought in random_thoughts])
+            if random_descriptions:
+                thoughts_list = "\n".join([f"- {thought}" for thought in random_descriptions])
                 thoughts_section = f"""{thoughts_list}"""
 
             # Build parent functions info
             parents_info = ""
             for i, parent in enumerate(selected_individuals, 1):
-                parent_info = self._get_solution_metadata(parent)
                 parents_info += f"""
 **Parent {i}:**
-**Name:** {parent_info.get("name", f"function_{i}")}
+**Name:** {parent.metadata.name or f"function_{i}"}
 **Score:** {self._format_solution_score(parent)}
-**Parent Approach:** {parent_info.get("thought", "No thought provided")}
+**Parent Approach:** {parent.metadata.description or "No thought provided"}
 **Function Code:**
 ```python
 {parent.sol_string}
@@ -108,10 +107,10 @@ thought: [The rationale for the improvement idea.]
             prompt = f"""# PYTHON FUNCTION CROSSOVER TASK
 {task_description}
 
-## BASELINE CODE
-**Name:** {current_best_info.get("name", "current_best")}
+## CURRENT BEST
+**Name:** {current_best_sol.metadata.name or "current_best"}
 **Score:** {current_best_score}
-**Current Approach:** {current_best_info.get("thought", "Current best implementation")}
+**Current Approach:** {current_best_sol.metadata.description or "Current best implementation"}
 **Function Code:**
 ```python
 {current_best_sol.sol_string}
@@ -125,7 +124,7 @@ thought: [The rationale for the improvement idea.]
 
 ## CROSSOVER STRATEGY
 Combine the best features from both parent functions:
-{"Use the insights above if relevant as crossover guidance." if random_thoughts and len(random_thoughts) > 0 else ""}
+{"Use the insights above if relevant as crossover guidance." if random_descriptions else ""}
 
 Create a hybrid Python function that combines the strengths of both parents.
 
@@ -144,30 +143,29 @@ thought: [The rationale for the improvement idea.]
 
         elif operator_name == "mutation":
             individual = selected_individuals[0]
-            individual_info = self._get_solution_metadata(individual)
 
             # Build the thoughts section if available
             thoughts_section = ""
-            if random_thoughts and len(random_thoughts) > 0:
-                thoughts_list = "\n".join([f"- {thought}" for thought in random_thoughts])
+            if random_descriptions:
+                thoughts_list = "\n".join([f"- {thought}" for thought in random_descriptions])
                 thoughts_section = f"""{thoughts_list}"""
 
             prompt = f"""# PYTHON FUNCTION MUTATION TASK
 {task_description}
 
 ## CURRENT BEST
-**Name:** {current_best_info.get("name", "current_best")}
+**Name:** {current_best_sol.metadata.name or "current_best"}
 **Score:** {current_best_score}
-**Previous Approach:** {current_best_info.get("thought", "Current best implementation")}
+**Previous Approach:** {current_best_sol.metadata.description or "Current best implementation"}
 **Function Code:**
 ```python
 {current_best_sol.sol_string}
 ```
 
 ## SOURCE TO MUTATE
-**Name:** {individual_info.get("name", "mutation_base")}
+**Name:** {individual.metadata.name or "mutation_base"}
 **Score:** {self._format_solution_score(individual)}
-**Target Approach:** {individual_info.get("thought", "No thought provided")}
+**Target Approach:** {individual.metadata.description or "No thought provided"}
 **Function Code:**
 ```python
 {individual.sol_string}
@@ -178,7 +176,7 @@ thought: [The rationale for the improvement idea.]
 
 ## MUTATION STRATEGY
 Apply significant changes to the target function:
-{"Use the insights above if relevant as mutation guidance." if random_thoughts and len(random_thoughts) > 0 else ""}
+{"Use the insights above if relevant as mutation guidance." if random_descriptions else ""}
 Create a substantially modified version that explores new optimization directions.
 
 ## RESPONSE FORMAT:
@@ -206,20 +204,20 @@ thought: [The rationale for the improvement idea.]
         # Strategy 1: Standard format parsing (most reliable)
         result = self._parse_standard_format(content)
         if result and result[1]:  # Ensure we have code
-            return Solution(result[1], other_info={"name": result[0], "thought": result[2]})
+            return self.make_solution(result[1], name=result[0], description=result[2])
 
         # Strategy 2: Flexible format parsing
         result = self._parse_flexible_format(content)
         if result and result[1]:
-            return Solution(result[1], other_info={"name": result[0], "thought": result[2]})
+            return self.make_solution(result[1], name=result[0], description=result[2])
 
         # Strategy 3: Code block fallback
         code = self._extract_any_code_block(content)
         if code:
-            return Solution(code, other_info={"name": "extracted", "thought": "Fallback parsing"})
+            return self.make_solution(code, name="extracted", description="Fallback parsing")
 
         # Strategy 4: Raw content (last resort)
-        return Solution(content, other_info={"name": "raw", "thought": "Failed to parse"})
+        return self.make_solution(content, name="raw", description="Failed to parse")
 
     def _parse_standard_format(self, content: str) -> tuple:
         """Parse standard format: name -> code -> thought order"""

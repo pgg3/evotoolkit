@@ -5,16 +5,20 @@
 
 import pytest
 
-from evotoolkit.core import EvaluationResult, Solution
+from evotoolkit.core import EvaluationResult, Solution, TaskSpec
 from evotoolkit.task.string_optimization.string_task import StringTask
 
 
 class SimpleStringTask(StringTask):
     """Concrete StringTask for testing: scores by string length."""
 
-    def _process_data(self, data):
-        self.data = data
-        self.task_info = {"name": "simple_string"}
+    def build_string_spec(self, data) -> TaskSpec:
+        return TaskSpec(
+            name="simple_string",
+            prompt="Produce a string. Longer is better.",
+            modality="string",
+            initial_solution="hello",
+        )
 
     def _evaluate_string_impl(self, candidate_string: str) -> EvaluationResult:
         return EvaluationResult(
@@ -23,28 +27,20 @@ class SimpleStringTask(StringTask):
             additional_info={"length": len(candidate_string)},
         )
 
-    def get_base_task_description(self) -> str:
-        return "Produce a string. Longer is better."
-
-    def make_init_sol_wo_other_info(self) -> Solution:
-        return Solution("hello")
-
 
 class ErroringStringTask(StringTask):
     """StringTask that always raises an exception during evaluation."""
 
-    def _process_data(self, data):
-        self.data = data
-        self.task_info = {}
+    def build_string_spec(self, data) -> TaskSpec:
+        return TaskSpec(
+            name="erroring_string",
+            prompt="This task always errors.",
+            modality="string",
+            initial_solution="start",
+        )
 
     def _evaluate_string_impl(self, candidate_string: str) -> EvaluationResult:
         raise ValueError("Always fails")
-
-    def get_base_task_description(self) -> str:
-        return "This task always errors."
-
-    def make_init_sol_wo_other_info(self) -> Solution:
-        return Solution("start")
 
 
 @pytest.fixture
@@ -58,42 +54,33 @@ def erroring_task():
 
 
 class TestStringTaskBasics:
-    def test_get_task_type(self, simple_task):
-        assert simple_task.get_task_type() == "String"
+    def test_spec_has_string_modality(self, simple_task):
+        assert simple_task.spec.modality == "string"
 
-    def test_evaluate_code_returns_valid(self, simple_task):
-        result = simple_task.evaluate_code("hello world")
+    def test_evaluate_returns_valid(self, simple_task):
+        result = simple_task.evaluate(Solution("hello world"))
         assert result.valid is True
         assert result.score == 11.0
 
-    def test_evaluate_code_empty_string(self, simple_task):
-        result = simple_task.evaluate_code("")
+    def test_evaluate_empty_string(self, simple_task):
+        result = simple_task.evaluate(Solution(""))
         assert result.valid is True
         assert result.score == 0.0
 
-    def test_evaluate_code_longer_scores_higher(self, simple_task):
-        short_res = simple_task.evaluate_code("hi")
-        long_res = simple_task.evaluate_code("hello world!")
+    def test_longer_scores_higher(self, simple_task):
+        short_res = simple_task.evaluate(Solution("hi"))
+        long_res = simple_task.evaluate(Solution("hello world!"))
         assert long_res.score > short_res.score
 
-    def test_evaluate_code_exception_returns_invalid(self, erroring_task):
-        result = erroring_task.evaluate_code("anything")
+    def test_evaluate_exception_returns_invalid(self, erroring_task):
+        result = erroring_task.evaluate(Solution("anything"))
         assert result.valid is False
         assert result.score == float("-inf")
         assert "error" in result.additional_info
 
-    def test_evaluate_solution_delegates(self, simple_task):
-        sol = Solution("test string")
-        result = simple_task.evaluate_solution(sol)
-        assert result.valid is True
-        assert result.score == 11.0
+    def test_spec_can_carry_initial_solution(self, simple_task):
+        assert simple_task.spec.initial_solution == "hello"
 
-    def test_make_init_sol(self, simple_task):
-        sol = simple_task.make_init_sol_wo_other_info()
-        assert isinstance(sol, Solution)
-        assert sol.sol_string == "hello"
-
-    def test_task_description(self, simple_task):
-        desc = simple_task.get_base_task_description()
-        assert isinstance(desc, str)
-        assert len(desc) > 0
+    def test_task_prompt(self, simple_task):
+        assert isinstance(simple_task.spec.prompt, str)
+        assert len(simple_task.spec.prompt) > 0

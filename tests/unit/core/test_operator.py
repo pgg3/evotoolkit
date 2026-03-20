@@ -1,9 +1,9 @@
 # Copyright (c) 2025 Ping Guo
 # Licensed under the MIT License
 
-"""Tests for Operator data class."""
+"""Tests for the EvoEngineer Operator data class."""
 
-from evotoolkit.core.operator import Operator
+from evotoolkit.evo_method.evoengineer.operator import Operator
 
 
 class TestOperator:

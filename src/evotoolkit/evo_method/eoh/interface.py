@@ -5,38 +5,31 @@
 from abc import abstractmethod
 from typing import List
 
-from ..base_task import BaseTask
-from ..solution import Solution
-from .base_method_interface import BaseMethodInterface
+from evotoolkit.core import MethodInterface, Solution, Task
 
 
-class EoHInterface(BaseMethodInterface):
-    """Base adapter for EoH (Evolution of Heuristics) algorithm"""
+class EoHInterface(MethodInterface):
+    """Base adapter for EoH (Evolution of Heuristics) algorithm."""
 
-    def __init__(self, task: BaseTask):
+    def __init__(self, task: Task):
         super().__init__(task)
 
     @abstractmethod
     def get_prompt_i1(self) -> List[dict]:
-        """Generate initialization prompt (I1 operator)"""
-        pass
+        """Generate initialization prompt (I1 operator)."""
 
     @abstractmethod
     def get_prompt_e1(self, selected_individuals: List[Solution]) -> List[dict]:
-        """Generate E1 (crossover) prompt"""
-        pass
+        """Generate E1 (crossover) prompt."""
 
     @abstractmethod
     def get_prompt_e2(self, selected_individuals: List[Solution]) -> List[dict]:
-        """Generate E2 (guided crossover) prompt"""
-        pass
+        """Generate E2 (guided crossover) prompt."""
 
     @abstractmethod
     def get_prompt_m1(self, individual: Solution) -> List[dict]:
-        """Generate M1 (mutation) prompt"""
-        pass
+        """Generate M1 (mutation) prompt."""
 
     @abstractmethod
     def get_prompt_m2(self, individual: Solution) -> List[dict]:
-        """Generate M2 (parameter mutation) prompt"""
-        pass
+        """Generate M2 (parameter mutation) prompt."""

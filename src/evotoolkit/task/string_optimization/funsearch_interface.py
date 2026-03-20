@@ -4,7 +4,8 @@
 
 from typing import List
 
-from evotoolkit.core import FunSearchInterface, Solution
+from evotoolkit.core import Solution
+from evotoolkit.evo_method.funsearch import FunSearchInterface
 from evotoolkit.task.string_optimization.string_task import StringTask
 
 
@@ -20,7 +21,7 @@ class FunSearchStringInterface(FunSearchInterface):
 
     def get_prompt(self, solutions: List[Solution]) -> List[dict]:
         """Generate prompt based on multiple solutions"""
-        task_description = self.task.get_base_task_description()
+        task_description = self.task.spec.prompt
 
         if len(solutions) == 1:
             prompt = f"""
@@ -63,3 +64,7 @@ FOLLOW EXACTLY THIS FORMAT. DO NOT ADD ANYTHING ELSE.
 """
 
         return [{"role": "user", "content": prompt}]
+
+    def parse_response(self, response_str: str) -> Solution:
+        """Parse raw string output from the model."""
+        return self.make_solution(response_str.strip())

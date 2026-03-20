@@ -1,17 +1,13 @@
-# Archived Docs Entry
+# EvoToolkit Core
 
-This `docs/` tree is kept only as archived material from the pre-`3.0.0` documentation set.
+EvoToolkit is now the reusable engine layer for LLM-guided evolutionary search.
 
-The active documentation site now builds from `docs_core/` and reflects the current core runtime:
+The core package provides:
 
-- explicit method instantiation
-- `Method` + `MethodState`
-- `RunStore`
-- pickle checkpointing via `checkpoint/state.pkl`
-- companion task packages outside the core SDK
+- search algorithms
+- shared run-state and history management
+- abstract base classes
+- generic Python and String task SDKs
+- generic Python and String interfaces
 
-Start from:
-
-- `docs_core/index.md`
-- `docs_core/quickstart.md`
-- `docs_core/migration.md`
+Concrete domains moved to `evotoolkit-tasks`.

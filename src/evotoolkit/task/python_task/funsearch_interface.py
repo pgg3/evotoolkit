@@ -5,7 +5,8 @@
 import re
 from typing import List
 
-from evotoolkit.core import FunSearchInterface, Solution
+from evotoolkit.core import Solution
+from evotoolkit.evo_method.funsearch import FunSearchInterface
 from evotoolkit.task.python_task.python_task import PythonTask
 
 
@@ -21,7 +22,7 @@ class FunSearchPythonInterface(FunSearchInterface):
 
     def get_prompt(self, solutions: List[Solution]) -> List[dict]:
         """Generate prompt based on multiple solutions (similar to CUDA implementation)"""
-        task_description = self.task.get_base_task_description()
+        task_description = self.task.spec.prompt
         if len(solutions) == 1:
             prompt = f"""
 {task_description}

@@ -6,7 +6,7 @@
 import pytest
 
 from evotoolkit.core import EvaluationResult, Solution
-from evotoolkit.task.python_task.method_interface.evoengineer_interface import EvoEngineerPythonInterface
+from evotoolkit.task.python_task.evoengineer_interface import EvoEngineerPythonInterface
 
 
 @pytest.fixture
@@ -18,7 +18,7 @@ def iface(minimal_task):
 def best_sol():
     return Solution(
         sol_string="def f(x):\n    return x",
-        other_info={"name": "linear", "thought": "Simple linear function"},
+        metadata={"name": "linear", "description": "Simple linear function"},
         evaluation_res=EvaluationResult(valid=True, score=1.0, additional_info={}),
     )
 
@@ -28,12 +28,12 @@ def parent_sols():
     return [
         Solution(
             sol_string="def f(x):\n    return x + 1",
-            other_info={"name": "plus_one", "thought": "Add one"},
+            metadata={"name": "plus_one", "description": "Add one"},
             evaluation_res=EvaluationResult(valid=True, score=2.0, additional_info={}),
         ),
         Solution(
             sol_string="def f(x):\n    return x * 2",
-            other_info={"name": "double", "thought": "Double it"},
+            metadata={"name": "double", "description": "Double it"},
             evaluation_res=EvaluationResult(valid=True, score=3.0, additional_info={}),
         ),
     ]
@@ -113,8 +113,8 @@ class TestEvoEngineerPythonInterfaceParsing:
         sol = iface.parse_response("this is completely unparseable garbage!!!")
         assert isinstance(sol, Solution)
 
-    def test_parse_stores_other_info(self, iface):
+    def test_parse_stores_metadata(self, iface):
         response = "name: my_impl\ncode:\n```python\ndef f(x): return x\n```\nthought: simple"
         sol = iface.parse_response(response)
-        # other_info should be a dict (may be empty if fallback used)
-        assert isinstance(sol.other_info, dict)
+        assert sol.metadata.name == "my_impl"
+        assert sol.metadata.description == "simple"

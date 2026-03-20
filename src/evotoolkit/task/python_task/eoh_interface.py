@@ -5,7 +5,8 @@
 import re
 from typing import List
 
-from evotoolkit.core import EoHInterface, Solution
+from evotoolkit.core import Solution
+from evotoolkit.evo_method.eoh import EoHInterface
 from evotoolkit.task.python_task.python_task import PythonTask
 
 
@@ -21,7 +22,7 @@ class EoHPythonInterface(EoHInterface):
 
     def get_prompt_i1(self) -> List[dict]:
         """Generate initialization prompt (I1 operator)."""
-        task_description = self.task.get_base_task_description()
+        task_description = self.task.spec.prompt
 
         prompt = f"""
 {task_description}
@@ -37,16 +38,12 @@ Do not give additional explanations.
         return [{"role": "user", "content": prompt}]
 
     def get_prompt_e1(self, selected_individuals: List[Solution]) -> List[dict]:
-        task_description = self.task.get_base_task_description()
+        task_description = self.task.spec.prompt
 
         # Create prompt content for all individuals
         indivs_prompt = ""
         for i, indi in enumerate(selected_individuals):
-            other_info = indi.other_info or {}
-            if other_info.get("algorithm"):
-                algorithm_desc = other_info["algorithm"]
-            else:
-                algorithm_desc = f"Python Code {i + 1}"
+            algorithm_desc = indi.metadata.description or f"Python Code {i + 1}"
             indivs_prompt += f"No. {i + 1} algorithm and the corresponding code are:\n{algorithm_desc}\n{indi.sol_string}\n"
 
         prompt = f"""
@@ -67,16 +64,12 @@ Do not give additional explanations.
 
     def get_prompt_e2(self, selected_individuals: List[Solution]) -> List[dict]:
         """Generate E2 (guided crossover) prompt."""
-        task_description = self.task.get_base_task_description()
+        task_description = self.task.spec.prompt
 
         # Create prompt content for all individuals
         indivs_prompt = ""
         for i, indi in enumerate(selected_individuals):
-            other_info = indi.other_info or {}
-            if other_info.get("algorithm"):
-                algorithm_desc = other_info["algorithm"]
-            else:
-                algorithm_desc = f"Python code {i + 1}"
+            algorithm_desc = indi.metadata.description or f"Python code {i + 1}"
             indivs_prompt += f"No. {i + 1} algorithm and the corresponding code are:\n{algorithm_desc}\n{indi.sol_string}\n"
 
         prompt = f"""
@@ -97,13 +90,9 @@ Do not give additional explanations.
         return [{"role": "user", "content": prompt}]
 
     def get_prompt_m1(self, individual: Solution) -> List[dict]:
-        task_description = self.task.get_base_task_description()
+        task_description = self.task.spec.prompt
 
-        other_info = individual.other_info or {}
-        if other_info.get("algorithm"):
-            algorithm_desc = other_info["algorithm"]
-        else:
-            algorithm_desc = "Current algorithm"
+        algorithm_desc = individual.metadata.description or "Current algorithm"
 
         prompt = f"""
 {task_description}
@@ -124,13 +113,9 @@ Do not give additional explanations.
         return [{"role": "user", "content": prompt}]
 
     def get_prompt_m2(self, individual: Solution) -> List[dict]:
-        task_description = self.task.get_base_task_description()
+        task_description = self.task.spec.prompt
 
-        other_info = individual.other_info or {}
-        if other_info.get("algorithm"):
-            algorithm_desc = other_info["algorithm"]
-        else:
-            algorithm_desc = "Current algorithm"
+        algorithm_desc = individual.metadata.description or "Current algorithm"
 
         prompt = f"""
 {task_description}
@@ -186,7 +171,4 @@ Do not give additional explanations.
             # Last resort: return stripped response without algorithm
             code = response_without_algorithm.strip()
 
-        # Store algorithm description in the solution (this would need to be handled elsewhere)
-        # For now, we just return the code
-        other_info = {"algorithm": algorithm}
-        return Solution(code, other_info=other_info)
+        return self.make_solution(code, description=algorithm or "")

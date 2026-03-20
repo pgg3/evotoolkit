@@ -7,26 +7,24 @@ import re
 
 import pytest
 
-from evotoolkit.core import EvaluationResult, Solution
-from evotoolkit.task.string_optimization.method_interface.eoh_interface import EoHStringInterface
+from evotoolkit.core import EvaluationResult, Solution, TaskSpec
+from evotoolkit.task.string_optimization.eoh_interface import EoHStringInterface
 from evotoolkit.task.string_optimization.string_task import StringTask
 
 
 class MinimalStringTask(StringTask):
     """Minimal concrete StringTask for testing."""
 
-    def _process_data(self, data):
-        self.data = data
-        self.task_info = {"name": "string_test"}
+    def build_string_spec(self, data) -> TaskSpec:
+        return TaskSpec(
+            name="string_test",
+            prompt="Produce a long and interesting string.",
+            modality="string",
+            initial_solution="hello world",
+        )
 
     def _evaluate_string_impl(self, candidate_string: str) -> EvaluationResult:
         return EvaluationResult(valid=True, score=float(len(candidate_string)), additional_info={})
-
-    def get_base_task_description(self) -> str:
-        return "Produce a long and interesting string."
-
-    def make_init_sol_wo_other_info(self) -> Solution:
-        return Solution("hello world")
 
 
 @pytest.fixture
@@ -45,7 +43,7 @@ class ConcreteEoHStringInterface(EoHStringInterface):
         algo_match = re.search(r"\{([^}]+)\}", response_str)
         algo = algo_match.group(1).strip() if algo_match else ""
         sol_string = re.sub(r"\{[^}]*\}", "", response_str).strip()
-        return Solution(sol_string or response_str.strip(), other_info={"algorithm": algo})
+        return Solution(sol_string or response_str.strip(), metadata={"description": algo})
 
 
 @pytest.fixture
@@ -57,7 +55,7 @@ def string_iface(string_task):
 def sol_with_algorithm():
     return Solution(
         sol_string="The quick brown fox",
-        other_info={"algorithm": "Use vivid adjectives"},
+        metadata={"description": "Use vivid adjectives"},
         evaluation_res=EvaluationResult(valid=True, score=19.0, additional_info={}),
     )
 
@@ -66,7 +64,7 @@ def sol_with_algorithm():
 def sol_without_algorithm():
     return Solution(
         sol_string="Hello world",
-        other_info={},
+        metadata={},
         evaluation_res=EvaluationResult(valid=True, score=11.0, additional_info={}),
     )
 

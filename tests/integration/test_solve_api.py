@@ -5,7 +5,7 @@
 
 from evotoolkit.core import Solution
 from evotoolkit.evo_method.eoh import EoH
-from evotoolkit.task.python_task.method_interface.eoh_interface import EoHPythonInterface
+from evotoolkit.task.python_task.eoh_interface import EoHPythonInterface
 
 # ---------------------------------------------------------------------------
 # MockLLM that returns a valid Python function

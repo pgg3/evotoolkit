@@ -5,8 +5,7 @@
 
 import pytest
 
-from evotoolkit.core import EvaluationResult, Solution
-from evotoolkit.core.base_method import Method
+from evotoolkit.core import EvaluationResult, Method, Solution
 
 
 def make_sol(score, valid=True):

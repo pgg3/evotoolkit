@@ -11,6 +11,15 @@ from evotoolkit.evo_method.evoengineer import EvoEngineer
 from evotoolkit.evo_method.funsearch import FunSearch
 
 
+def _make_initial_solution(interface) -> Solution:
+    return interface.make_solution(
+        interface.task.spec.initial_solution,
+        name=interface.task.spec.initial_name,
+        description=interface.task.spec.initial_description,
+        extras=interface.task.spec.initial_extras,
+    )
+
+
 class MockLLM:
     """Deterministic mock LLM used by algorithm execution tests."""
 
@@ -247,7 +256,7 @@ class TestFunSearchExecution:
             num_evaluators=1,
             programs_per_prompt=1,
         )
-        prompt_solutions = [funsearch_interface.task.make_init_sol_wo_other_info()]
+        prompt_solutions = [_make_initial_solution(funsearch_interface)]
 
         solution, usage = algo._generate_single_program(prompt_solutions, 0)
 

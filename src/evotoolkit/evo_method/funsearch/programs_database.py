@@ -157,7 +157,7 @@ class ProgramsDatabase:
                 for solution in cluster.solutions:
                     sol_dict = {
                         "sol_string": solution.sol_string,
-                        "other_info": solution.other_info,
+                        "metadata": solution.metadata.to_dict(),
                         "evaluation_res": None,
                     }
                     if solution.evaluation_res:
@@ -225,7 +225,7 @@ class ProgramsDatabase:
 
                     solution = Solution(
                         sol_string=sol_dict["sol_string"],
-                        other_info=sol_dict.get("other_info"),
+                        metadata=sol_dict.get("metadata"),
                         evaluation_res=evaluation_res,
                     )
                     solutions.append(solution)

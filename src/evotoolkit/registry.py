@@ -6,10 +6,10 @@
 
 from typing import Any, Callable, Dict, Type
 
-from evotoolkit.core import BaseTask
+from evotoolkit.core import Task
 
 # Global registries
-_TASK_REGISTRY: Dict[str, Type[BaseTask]] = {}
+_TASK_REGISTRY: Dict[str, Type[Task]] = {}
 _ALGORITHM_REGISTRY: Dict[str, Dict[str, Any]] = {}
 
 
@@ -30,7 +30,7 @@ def register_task(name: str) -> Callable:
         Decorator function
     """
 
-    def decorator(task_class: Type[BaseTask]) -> Type[BaseTask]:
+    def decorator(task_class: Type[Task]) -> Type[Task]:
         if name in _TASK_REGISTRY:
             raise ValueError(f"Task '{name}' is already registered")
         _TASK_REGISTRY[name] = task_class
@@ -63,7 +63,7 @@ def register_algorithm(name: str) -> Callable:
     return decorator
 
 
-def get_task_class(name: str) -> Type[BaseTask]:
+def get_task_class(name: str) -> Type[Task]:
     """
     Get a registered task class by name.
 
@@ -99,6 +99,8 @@ def get_algorithm_info(name: str) -> Dict[str, Any]:
         available = ", ".join(_ALGORITHM_REGISTRY.keys())
         raise ValueError(f"Algorithm '{name}' not found. Available algorithms: {available}")
     return _ALGORITHM_REGISTRY[name]
+
+
 def list_tasks() -> list[str]:
     """List all registered task names."""
     return list(_TASK_REGISTRY.keys())

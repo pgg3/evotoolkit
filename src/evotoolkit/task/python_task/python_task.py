@@ -5,22 +5,19 @@
 """
 Python task base class for evolutionary optimization.
 
-This module contains the base class for Python-based tasks, unifying
-the functionality of PythonEvaluator and PythonTaskConfig.
+This module contains the base class for Python-based tasks.
 """
 
 import traceback
 from abc import abstractmethod
+from typing import Any
 
-from evotoolkit.core import BaseTask, EvaluationResult
+from evotoolkit.core import EvaluationResult, Solution, Task, TaskSpec
 
 
-class PythonTask(BaseTask):
+class PythonTask(Task):
     """
     Abstract base class for Python-based evolutionary optimization tasks.
-
-    This class unifies PythonEvaluator and PythonTaskConfig functionality,
-    providing a common base for Python code evaluation tasks.
     """
 
     def __init__(self, data, timeout_seconds: float = 30.0):
@@ -34,25 +31,13 @@ class PythonTask(BaseTask):
         self.timeout_seconds = timeout_seconds
         super().__init__(data)
 
-    def get_task_type(self) -> str:
-        """Get task type as 'Python'."""
-        return "Python"
+    def build_spec(self, data: Any) -> TaskSpec:
+        return self.build_python_spec(data)
 
-    def evaluate_code(self, candidate_code: str) -> EvaluationResult:
-        """
-        Evaluate Python code.
-
-        Default implementation provides basic error handling framework.
-        Subclasses should override this method with specific evaluation logic.
-
-        Args:
-            candidate_code: Python code to evaluate
-
-        Returns:
-            EvaluationResult: Result of the evaluation
-        """
+    def evaluate(self, solution: Solution) -> EvaluationResult:
+        """Evaluate Python code contained in a solution."""
         try:
-            return self._evaluate_code_impl(candidate_code)
+            return self._evaluate_code_impl(solution.sol_string)
         except Exception as e:
             return EvaluationResult(
                 valid=False,
@@ -64,12 +49,16 @@ class PythonTask(BaseTask):
             )
 
     @abstractmethod
+    def build_python_spec(self, data: Any) -> TaskSpec:
+        """Build the task specification for this Python task."""
+
+    @abstractmethod
     def _evaluate_code_impl(self, candidate_code: str) -> EvaluationResult:
         """
         Implement specific code evaluation logic.
 
         Subclasses must implement this method with their specific
-        evaluation logic. This method is called by evaluate_code
+        evaluation logic. This method is called by evaluate()
         within a try-catch block.
 
         Args:
@@ -79,7 +68,3 @@ class PythonTask(BaseTask):
             EvaluationResult: Result of the evaluation
         """
         pass
-
-    # Abstract methods from BaseTask are still required:
-    # - get_base_task_description() -> str
-    # - make_init_sol_wo_other_info() -> Solution

@@ -97,7 +97,7 @@ class RunStore:
     def _solution_to_dict(solution: Solution) -> dict:
         payload = {
             "sol_string": solution.sol_string,
-            "other_info": RunStore._serialize_value(solution.other_info),
+            "metadata": RunStore._serialize_value(solution.metadata.to_dict()),
             "evaluation_res": None,
         }
         if solution.evaluation_res is not None:

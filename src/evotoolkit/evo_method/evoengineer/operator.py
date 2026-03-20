@@ -4,9 +4,10 @@
 
 from dataclasses import dataclass
 
-from evotoolkit.core import PopulationState
-
 
 @dataclass
-class EoHState(PopulationState):
-    """Runtime state for EoH."""
+class Operator:
+    """Operator definition used by EvoEngineer."""
+
+    name: str
+    selection_size: int = 0

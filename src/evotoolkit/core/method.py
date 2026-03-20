@@ -6,11 +6,9 @@ import os
 from abc import ABC, abstractmethod
 from typing import List
 
-import numpy as np
-
-from .method_state import MethodState
-from .run_store import RunStore
 from .solution import Solution
+from .state import MethodState
+from .store import RunStore
 
 
 class Method(ABC):
@@ -42,35 +40,19 @@ class Method(ABC):
         return self._select_best_solution()
 
     def run(self) -> Solution | None:
-        if not self.state.bootstrapped:
-            self.state.status = "bootstrapping"
-            self._bootstrap()
-            self.state.bootstrapped = True
-            if self.state.status == "bootstrapping":
-                self.state.status = "running"
-            self._persist_runtime()
+        self._ensure_initialized()
 
         while not self._should_stop():
             self.run_iteration()
 
-        if self.state.status not in {"failed", "completed"}:
-            self.state.status = "completed"
-            self._persist_runtime()
+        self._complete_if_needed()
         return self.best_solution
 
     def run_iteration(self) -> None:
-        if not self.state.bootstrapped:
-            self.state.status = "bootstrapping"
-            self._bootstrap()
-            self.state.bootstrapped = True
-            if self.state.status == "bootstrapping":
-                self.state.status = "running"
-            self._persist_runtime()
+        self._ensure_initialized()
 
         if self._should_stop():
-            if self.state.status not in {"failed", "completed"}:
-                self.state.status = "completed"
-                self._persist_runtime()
+            self._complete_if_needed()
             return
 
         self.state.status = "running"
@@ -102,33 +84,27 @@ class Method(ABC):
     def checkpoint_exists(self) -> bool:
         return self.store.checkpoint_exists()
 
+    def _ensure_initialized(self) -> None:
+        if self.state.initialized:
+            return
+
+        self.state.status = "initializing"
+        self._initialize()
+        self.state.initialized = True
+        if self.state.status == "initializing":
+            self.state.status = "running"
+        self._persist_runtime()
+
+    def _complete_if_needed(self) -> None:
+        if self.state.status in {"failed", "completed"}:
+            return
+
+        self.state.status = "completed"
+        self._persist_runtime()
+
     def _persist_runtime(self) -> None:
         self._save_artifacts()
         self.save_checkpoint()
-
-    def _create_seed_solution(self) -> Solution | None:
-        initial_sol = None
-        for attempt in range(3):
-            try:
-                candidate_sol = self.task.make_init_sol_wo_other_info()
-                if candidate_sol.evaluation_res is None:
-                    candidate_sol.evaluation_res = self.task.evaluate_solution(candidate_sol)
-
-                if (
-                    candidate_sol.evaluation_res is not None
-                    and candidate_sol.evaluation_res.valid
-                    and not np.isinf(candidate_sol.evaluation_res.score)
-                    and candidate_sol.evaluation_res.score > -np.inf
-                ):
-                    initial_sol = candidate_sol
-                    break
-                self.verbose_info(f"Initial solution attempt {attempt + 1} failed: invalid evaluation result")
-            except Exception as exc:
-                self.verbose_info(f"Initial solution attempt {attempt + 1} failed with exception: {exc}")
-
-        if initial_sol is None:
-            self.verbose_info("Warning: Failed to create valid initial solution after 3 attempts.")
-        return initial_sol
 
     def _get_progress_index(self) -> int:
         for attr in ("generation", "iteration", "current_batch_id", "tot_sample_nums"):
@@ -195,7 +171,7 @@ class Method(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _bootstrap(self) -> None:
+    def _initialize(self) -> None:
         raise NotImplementedError()
 
     @abstractmethod

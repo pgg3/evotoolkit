@@ -3,6 +3,7 @@
 
 
 from .eoh import EoH
+from .interface import EoHInterface
 from .state import EoHState
 
-__all__ = ["EoH", "EoHState"]
+__all__ = ["EoH", "EoHState", "EoHInterface"]

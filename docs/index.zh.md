@@ -1,17 +1,13 @@
-# 归档文档入口
+# EvoToolkit Core
 
-这个 `docs/` 目录已经不再作为当前版本的主文档源，现仅保留为 `3.0.0` 之前文档体系的归档材料。
+EvoToolkit 现在定位为面向 LLM 驱动进化搜索的可复用核心引擎层。
 
-当前生效的文档站点改为从 `docs_core/` 构建，内容与新的核心运行时一致，重点包括：
+核心包提供：
 
-- 显式创建算法对象并调用 `run()`
-- `Method` 与 `MethodState`
-- `RunStore`
-- `checkpoint/state.pkl` 的 pickle checkpoint
-- 具体 task 通过独立扩展包提供，而不是内置在 core 中
+- 搜索算法
+- 共享运行状态与历史管理
+- 抽象基类
+- 通用 Python 与 String 任务 SDK
+- 通用 Python 与 String 接口
 
-建议直接从下面这些页面开始看：
-
-- `docs_core/index.md`
-- `docs_core/quickstart.md`
-- `docs_core/migration.md`
+具体领域任务已经迁移到 `evotoolkit-tasks`。

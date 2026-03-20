@@ -5,27 +5,23 @@
 
 import pytest
 
-from evotoolkit.core import EvaluationResult, Solution
-from evotoolkit.task.string_optimization.method_interface.evoengineer_interface import (
-    EvoEngineerStringInterface,
-)
+from evotoolkit.core import EvaluationResult, Solution, TaskSpec
+from evotoolkit.task.string_optimization.evoengineer_interface import EvoEngineerStringInterface
 from evotoolkit.task.string_optimization.string_task import StringTask
 
 
 class MinimalStringTask(StringTask):
-    def _process_data(self, data):
-        self.data = data
-        self.task_info = {"name": "test_string"}
+    def build_string_spec(self, data) -> TaskSpec:
+        return TaskSpec(
+            name="test_string",
+            prompt="Optimize the string to maximize length.",
+            modality="string",
+            initial_solution="initial string",
+        )
 
     def _evaluate_string_impl(self, candidate_string: str) -> EvaluationResult:
         score = len(candidate_string)
         return EvaluationResult(valid=True, score=float(score), additional_info={})
-
-    def get_base_task_description(self) -> str:
-        return "Optimize the string to maximize length."
-
-    def make_init_sol_wo_other_info(self) -> Solution:
-        return Solution("initial string")
 
 
 @pytest.fixture
@@ -42,7 +38,7 @@ def _make_scored_solution(text: str, score: float) -> Solution:
     return Solution(
         sol_string=text,
         evaluation_res=EvaluationResult(valid=True, score=score, additional_info={}),
-        other_info={"name": "test", "thought": "test thought"},
+        metadata={"name": "test", "description": "test thought"},
     )
 
 
@@ -115,7 +111,7 @@ class TestGetOperatorPrompt:
         result = string_interface.get_operator_prompt("unknown_op", [], best, [])
         assert result == []
 
-    def test_init_with_none_best_sol_uses_baseline_fallback(self, string_interface):
+    def test_init_with_none_best_sol_uses_initial_fallback(self, string_interface):
         prompt = string_interface.get_operator_prompt("init", [], None, [])
         assert isinstance(prompt, list)
         assert "<score>None</score>" in prompt[0]["content"]
@@ -134,8 +130,8 @@ class TestParseResponse:
         response = "name: my_solution\nsolution: The optimized text here\nthought: This is better"
         sol = string_interface.parse_response(response)
         assert sol.sol_string == "The optimized text here"
-        assert sol.other_info["name"] == "my_solution"
-        assert "This is better" in sol.other_info["thought"]
+        assert sol.metadata.name == "my_solution"
+        assert "This is better" in sol.metadata.description
 
     def test_json_format(self, string_interface):
         import json

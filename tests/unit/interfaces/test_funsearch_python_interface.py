@@ -6,7 +6,16 @@
 import pytest
 
 from evotoolkit.core import EvaluationResult, Solution
-from evotoolkit.task.python_task.method_interface.funsearch_interface import FunSearchPythonInterface
+from evotoolkit.task.python_task.funsearch_interface import FunSearchPythonInterface
+
+
+def _make_initial_solution(interface) -> Solution:
+    return interface.make_solution(
+        interface.task.spec.initial_solution,
+        name=interface.task.spec.initial_name,
+        description=interface.task.spec.initial_description,
+        extras=interface.task.spec.initial_extras,
+    )
 
 
 @pytest.fixture
@@ -55,8 +64,8 @@ class TestFunSearchPythonInterfacePrompts:
         content = messages[0]["content"]
         assert "Python" in content or "function" in content.lower()
 
-    def test_task_init_solution_returns_solution(self, iface):
-        sol = iface.task.make_init_sol_wo_other_info()
+    def test_task_initial_solution_returns_solution(self, iface):
+        sol = _make_initial_solution(iface)
         assert isinstance(sol, Solution)
         assert len(sol.sol_string) > 0
 
