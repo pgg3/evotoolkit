@@ -2,23 +2,9 @@
 # Licensed under the MIT License
 
 
-from .cuda_task import CudaTask, CudaTaskInfoMaker
+from evotoolkit._legacy import raise_split_import_error
 
-# Import method interfaces from subdirectory
-from .method_interface import (
-    EoHCudaInterface,
-    EvoEngineerFreeCudaInterface,
-    EvoEngineerFullCudaInterface,
-    EvoEngineerInsightCudaInterface,
-    FunSearchCudaInterface,
+raise_split_import_error(
+    "evotoolkit.task.cuda_engineering",
+    "evotoolkit_tasks.cuda_engineering",
 )
-
-__all__ = [
-    "CudaTask",
-    "CudaTaskInfoMaker",
-    "EoHCudaInterface",
-    "FunSearchCudaInterface",
-    "EvoEngineerFullCudaInterface",
-    "EvoEngineerInsightCudaInterface",
-    "EvoEngineerFreeCudaInterface",
-]

@@ -4,19 +4,17 @@ This section documents EvoToolkit’s core building blocks. Each topic has a ded
 
 ## Functions
 
-- [evotoolkit.solve()](core/solve.md)
+- [Explicit Runtime Workflow](core/solve.md)
 - [evotoolkit.list_algorithms()](core/list-algorithms.md)
-- [evotoolkit.list_tasks()](core/list-tasks.md)
 
 ## Classes
 
 - [Solution](core/solution.md)
 - [BaseTask](core/base-task.md)
 - [Method](core/method.md)
-- [BaseConfig](core/base-config.md)
-- [HistoryManager](core/history-manager.md)
+- [MethodState](core/method-state.md)
+- [RunStore](core/run-store.md)
 - [Operator](core/operators.md)
-- [BaseRunStateDict](core/base-run-state-dict.md)
 
 ## Related
 

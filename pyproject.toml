@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "evotoolkit"
-version = "1.0.0"
-description = "LLM-driven evolutionary framework for executable solutions."
+version = "3.0.0"
+description = "Core SDK for LLM-driven evolutionary search over executable solutions."
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
@@ -25,7 +25,6 @@ classifiers = [
 dependencies = [
     "numpy",
     "scipy",
-    "python-dotenv",
 ]
 [dependency-groups]
 dev = [
@@ -39,64 +38,6 @@ dev = [
     "twine>=6.2.0",
     "pytest>=8.0",
     "pytest-cov>=5.0",
-]
-
-[project.optional-dependencies]
-# CUDA kernel optimization task
-# Note: Install PyTorch separately to match your CUDA version
-# See: https://pytorch.org/get-started/locally/
-cuda_engineering = [
-    "ninja",
-    "portalocker",
-    # "torch",  # Removed - users install their own version
-    "psutil"
-]
-
-# Prompt engineering task (requires LLM evaluation)
-prompt_engineering = [
-    # No specific dependencies beyond base requirements
-    # Uses LLM API for evaluation
-]
-
-# Scientific symbolic regression task (requires scipy for optimization)
-scientific_regression = [
-    "scipy",  # For parameter optimization in evaluator
-    "pandas",  # For loading CSV datasets
-]
-
-# Adversarial attack evolution task
-# Note: Install PyTorch with GPU support first (CUDA 12.6 recommended)
-# See installation guide in docs/tutorials/adversarial-attack.md
-adversarial_attack = [
-    # "torch",  # Removed - users install GPU version first
-    # "torchvision",  # Removed - users install GPU version first
-    "timm",  # PyTorch Image Models (for CIFAR-10 pretrained models)
-    "foolbox",  # For adversarial attack framework
-]
-
-# Control tasks with Box2D physics (LunarLander, BipedalWalker, etc.)
-control_box2d = [
-    "gymnasium[box2d]",  # Gymnasium with Box2D environments
-]
-
-# Huawei Ascend / CANN operator generation helpers
-# Note: the vendor CANN toolkit must still be installed manually.
-cann_init = [
-    "pybind11",
-]
-
-# All experimental tasks
-all_tasks = [
-    "ninja",
-    "portalocker",
-    "torch",
-    "torchvision",
-    "psutil",
-    "scipy",
-    "pandas",
-    "foolbox",
-    "gymnasium[box2d]",
-    "pybind11",
 ]
 
 [project.urls]
@@ -113,10 +54,6 @@ include = ["src/evotoolkit"]
 [tool.ruff]
 line-length = 160
 target-version = "py310"
-exclude = [
-    "src/evotoolkit/evo_method/cann_initer",
-    "src/evotoolkit/task/cann_init",
-]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]  # E: pycodestyle errors, F: pyflakes, I: isort
@@ -143,14 +80,6 @@ markers = [
 
 [tool.coverage.run]
 source = ["src/evotoolkit"]
-omit = [
-    "*/cann_initer/*",
-    "*\\cann_initer\\*",
-    "*/cann_init/*",
-    "*\\cann_init\\*",
-    "*/cuda_engineering/*",
-    "*\\cuda_engineering\\*",
-]
 
 [tool.coverage.report]
 show_missing = true

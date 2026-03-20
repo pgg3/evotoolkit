@@ -15,11 +15,12 @@ from typing import List
 
 import pytest
 
-from evotoolkit.core import BaseConfig, EvaluationResult, Solution
+from evotoolkit.core import EvaluationResult, Solution
 from evotoolkit.core.base_task import BaseTask
 from evotoolkit.core.method_interface import EoHInterface, EvoEngineerInterface, FunSearchInterface
 from evotoolkit.core.operator import Operator
 from evotoolkit.task.python_task.python_task import PythonTask
+from evotoolkit.task.string_optimization.string_task import StringTask
 
 # ---------------------------------------------------------------------------
 # Minimal concrete task implementations
@@ -82,6 +83,24 @@ class AlwaysInvalidTask(BaseTask):
         return Solution("bad_code")
 
 
+class MinimalStringTask(StringTask):
+    """Minimal StringTask used to exercise generic string interfaces."""
+
+    def _process_data(self, data):
+        self.data = data
+        self.task_info = {"name": "minimal_string", "description": "Test string task"}
+
+    def _evaluate_string_impl(self, candidate_string: str) -> EvaluationResult:
+        score = float(len(candidate_string))
+        return EvaluationResult(valid=True, score=score, additional_info={"length": len(candidate_string)})
+
+    def get_base_task_description(self) -> str:
+        return "Return a concise string solution."
+
+    def make_init_sol_wo_other_info(self) -> Solution:
+        return Solution("baseline string")
+
+
 # ---------------------------------------------------------------------------
 # Minimal concrete interface implementations
 # ---------------------------------------------------------------------------
@@ -140,10 +159,6 @@ class MinimalFunSearchInterface(FunSearchInterface):
     def __init__(self, task: MinimalPythonTask):
         super().__init__(task)
 
-    def make_init_sol(self) -> Solution:
-        sol = self.task.make_init_sol_wo_other_info()
-        return sol
-
     def get_prompt(self, solutions: List[Solution]) -> List[dict]:
         return [{"role": "user", "content": "Generate next solution."}]
 
@@ -169,6 +184,11 @@ def always_valid_task():
 @pytest.fixture
 def always_invalid_task():
     return AlwaysInvalidTask(data=None)
+
+
+@pytest.fixture
+def minimal_string_task():
+    return MinimalStringTask(data=None)
 
 
 @pytest.fixture
@@ -220,8 +240,3 @@ def funsearch_interface(minimal_task):
 @pytest.fixture
 def tmp_output(tmp_path):
     return str(tmp_path / "output")
-
-
-@pytest.fixture
-def base_config(eoh_interface, tmp_output):
-    return BaseConfig(interface=eoh_interface, output_path=tmp_output, verbose=False)

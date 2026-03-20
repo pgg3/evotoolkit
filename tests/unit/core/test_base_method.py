@@ -37,12 +37,9 @@ class TestMethodStaticHelpers:
         best = Method._get_best_sol(sols)
         assert best.evaluation_res.score == 5.0
 
-    def test_get_best_sol_all_invalid_raises(self):
-        # When all solutions are invalid, _get_best_valid_sol raises ValueError
-        # because max() is called on an empty list. This is the current behavior.
+    def test_get_best_sol_all_invalid_returns_first(self):
         sols = [make_sol(10.0, valid=False), make_sol(20.0, valid=False)]
-        with pytest.raises(ValueError):
-            Method._get_best_sol(sols)
+        assert Method._get_best_sol(sols) is sols[0]
 
     def test_get_best_valid_sol_no_evaluation_res(self):
         sols_no_eval = [Solution("code_no_eval")]

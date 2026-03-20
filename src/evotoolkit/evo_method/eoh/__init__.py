@@ -3,4 +3,6 @@
 
 
 from .eoh import EoH
-from .run_config import EoHConfig
+from .state import EoHState
+
+__all__ = ["EoH", "EoHState"]

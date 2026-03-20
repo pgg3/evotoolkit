@@ -2,8 +2,9 @@
 # Licensed under the MIT License
 
 
-"""Adversarial attack task for evolutionary optimization."""
+from evotoolkit._legacy import raise_split_import_error
 
-from .adversarial_attack_task import AdversarialAttackTask
-
-__all__ = ["AdversarialAttackTask"]
+raise_split_import_error(
+    "evotoolkit.task.python_task.adversarial_attack",
+    "evotoolkit_tasks.python_task.adversarial_attack",
+)

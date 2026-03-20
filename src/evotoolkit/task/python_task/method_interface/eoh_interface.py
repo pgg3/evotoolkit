@@ -42,8 +42,9 @@ Do not give additional explanations.
         # Create prompt content for all individuals
         indivs_prompt = ""
         for i, indi in enumerate(selected_individuals):
-            if "algorithm" in indi.other_info and indi.other_info["algorithm"]:
-                algorithm_desc = indi.other_info["algorithm"]
+            other_info = indi.other_info or {}
+            if other_info.get("algorithm"):
+                algorithm_desc = other_info["algorithm"]
             else:
                 algorithm_desc = f"Python Code {i + 1}"
             indivs_prompt += f"No. {i + 1} algorithm and the corresponding code are:\n{algorithm_desc}\n{indi.sol_string}\n"
@@ -71,8 +72,9 @@ Do not give additional explanations.
         # Create prompt content for all individuals
         indivs_prompt = ""
         for i, indi in enumerate(selected_individuals):
-            if "algorithm" in indi.other_info and indi.other_info["algorithm"]:
-                algorithm_desc = indi.other_info["algorithm"]
+            other_info = indi.other_info or {}
+            if other_info.get("algorithm"):
+                algorithm_desc = other_info["algorithm"]
             else:
                 algorithm_desc = f"Python code {i + 1}"
             indivs_prompt += f"No. {i + 1} algorithm and the corresponding code are:\n{algorithm_desc}\n{indi.sol_string}\n"
@@ -97,8 +99,9 @@ Do not give additional explanations.
     def get_prompt_m1(self, individual: Solution) -> List[dict]:
         task_description = self.task.get_base_task_description()
 
-        if "algorithm" in individual.other_info and individual.other_info["algorithm"]:
-            algorithm_desc = individual.other_info["algorithm"]
+        other_info = individual.other_info or {}
+        if other_info.get("algorithm"):
+            algorithm_desc = other_info["algorithm"]
         else:
             algorithm_desc = "Current algorithm"
 
@@ -123,8 +126,9 @@ Do not give additional explanations.
     def get_prompt_m2(self, individual: Solution) -> List[dict]:
         task_description = self.task.get_base_task_description()
 
-        if "algorithm" in individual.other_info and individual.other_info["algorithm"]:
-            algorithm_desc = individual.other_info["algorithm"]
+        other_info = individual.other_info or {}
+        if other_info.get("algorithm"):
+            algorithm_desc = other_info["algorithm"]
         else:
             algorithm_desc = "Current algorithm"
 

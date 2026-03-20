@@ -2,13 +2,9 @@
 # Licensed under the MIT License
 
 
-"""
-Prompt optimization task for LLM-driven evolution.
+from evotoolkit._legacy import raise_split_import_error
 
-This module provides a task for optimizing prompt templates to improve
-LLM performance on downstream tasks.
-"""
-
-from .prompt_optimization_task import PromptOptimizationTask
-
-__all__ = ["PromptOptimizationTask"]
+raise_split_import_error(
+    "evotoolkit.task.string_optimization.prompt_optimization",
+    "evotoolkit_tasks.string_optimization.prompt_optimization",
+)

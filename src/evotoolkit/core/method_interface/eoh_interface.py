@@ -16,12 +16,6 @@ class EoHInterface(BaseMethodInterface):
     def __init__(self, task: BaseTask):
         super().__init__(task)
 
-    def make_init_sol(self) -> Solution:
-        init_sol = self.task.make_init_sol_wo_other_info()
-        other_info = {"algorithm": "None"}
-        init_sol.other_info = other_info
-        return init_sol
-
     @abstractmethod
     def get_prompt_i1(self) -> List[dict]:
         """Generate initialization prompt (I1 operator)"""

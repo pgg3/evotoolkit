@@ -18,11 +18,23 @@ class EvoEngineerInterface(BaseMethodInterface):
         super().__init__(task)
         self.valid_require = 2
 
-    def make_init_sol(self) -> Solution:
+    def _make_baseline_solution(self) -> Solution:
         init_sol = self.task.make_init_sol_wo_other_info()
-        other_info = {"name": "Baseline", "thought": "Baseline"}
+        other_info = dict(init_sol.other_info or {})
+        other_info.setdefault("name", "Baseline")
+        other_info.setdefault("thought", "Baseline")
         init_sol.other_info = other_info
         return init_sol
+
+    @staticmethod
+    def _get_solution_metadata(solution: Solution) -> dict:
+        return solution.other_info or {}
+
+    @staticmethod
+    def _format_solution_score(solution: Solution) -> str:
+        if solution.evaluation_res is None or solution.evaluation_res.score is None:
+            return "None"
+        return f"{solution.evaluation_res.score:.5f}"
 
     @abstractmethod
     def get_init_operators(self) -> List[Operator]:

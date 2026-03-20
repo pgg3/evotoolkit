@@ -1,0 +1,3 @@
+# MethodState
+
+::: evotoolkit.core.MethodState

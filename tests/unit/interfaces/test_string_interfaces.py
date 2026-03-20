@@ -122,9 +122,11 @@ class TestEvoEngineerStringInterfacePrompts:
         content = msgs[0]["content"]
         assert "longer words" in content
 
-    def test_make_init_sol(self, ee_iface):
-        sol = ee_iface.make_init_sol()
+    def test_make_baseline_solution(self, ee_iface):
+        sol = ee_iface._make_baseline_solution()
         assert isinstance(sol, Solution)
+        assert sol.other_info["name"] == "init"
+        assert sol.other_info["thought"] == "Initial solution"
 
     def test_parse_response_returns_solution(self, ee_iface):
         response = "name: my_string\nThe answer is a long sentence with many words.\nthought: more words = higher score"
@@ -159,6 +161,6 @@ class TestFunSearchStringInterfacePrompts:
         assert isinstance(msgs, list)
         assert len(msgs) == 1
 
-    def test_make_init_sol(self, fs_iface):
-        sol = fs_iface.make_init_sol()
+    def test_task_init_solution(self, fs_iface):
+        sol = fs_iface.task.make_init_sol_wo_other_info()
         assert isinstance(sol, Solution)

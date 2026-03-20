@@ -39,7 +39,10 @@ class EvoEngineerPythonInterface(EvoEngineerInterface):
         task_description = self.task.get_base_task_description()
 
         if current_best_sol is None:
-            current_best_sol = self.make_init_sol()
+            current_best_sol = self._make_baseline_solution()
+
+        current_best_info = self._get_solution_metadata(current_best_sol)
+        current_best_score = self._format_solution_score(current_best_sol)
 
         if operator_name == "init":
             # Build the thoughts section if available
@@ -52,9 +55,9 @@ class EvoEngineerPythonInterface(EvoEngineerInterface):
 {task_description}
 
 ## BASELINE CODE
-**Name:** {current_best_sol.other_info["name"]}
-**Score:** {current_best_sol.evaluation_res.score:.5f}
-**Current Approach:** {current_best_sol.other_info["thought"]}
+**Name:** {current_best_info.get("name", "Baseline")}
+**Score:** {current_best_score}
+**Current Approach:** {current_best_info.get("thought", "Baseline")}
 **Function Code:**
 ```python
 {current_best_sol.sol_string}
@@ -90,11 +93,12 @@ thought: [The rationale for the improvement idea.]
             # Build parent functions info
             parents_info = ""
             for i, parent in enumerate(selected_individuals, 1):
+                parent_info = self._get_solution_metadata(parent)
                 parents_info += f"""
 **Parent {i}:**
-**Name:** {parent.other_info.get("name", f"function_{i}")}
-**Score:** {parent.evaluation_res.score if parent.evaluation_res else 0:.5f}
-**Parent Approach:** {parent.other_info.get("thought", "No thought provided")}
+**Name:** {parent_info.get("name", f"function_{i}")}
+**Score:** {self._format_solution_score(parent)}
+**Parent Approach:** {parent_info.get("thought", "No thought provided")}
 **Function Code:**
 ```python
 {parent.sol_string}
@@ -105,9 +109,9 @@ thought: [The rationale for the improvement idea.]
 {task_description}
 
 ## BASELINE CODE
-**Name:** {current_best_sol.other_info.get("name", "current_best")}
-**Score:** {current_best_sol.evaluation_res.score:.5f}
-**Current Approach:** {current_best_sol.other_info.get("thought", "Current best implementation")}
+**Name:** {current_best_info.get("name", "current_best")}
+**Score:** {current_best_score}
+**Current Approach:** {current_best_info.get("thought", "Current best implementation")}
 **Function Code:**
 ```python
 {current_best_sol.sol_string}
@@ -140,6 +144,7 @@ thought: [The rationale for the improvement idea.]
 
         elif operator_name == "mutation":
             individual = selected_individuals[0]
+            individual_info = self._get_solution_metadata(individual)
 
             # Build the thoughts section if available
             thoughts_section = ""
@@ -151,18 +156,18 @@ thought: [The rationale for the improvement idea.]
 {task_description}
 
 ## CURRENT BEST
-**Name:** {current_best_sol.other_info.get("name", "current_best")}
-**Score:** {current_best_sol.evaluation_res.score:.5f}
-**Previous Approach:** {current_best_sol.other_info.get("thought", "Current best implementation")}
+**Name:** {current_best_info.get("name", "current_best")}
+**Score:** {current_best_score}
+**Previous Approach:** {current_best_info.get("thought", "Current best implementation")}
 **Function Code:**
 ```python
 {current_best_sol.sol_string}
 ```
 
 ## SOURCE TO MUTATE
-**Name:** {individual.other_info.get("name", "mutation_base")}
-**Score:** {individual.evaluation_res.score if individual.evaluation_res else 0:.5f}
-**Target Approach:** {individual.other_info.get("thought", "No thought provided")}
+**Name:** {individual_info.get("name", "mutation_base")}
+**Score:** {self._format_solution_score(individual)}
+**Target Approach:** {individual_info.get("thought", "No thought provided")}
 **Function Code:**
 ```python
 {individual.sol_string}

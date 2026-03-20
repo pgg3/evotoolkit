@@ -2,38 +2,19 @@
 # Licensed under the MIT License
 
 
-"""
-EvoTool Core Module
+"""Core runtime types for EvoToolkit."""
 
-This module contains the fundamental data structures and base classes
-used throughout the EvoTool framework. It provides the foundation
-for all evolutionary algorithms and task implementations.
-
-Core Components:
-- Solution, EvaluationResult: Basic data structures
-- Operator: Evolutionary operator definitions
-- BaseTask: Abstract task interface (unified evaluator and config)
-- BaseConfig: Base configuration class
-- Method: Base evolutionary method class
-- BaseRunStateDict: Base run state dictionary for saving/loading state
-- HistoryManager: Manager for evolution history
-- method_interface: Interfaces for different evolutionary algorithms
-"""
-
-from .base_config import BaseConfig
 from .base_method import Method
-from .base_run_state_dict import BaseRunStateDict
 from .base_task import BaseTask
-from .history_manager import HistoryManager
-
-# Import method interfaces
 from .method_interface import (
     BaseMethodInterface,
     EoHInterface,
     EvoEngineerInterface,
     FunSearchInterface,
 )
+from .method_state import MethodState, PopulationMethodState
 from .operator import Operator
+from .run_store import RunStore
 from .solution import EvaluationResult, Solution
 
 __all__ = [
@@ -41,10 +22,10 @@ __all__ = [
     "EvaluationResult",
     "Operator",
     "BaseTask",
-    "BaseConfig",
     "Method",
-    "BaseRunStateDict",
-    "HistoryManager",
+    "MethodState",
+    "PopulationMethodState",
+    "RunStore",
     "BaseMethodInterface",
     "EoHInterface",
     "FunSearchInterface",

@@ -115,15 +115,10 @@ class TestGetOperatorPrompt:
         result = string_interface.get_operator_prompt("unknown_op", [], best, [])
         assert result == []
 
-    def test_init_with_none_best_sol_falls_back_to_make_init_sol(self, string_interface):
-        """When current_best_sol is None, falls back to make_init_sol().
-        The fallback sol has no evaluation_res, so the prompt will error when formatting .score.
-        This tests that the code reaches the make_init_sol() call path."""
-        # The interface's make_init_sol() returns a Solution without evaluation_res,
-        # so accessing .score in the prompt raises AttributeError.
-        # This is existing behavior — just verify it calls make_init_sol, not crash elsewhere.
-        with pytest.raises(AttributeError):
-            string_interface.get_operator_prompt("init", [], None, [])
+    def test_init_with_none_best_sol_uses_baseline_fallback(self, string_interface):
+        prompt = string_interface.get_operator_prompt("init", [], None, [])
+        assert isinstance(prompt, list)
+        assert "<score>None</score>" in prompt[0]["content"]
 
 
 class TestParseResponse:

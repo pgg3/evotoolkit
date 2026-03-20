@@ -4,115 +4,208 @@
 
 import os
 from abc import ABC, abstractmethod
-from typing import List, Type
+from typing import List
 
 import numpy as np
 
-from .base_config import BaseConfig
-from .base_run_state_dict import BaseRunStateDict
+from .method_state import MethodState
+from .run_store import RunStore
 from .solution import Solution
 
 
 class Method(ABC):
-    def __init__(self, config: BaseConfig):
-        self.config = config
-        self.run_state_dict = self._load_run_state_dict()
-        # 初始化历史管理器
-        self.run_state_dict.init_history_manager(self.config.output_path)
-        self._save_run_state_dict()
+    """Thin template base class for method runtime lifecycle."""
 
-    def _get_init_sol(self):
-        # Try to create and evaluate initial solution up to 3 times
+    algorithm_name = "method"
+    history_layout = "iteration"
+
+    def __init__(
+        self,
+        interface,
+        output_path: str = "./results",
+        *,
+        running_llm=None,
+        verbose: bool = True,
+    ):
+        self.interface = interface
+        self.task = interface.task
+        self.running_llm = running_llm
+        self.output_path = output_path
+        self.verbose = verbose
+
+        os.makedirs(self.output_path, exist_ok=True)
+        self.store = RunStore(self.output_path)
+        self.state = self._create_state()
+
+    @property
+    def best_solution(self) -> Solution | None:
+        return self._select_best_solution()
+
+    def run(self) -> Solution | None:
+        if not self.state.bootstrapped:
+            self.state.status = "bootstrapping"
+            self._bootstrap()
+            self.state.bootstrapped = True
+            if self.state.status == "bootstrapping":
+                self.state.status = "running"
+            self._persist_runtime()
+
+        while not self._should_stop():
+            self.run_iteration()
+
+        if self.state.status not in {"failed", "completed"}:
+            self.state.status = "completed"
+            self._persist_runtime()
+        return self.best_solution
+
+    def run_iteration(self) -> None:
+        if not self.state.bootstrapped:
+            self.state.status = "bootstrapping"
+            self._bootstrap()
+            self.state.bootstrapped = True
+            if self.state.status == "bootstrapping":
+                self.state.status = "running"
+            self._persist_runtime()
+
+        if self._should_stop():
+            if self.state.status not in {"failed", "completed"}:
+                self.state.status = "completed"
+                self._persist_runtime()
+            return
+
+        self.state.status = "running"
+        self._step()
+        if self._should_stop() and self.state.status != "failed":
+            self.state.status = "completed"
+        self._persist_runtime()
+
+    def save_checkpoint(self) -> None:
+        self.store.save_checkpoint(
+            self.state,
+            algorithm=self.algorithm_name,
+            status=self.state.status,
+            generation_or_iteration=self._get_progress_index(),
+            sample_count=self._get_sample_count(),
+            history_layout=self.history_layout,
+        )
+
+    def load_checkpoint(self) -> None:
+        loaded_state = self.store.load_checkpoint()
+        if not isinstance(loaded_state, self.state.__class__):
+            raise TypeError(
+                f"Checkpoint state type mismatch: expected {self.state.__class__.__name__}, "
+                f"got {loaded_state.__class__.__name__}"
+            )
+        self.state = loaded_state
+        self.verbose_info(f"Loaded checkpoint from {self.store.state_file}")
+
+    def checkpoint_exists(self) -> bool:
+        return self.store.checkpoint_exists()
+
+    def _persist_runtime(self) -> None:
+        self._save_artifacts()
+        self.save_checkpoint()
+
+    def _create_seed_solution(self) -> Solution | None:
         initial_sol = None
         for attempt in range(3):
             try:
-                candidate_sol = self.config.interface.make_init_sol()
+                candidate_sol = self.task.make_init_sol_wo_other_info()
                 if candidate_sol.evaluation_res is None:
-                    candidate_sol.evaluation_res = self.config.task.evaluate_code(candidate_sol.sol_string)
+                    candidate_sol.evaluation_res = self.task.evaluate_solution(candidate_sol)
 
-                if candidate_sol.evaluation_res is not None and candidate_sol.evaluation_res.valid:
-                    if (not np.isinf(candidate_sol.evaluation_res.score)) and (candidate_sol.evaluation_res.score > -np.inf):
-                        initial_sol = candidate_sol
-                        break
-                else:
-                    self.verbose_info(f"Initial solution attempt {attempt + 1} failed: invalid evaluation result")
-            except Exception as e:
-                self.verbose_info(f"Initial solution attempt {attempt + 1} failed with exception: {e}")
+                if (
+                    candidate_sol.evaluation_res is not None
+                    and candidate_sol.evaluation_res.valid
+                    and not np.isinf(candidate_sol.evaluation_res.score)
+                    and candidate_sol.evaluation_res.score > -np.inf
+                ):
+                    initial_sol = candidate_sol
+                    break
+                self.verbose_info(f"Initial solution attempt {attempt + 1} failed: invalid evaluation result")
+            except Exception as exc:
+                self.verbose_info(f"Initial solution attempt {attempt + 1} failed with exception: {exc}")
 
         if initial_sol is None:
-            print("Warning: Failed to create valid initial solution after 3 attempts. Exiting.")
+            self.verbose_info("Warning: Failed to create valid initial solution after 3 attempts.")
         return initial_sol
 
-    @abstractmethod
-    def run(self, *args):
-        raise NotImplementedError()
+    def _get_progress_index(self) -> int:
+        for attr in ("generation", "iteration", "current_batch_id", "tot_sample_nums"):
+            value = getattr(self.state, attr, None)
+            if isinstance(value, int):
+                return value
+        return 0
 
-    def verbose_info(self, message: str):
-        if self.config.verbose:
+    def _get_sample_count(self) -> int:
+        for attr in ("tot_sample_nums", "sample_count"):
+            value = getattr(self.state, attr, None)
+            if isinstance(value, int):
+                return value
+        return len(self.state.sol_history)
+
+    def _save_artifacts(self) -> None:
+        """Optional hook for algorithms to persist readable artifacts."""
+
+    @staticmethod
+    def _get_best_valid_sol(sol_list: List[Solution]) -> Solution:
+        valid_sols = [
+            sol
+            for sol in sol_list
+            if sol.evaluation_res is not None and sol.evaluation_res.valid and sol.evaluation_res.score is not None
+        ]
+        if not valid_sols:
+            raise ValueError("No valid solutions available")
+        return max(valid_sols, key=lambda x: x.evaluation_res.score)
+
+    @staticmethod
+    def _get_best_sol(sol_list: List[Solution]) -> Solution | None:
+        if not sol_list:
+            return None
+        try:
+            return Method._get_best_valid_sol(sol_list)
+        except ValueError:
+            return sol_list[0]
+
+    def verbose_info(self, message: str) -> None:
+        if self.verbose:
             print(message)
 
-    def verbose_title(self, text: str, total_width: int = 60):
-        """Display a centered title with equal signs above and below"""
-        if self.config.verbose:
+    def verbose_title(self, text: str, total_width: int = 60) -> None:
+        if self.verbose:
             print("=" * total_width)
             print(text.center(total_width))
             print("=" * total_width)
 
-    def verbose_stage(self, text: str, total_width: int = 60):
-        """Display a stage separator with dashes"""
-        if self.config.verbose:
+    def verbose_stage(self, text: str, total_width: int = 60) -> None:
+        if self.verbose:
             print("-" * total_width)
             print(text.center(total_width))
             print("-" * total_width)
 
-    def verbose_gen(self, text: str, total_width: int = 60):
-        """Display text centered with dashes on both sides"""
-        if self.config.verbose:
+    def verbose_gen(self, text: str, total_width: int = 60) -> None:
+        if self.verbose:
             padding = (total_width - len(text)) // 2
             left_dashes = "-" * padding
             right_dashes = "-" * (total_width - len(text) - padding)
             print(left_dashes + text + right_dashes)
 
-    def _save_run_state_dict(self):
-        """Save run state to file and history"""
-        # 先保存历史
-        self.run_state_dict.save_current_history()
-        # 再保存当前状态
-        self.run_state_dict.to_json_file(os.path.join(self.config.output_path, "run_state.json"))
-
-    def _load_run_state_dict(self) -> BaseRunStateDict | None:
-        """Load run state from file"""
-        run_state_class = self._get_run_state_class()
-        if os.path.exists(os.path.join(self.config.output_path, "run_state.json")):
-            self.verbose_info(f"Loading run state from file {os.path.join(self.config.output_path, 'run_state.json')}")
-            return run_state_class.from_json_file(os.path.join(self.config.output_path, "run_state.json"))
-        else:
-            run_state_dict = run_state_class(self.config.task.task_info)
-            self.verbose_info("Initialized run state dict.")
-            return run_state_dict
-
-    @staticmethod
-    def _get_best_valid_sol(sol_list: List[Solution]):
-        valid_sols = []
-        for sol in sol_list:
-            if sol.evaluation_res is not None:
-                if sol.evaluation_res.valid:
-                    valid_sols.append(sol)
-
-        # Return the kernel with minimum runtime
-        best_kernel = max(valid_sols, key=lambda x: x.evaluation_res.score)
-        return best_kernel
-
-    @staticmethod
-    def _get_best_sol(sol_list: List[Solution]):
-        best_valid_sol = Method._get_best_valid_sol(sol_list)
-        if best_valid_sol is not None:
-            best_sol = best_valid_sol
-        else:
-            best_sol = sol_list[0]
-        return best_sol
+    @abstractmethod
+    def _create_state(self) -> MethodState:
+        raise NotImplementedError()
 
     @abstractmethod
-    def _get_run_state_class(self) -> Type[BaseRunStateDict]:
-        """Return the algorithm-specific RunStateDict class"""
-        pass
+    def _bootstrap(self) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _step(self) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _should_stop(self) -> bool:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _select_best_solution(self) -> Solution | None:
+        raise NotImplementedError()

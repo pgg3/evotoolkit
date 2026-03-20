@@ -16,10 +16,5 @@ class BaseMethodInterface(abc.ABC):
         self.task = task
 
     @abstractmethod
-    def make_init_sol(self) -> Solution:
-        """Create initial solution from task info."""
-        raise NotImplementedError()
-
-    @abstractmethod
     def parse_response(self, response_str: str) -> Solution:
         raise NotImplementedError()

@@ -4,19 +4,17 @@
 
 ## 函数
 
-- [evotoolkit.solve()](core/solve.md)
+- [显式 Runtime 工作流](core/solve.md)
 - [evotoolkit.list_algorithms()](core/list-algorithms.md)
-- [evotoolkit.list_tasks()](core/list-tasks.md)
 
 ## 类
 
 - [Solution](core/solution.md)
 - [BaseTask](core/base-task.md)
 - [Method](core/method.md)
-- [BaseConfig](core/base-config.md)
-- [HistoryManager](core/history-manager.md)
+- [MethodState](core/method-state.md)
+- [RunStore](core/run-store.md)
 - [Operator](core/operators.md)
-- [BaseRunStateDict](core/base-run-state-dict.md)
 
 ## 相关
 

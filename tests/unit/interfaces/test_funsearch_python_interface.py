@@ -55,8 +55,8 @@ class TestFunSearchPythonInterfacePrompts:
         content = messages[0]["content"]
         assert "Python" in content or "function" in content.lower()
 
-    def test_make_init_sol_returns_solution(self, iface):
-        sol = iface.make_init_sol()
+    def test_task_init_solution_returns_solution(self, iface):
+        sol = iface.task.make_init_sol_wo_other_info()
         assert isinstance(sol, Solution)
         assert len(sol.sol_string) > 0
 

@@ -3,151 +3,191 @@
 
 
 import concurrent.futures
-from typing import List, Type
+from typing import List
 
-from evotoolkit.core import BaseRunStateDict, Method, Solution
+from evotoolkit.core import Method, Solution
 from evotoolkit.registry import register_algorithm
 
-from .run_config import EvoEngineerConfig
-from .run_state_dict import EvoEngineerRunStateDict
+from .state import EvoEngineerState
 
 
-@register_algorithm("evoengineer", config=EvoEngineerConfig)
+@register_algorithm("evoengineer")
 class EvoEngineer(Method):
-    def __init__(self, config: EvoEngineerConfig):
-        super().__init__(config)
-        self.config = config
+    algorithm_name = "evoengineer"
+    history_layout = "generation"
 
-    def run(self):
-        """Main EvoEngineer algorithm execution"""
-        self.verbose_title("EvoEngineer ALGORITHM STARTED")
+    def __init__(
+        self,
+        interface,
+        *,
+        running_llm,
+        output_path: str = "./results",
+        verbose: bool = True,
+        max_generations: int = 10,
+        max_sample_nums: int = 45,
+        pop_size: int = 5,
+        num_samplers: int = 4,
+        num_evaluators: int = 4,
+    ):
+        self.max_generations = max_generations
+        self.max_sample_nums = max_sample_nums
+        self.pop_size = pop_size
+        self.num_samplers = num_samplers
+        self.num_evaluators = num_evaluators
+        self.init_operators = interface.get_init_operators()
+        self.offspring_operators = interface.get_offspring_operators()
 
-        if "sample" not in self.run_state_dict.usage_history:
-            self.run_state_dict.usage_history["sample"] = []
+        if not self.init_operators:
+            raise ValueError("Adapter must provide at least one init operator")
+        if not self.offspring_operators:
+            raise ValueError("Adapter must provide at least one offspring operator")
+        for op in self.init_operators:
+            if op.selection_size != 0:
+                raise ValueError(f"Init operator '{op.name}' must have selection_size=0, got {op.selection_size}")
 
-        # Initialize with seed solution if sol_history is empty
-        if len(self.run_state_dict.sol_history) == 0:
-            init_sol = self._get_init_sol()
+        super().__init__(
+            interface=interface,
+            output_path=output_path,
+            running_llm=running_llm,
+            verbose=verbose,
+        )
+
+    def _create_state(self) -> EvoEngineerState:
+        return EvoEngineerState(task_info=dict(self.task.task_info))
+
+    def _bootstrap(self) -> None:
+        self.verbose_title("EVOENGINEER ALGORITHM STARTED")
+
+        if not self.state.sol_history:
+            init_sol = self._create_seed_solution()
             if init_sol is None:
-                exit()
-            # Don't use _register_solution as this doesn't consume samples
-            self.run_state_dict.sol_history.append(init_sol)
-            self.run_state_dict.population.append(init_sol)
-            self._save_run_state_dict()
-            self.verbose_info(f"Initialized with baseline solution (score: {init_sol.evaluation_res.score if init_sol.evaluation_res else 'None'})")
+                self.state.status = "failed"
+                return
+            self.state.sol_history.append(init_sol)
+            self.state.population.append(init_sol)
+            score = init_sol.evaluation_res.score if init_sol.evaluation_res else "None"
+            self.verbose_info(f"Initialized with baseline solution (score: {score})")
 
-        # Initialize population if starting from scratch
-        if self.run_state_dict.generation == 0:
+        if self.state.generation == 0:
             self._initialize_population()
 
-        # Check if we have enough individuals for selection
-        valid_population = self._get_valid_population(self.run_state_dict.population)
-        if len(valid_population) < self.config.interface.valid_require:
+        valid_population = self._get_valid_population(self.state.population)
+        if len(valid_population) < self.interface.valid_require:
             self.verbose_info(
-                f"The search is terminated since EvoEngineer unable to obtain {self.config.interface.valid_require} feasible algorithms during initialization."
+                f"The search is terminated since EvoEngineer unable to obtain {self.interface.valid_require} feasible algorithms during initialization."
             )
+            self.state.status = "failed"
             return
 
-        # Main evolution loop - moved loop control logic here
-        while (self.run_state_dict.generation < self.config.max_generations) and (self.run_state_dict.tot_sample_nums < self.config.max_sample_nums):
-            try:
-                self.verbose_info(
-                    f"Generation {self.run_state_dict.generation} - Sample {self.run_state_dict.tot_sample_nums + 1} - {self.run_state_dict.tot_sample_nums + self.config.num_samplers} / {self.config.max_sample_nums or 'unlimited'}"
-                )
+        self.state.status = "running"
 
-                # Apply offspring operators in parallel for this generation
-                self._apply_operators_parallel(
-                    self.config.get_offspring_operators(),
-                    f"Gen {self.run_state_dict.generation}",
-                )
+    def _step(self) -> None:
+        self.verbose_info(
+            f"Generation {self.state.generation} - Sample {self.state.tot_sample_nums + 1} - "
+            f"{self.state.tot_sample_nums + self.num_samplers} / {self.max_sample_nums or 'unlimited'}"
+        )
+        self._apply_operators_parallel(self.offspring_operators, f"Gen {self.state.generation}")
+        self._manage_population_size()
+        self.state.generation += 1
 
-                # Manage population size - keep only the best pop_size individuals
-                self._manage_population_size()
+    def _should_stop(self) -> bool:
+        return (
+            self.state.status == "failed"
+            or self.state.generation >= self.max_generations
+            or self.state.tot_sample_nums >= self.max_sample_nums
+        )
 
-                self.run_state_dict.generation += 1
-                self._save_run_state_dict()
+    def _select_best_solution(self) -> Solution | None:
+        return self._get_best_sol(self.state.sol_history)
 
-            except KeyboardInterrupt:
-                self.verbose_info("Evolution interrupted by user")
-                break
-            except Exception as e:
-                self.verbose_info(f"Evolution error: {str(e)}")
-                continue
+    def _save_artifacts(self) -> None:
+        if not self.state.current_generation_solutions:
+            return
 
-        # Mark as done and save final state
-        self.run_state_dict.is_done = True
-        self._save_run_state_dict()
+        valid_sols = [s for s in self.state.current_generation_solutions if s.evaluation_res and s.evaluation_res.valid]
+        statistics = {
+            "total_solutions": len(self.state.current_generation_solutions),
+            "valid_solutions": len(valid_sols),
+            "valid_rate": len(valid_sols) / len(self.state.current_generation_solutions),
+        }
+        if valid_sols:
+            scores = [s.evaluation_res.score for s in valid_sols]
+            statistics["avg_score"] = sum(scores) / len(scores)
+            statistics["best_score"] = max(scores)
+            statistics["worst_score"] = min(scores)
 
-    def _initialize_population(self):
-        """Initialize population using init operators - keep generating until we have enough valid solutions"""
+        completed_generation = max(self.state.generation - 1, 0)
+        self.store.save_generation_history(
+            generation=completed_generation,
+            solutions=self.state.current_generation_solutions,
+            usage=self.state.current_generation_usage,
+            statistics=statistics,
+        )
+        self.store.save_usage_history(self.state.usage_history)
+
+        best_solution = self._select_best_solution()
+        if best_solution and best_solution.evaluation_res:
+            self.state.best_per_generation.append(
+                {
+                    "generation": completed_generation,
+                    "score": best_solution.evaluation_res.score,
+                    "sol_string": best_solution.sol_string,
+                }
+            )
+            self.store.save_best_per_generation(self.state.best_per_generation)
+
+        self.state.current_generation_solutions = []
+        self.state.current_generation_usage = []
+
+    def _initialize_population(self) -> None:
         self.verbose_info("Initializing population...")
 
-        initial_sample_limit = self.config.max_sample_nums  # Reasonable limit
+        while self.state.tot_sample_nums < self.max_sample_nums:
+            prev_sample_count = self.state.tot_sample_nums
+            prev_valid_count = len(self._get_valid_population(self.state.population))
 
-        # Keep generating until we have pop_size valid solutions or hit sample limit
-        while self.run_state_dict.tot_sample_nums < initial_sample_limit:
-            prev_sample_count = self.run_state_dict.tot_sample_nums
-            prev_valid_count = len(self._get_valid_population(self.run_state_dict.population))
+            self._apply_operators_parallel(self.init_operators, "Init")
+            valid_count = len(self._get_valid_population(self.state.population))
+            self.verbose_info(f"Valid solutions: {valid_count}/{self.pop_size}")
 
-            # Apply init operators in parallel
-            self._apply_operators_parallel(self.config.get_init_operators(), "Init")
+            self._persist_runtime()
 
-            valid_count = len(self._get_valid_population(self.run_state_dict.population))
-            self.verbose_info(f"Valid solutions: {valid_count}/{self.config.pop_size}")
-
-            self._save_run_state_dict()
-
-            if valid_count >= self.config.interface.valid_require:
+            if valid_count >= self.interface.valid_require:
                 break
 
-            if self.run_state_dict.tot_sample_nums == prev_sample_count and valid_count == prev_valid_count:
+            if self.state.tot_sample_nums == prev_sample_count and valid_count == prev_valid_count:
                 self.verbose_info("Warning: Initialization made no progress; stopping early to avoid an infinite loop")
                 break
 
-        valid_population = self._get_valid_population(self.run_state_dict.population)
-        if len(valid_population) >= self.config.interface.valid_require:
-            self.run_state_dict.generation = 1
-            self._save_run_state_dict()
+        valid_population = self._get_valid_population(self.state.population)
+        if len(valid_population) >= self.interface.valid_require:
+            self.state.generation = 1
             self.verbose_info(f"Initialization completed with {len(valid_population)} valid solutions")
         else:
-            self.verbose_info(f"Warning: Only {len(valid_population)} valid solutions obtained, need at least {self.config.interface.valid_require}")
+            self.verbose_info(f"Warning: Only {len(valid_population)} valid solutions obtained, need at least {self.interface.valid_require}")
 
     def _get_valid_population(self, population: List[Solution]) -> List[Solution]:
-        """Get valid solutions from population"""
         return [sol for sol in population if sol.evaluation_res and sol.evaluation_res.valid]
 
-    def _get_best_valid_sol(self, sol_history: List[Solution]) -> Solution | None:
-        """Get the best valid solution from sol_history"""
-        valid_sols = [sol for sol in sol_history if sol.evaluation_res and sol.evaluation_res.valid and sol.evaluation_res.score is not None]
-        if valid_sols:
-            return max(valid_sols, key=lambda x: x.evaluation_res.score)
-        return None
+    def _register_solution(self, solution: Solution) -> None:
+        self.state.sol_history.append(solution)
+        self.state.population.append(solution)
+        self.state.current_generation_solutions.append(solution)
+        self.state.tot_sample_nums += 1
 
-    def _register_solution(self, solution: Solution):
-        """Register a new solution to both sol_history and population"""
-        self.run_state_dict.sol_history.append(solution)
-        self.run_state_dict.population.append(solution)
-        self.run_state_dict.current_gen_solutions.append(solution)  # 添加到当前代历史
-        self.run_state_dict.tot_sample_nums += 1
-
-    def _apply_operators_parallel(self, operators: List, generation_label: str = ""):
-        """Apply operators in parallel and register solutions"""
+    def _apply_operators_parallel(self, operators: List, generation_label: str = "") -> None:
         if not operators:
             return
 
-        # Single executor for both generation and evaluation
-        with concurrent.futures.ThreadPoolExecutor(max_workers=self.config.num_samplers + self.config.num_evaluators) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.num_samplers + self.num_evaluators) as executor:
             generate_futures = []
             eval_futures = []
 
-            # Calculate target samples: multiple of num_operators, not exceeding num_samplers
             num_operators = len(operators)
+            max_multiplier = self.num_samplers // num_operators
+            target_samples = max_multiplier * num_operators
+            samples_per_operator = target_samples // num_operators if num_operators else 0
 
-            max_multiplier = self.config.num_samplers // num_operators
-            target_samples = max_multiplier * num_operators  # Largest multiple of num_operators <= num_samplers
-            samples_per_operator = target_samples // num_operators  # This equals max_multiplier
-
-            # Generate samples: each operator gets exactly samples_per_operator samples
             sample_id = 0
             for operator in operators:
                 for _ in range(samples_per_operator):
@@ -161,94 +201,66 @@ class EvoEngineer(Method):
                     generate_futures.append((operator.name, future))
                     sample_id += 1
 
-            # Process generations as they complete and immediately submit for evaluation
             future_to_operator = {future: operator_name for operator_name, future in generate_futures}
             for future in concurrent.futures.as_completed([f for _, f in generate_futures]):
                 operator_name = future_to_operator[future]
                 try:
                     solution, usage = future.result()
+                    self.state.usage_history["sample"].append(usage)
+                    self.state.current_generation_usage.append(usage)
 
-                    # Add usage history
-                    self.run_state_dict.usage_history["sample"].append(usage)
-                    self.run_state_dict.current_gen_usage.append(usage)  # 添加到当前代usage历史
-
-                    # Immediately submit for evaluation without waiting
                     if solution.sol_string.strip():
-                        eval_future = executor.submit(self.config.task.evaluate_code, solution.sol_string)
-                        eval_futures.append((eval_future, solution, operator_name))
+                        eval_futures.append((executor.submit(self.task.evaluate_code, solution.sol_string), solution, operator_name))
                     else:
                         self._register_solution(solution)
-                        # Log result for empty solution
                         self.verbose_info(f"{operator_name} {generation_label} - Score: None (Invalid)")
+                except Exception as exc:
+                    self.verbose_info(f"Error generating {operator_name}: {exc}")
 
-                except Exception as e:
-                    self.verbose_info(f"Error generating {operator_name}: {str(e)}")
-                    continue
-
-            # Collect evaluation results
             eval_future_to_info = {eval_future: (solution, operator_name) for eval_future, solution, operator_name in eval_futures}
             for eval_future in concurrent.futures.as_completed([ef for ef, _, _ in eval_futures]):
                 solution, operator_name = eval_future_to_info[eval_future]
                 try:
-                    evaluation_res = eval_future.result()
-                    solution.evaluation_res = evaluation_res
-                    self._register_solution(solution)
-
-                    # Log result
-                    score_str = "None" if not solution.evaluation_res or solution.evaluation_res.score is None else f"{solution.evaluation_res.score}"
-                    valid_str = "Valid" if solution.evaluation_res and solution.evaluation_res.valid else "Invalid"
+                    solution.evaluation_res = eval_future.result()
+                    score_str = "None" if solution.evaluation_res.score is None else f"{solution.evaluation_res.score}"
+                    valid_str = "Valid" if solution.evaluation_res.valid else "Invalid"
                     self.verbose_info(f"{operator_name} {generation_label} - Score: {score_str} ({valid_str})")
+                except Exception as exc:
+                    self.verbose_info(f"Error evaluating {operator_name}: {exc}")
+                self._register_solution(solution)
 
-                except Exception as e:
-                    self.verbose_info(f"Error evaluating {operator_name}: {str(e)}")
-                    self._register_solution(solution)  # Add with no evaluation result
-                    continue
-
-    def _manage_population_size(self):
-        """Manage population size - keep only the best pop_size individuals"""
-        if len(self.run_state_dict.population) <= self.config.pop_size:
+    def _manage_population_size(self) -> None:
+        if len(self.state.population) <= self.pop_size:
             return
 
-        # Separate valid and invalid solutions
-        valid_solutions = self._get_valid_population(self.run_state_dict.population)
-        invalid_solutions = [sol for sol in self.run_state_dict.population if sol not in valid_solutions]
+        valid_solutions = self._get_valid_population(self.state.population)
+        invalid_solutions = [sol for sol in self.state.population if sol not in valid_solutions]
 
-        # Sort valid solutions by score (descending - higher is better)
         valid_solutions.sort(
             key=lambda x: x.evaluation_res.score if x.evaluation_res and x.evaluation_res.score is not None else float("-inf"),
             reverse=True,
         )
 
-        # Keep the best valid solutions + some invalid ones if needed
-        new_population = []
-
-        # First, add the best valid solutions
-        valid_to_keep = min(len(valid_solutions), self.config.pop_size)
-        new_population.extend(valid_solutions[:valid_to_keep])
-
-        # If we need more individuals, add some invalid ones (most recent)
-        remaining_slots = self.config.pop_size - len(new_population)
+        new_population = valid_solutions[: min(len(valid_solutions), self.pop_size)]
+        remaining_slots = self.pop_size - len(new_population)
         if remaining_slots > 0 and invalid_solutions:
-            new_population.extend(invalid_solutions[-remaining_slots:])  # Keep most recent invalid ones
+            new_population.extend(invalid_solutions[-remaining_slots:])
 
-        self.run_state_dict.population = new_population
-
+        self.state.population = new_population
         valid_count = len(self._get_valid_population(new_population))
         self.verbose_info(f"Population managed: {len(new_population)} total ({valid_count} valid, {len(new_population) - valid_count} invalid)")
 
     def _select_individuals_for_operator(self, operator) -> List[Solution]:
-        """Select individuals for an operator using rank-based probability selection"""
         import math
 
         import numpy as np
 
         if operator.selection_size <= 0:
-            return []  # Init operators or invalid selection size
+            return []
 
-        # Filter valid solutions with finite scores (including NaN check)
         funcs = [
             sol
-            for sol in self.run_state_dict.population
+            for sol in self.state.population
             if sol.evaluation_res
             and sol.evaluation_res.valid
             and sol.evaluation_res.score is not None
@@ -256,58 +268,39 @@ class EvoEngineer(Method):
             and not math.isnan(sol.evaluation_res.score)
         ]
 
-        if len(funcs) == 0:
-            # Fallback to any available solutions
-            return self.run_state_dict.population[: operator.selection_size] if self.run_state_dict.population else []
+        if not funcs:
+            return self.state.population[: operator.selection_size] if self.state.population else []
 
-        # Sort by score (assuming higher is better)
-        func = sorted(funcs, key=lambda f: f.evaluation_res.score, reverse=True)
+        ranked = sorted(funcs, key=lambda f: f.evaluation_res.score, reverse=True)
+        probabilities = np.array([1 / (r + len(ranked)) for r in range(len(ranked))])
+        probabilities = probabilities / np.sum(probabilities)
 
-        # Create rank-based probability distribution
-        p = [1 / (r + len(func)) for r in range(len(func))]
-        p = np.array(p)
-        p = p / np.sum(p)
-
-        # Select individuals based on probability
         selected = []
-        for _ in range(min(operator.selection_size, len(func))):  # Ensure we don't select more than available
-            chosen = np.random.choice(func, p=p)
-            selected.append(chosen)
-
+        for _ in range(min(operator.selection_size, len(ranked))):
+            selected.append(np.random.choice(ranked, p=probabilities))
         return selected
 
     def _generate_single_solution(self, operator, selected_individuals: List[Solution], sampler_id: int) -> tuple[Solution, dict]:
-        """Generate a single solution using an operator"""
         try:
-            current_best_sol = self._get_best_sol(self.run_state_dict.population)
-            random_3_thought = self._get_n_random_thought(3)
-            prompt_content = self.config.interface.get_operator_prompt(operator.name, selected_individuals, current_best_sol, random_3_thought)
-            response, usage = self.config.running_llm.get_response(prompt_content)
-            new_sol = self.config.interface.parse_response(response)
+            current_best_sol = self._get_best_sol(self.state.population)
+            random_thoughts = self._get_n_random_thought(3)
+            prompt_content = self.interface.get_operator_prompt(operator.name, selected_individuals, current_best_sol, random_thoughts)
+            response, usage = self.running_llm.get_response(prompt_content)
+            new_sol = self.interface.parse_response(response)
             self.verbose_info(f"Sampler {sampler_id}: Generated {operator.name} solution")
             return new_sol, usage
-        except Exception as e:
-            self.verbose_info(f"Sampler {sampler_id}: Failed to generate {operator.name} solution - {str(e)}")
+        except Exception as exc:
+            self.verbose_info(f"Sampler {sampler_id}: Failed to generate {operator.name} solution - {exc}")
             return Solution(""), {}
 
     def _get_n_random_thought(self, n: int) -> List[str]:
-        """Get n random thoughts from solutions in the current population"""
         import random
 
-        # Get all thoughts from current population
         thoughts = []
-        for sol in self.run_state_dict.population:
-            if sol.other_info and "thought" in sol.other_info:
-                thought = sol.other_info["thought"]
-                if thought:  # Only add non-empty thoughts
-                    thoughts.append(thought)
+        for sol in self.state.population:
+            if sol.other_info and "thought" in sol.other_info and sol.other_info["thought"]:
+                thoughts.append(sol.other_info["thought"])
 
-        # If we don't have enough thoughts, return all available ones
         if len(thoughts) <= n:
             return thoughts
-
-        # Randomly sample n thoughts without replacement
         return random.sample(thoughts, n)
-
-    def _get_run_state_class(self) -> Type[BaseRunStateDict]:
-        return EvoEngineerRunStateDict

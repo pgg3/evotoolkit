@@ -2,9 +2,7 @@
 # Licensed under the MIT License
 
 
-"""
-Task module for evolutionary optimization.
-"""
+"""Generic task SDK shipped with the EvoToolkit core package."""
 
 from .python_task import (
     EoHPythonInterface,
@@ -16,7 +14,6 @@ from .string_optimization import (
     EoHStringInterface,
     EvoEngineerStringInterface,
     FunSearchStringInterface,
-    PromptOptimizationTask,
     StringTask,
 )
 
@@ -26,7 +23,6 @@ __all__ = [
     "FunSearchPythonInterface",
     "EvoEngineerPythonInterface",
     "StringTask",
-    "PromptOptimizationTask",
     "EvoEngineerStringInterface",
     "EoHStringInterface",
     "FunSearchStringInterface",

@@ -1,43 +1,37 @@
-# Testing And Coverage
+# Testing
 
-EvoToolkit maintains three complementary validation views.
+The core SDK should be testable without any concrete task package installed.
 
-## 1. Routine CI Subset
-
-This is the portable CPU-only subset used for routine cross-platform validation:
+## Core Test Suite
 
 ```bash
 uv run pytest tests/ -m "not cuda and not llm and not slow"
 ```
 
-## 2. Primary Reviewed Surface
+This suite validates:
 
-This is the reviewer-facing coverage metric for the MLOSS submission. It measures the core framework plus CPU-reviewable reference-task layers defined in [`REVIEWED_SURFACE.md`](REVIEWED_SURFACE.md).
+- generic Python task abstractions
+- generic String task abstractions
+- algorithm execution
+- registry behavior
+- top-level `solve(...)`
 
-```bash
-uv run pytest tests/ --cov --cov-config=coverage-reviewed.ini --cov-report=term-missing -m "not cuda and not llm and not slow"
-```
-
-This primary metric excludes:
-
-- `examples/**`
-- experimental CANN modules
-- hardware-runtime CUDA compilation / benchmarking helpers
-
-## 3. Full-Package Audit
-
-This stricter audit is retained for transparency across the entire source tree, including optional and hardware-coupled modules:
+## Coverage
 
 ```bash
-uv run pytest tests/ --cov --cov-config=coverage-full.ini --cov-report=term -m "not cuda and not llm and not slow"
+uv run pytest tests/ --cov --cov-config=coverage-full.ini --cov-report=term-missing -m "not cuda and not llm and not slow"
 ```
 
-The full-package audit is not the headline MLOSS quality metric. It is a transparency view for the whole repository.
+`coverage-reviewed.ini` is kept as a compatibility alias for the same core-only source tree.
 
-## Packaging And Docs Checks
+## Docs And Packaging
 
 ```bash
 uv run mkdocs build
 uv build --out-dir dist
 uvx twine check dist/*
 ```
+
+## Companion Package
+
+Concrete domain tests now belong in `evotoolkit-tasks` and should be run from the `tasks/` workspace package.

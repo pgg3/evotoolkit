@@ -2,16 +2,11 @@
 # Licensed under the MIT License
 
 
-"""
-Registry system for tasks and algorithms.
-
-This module provides decorators and factory functions to simplify
-the creation of evolutionary optimization workflows.
-"""
+"""Registry helpers for core algorithms and extension tasks."""
 
 from typing import Any, Callable, Dict, Type
 
-from evotoolkit.core import BaseMethodInterface, BaseTask
+from evotoolkit.core import BaseTask
 
 # Global registries
 _TASK_REGISTRY: Dict[str, Type[BaseTask]] = {}
@@ -19,16 +14,6 @@ _ALGORITHM_REGISTRY: Dict[str, Dict[str, Any]] = {}
 
 
 # Interface naming mapping: algorithm_name -> interface_class_prefix
-_INTERFACE_PREFIX_MAP = {
-    "eoh": "EoH",
-    "evoengineer": "EvoEngineer",
-    "funsearch": "FunSearch",
-}
-
-# Reverse mapping: interface_class_prefix -> algorithm_name
-_INTERFACE_TO_ALGORITHM_MAP = {v: k for k, v in _INTERFACE_PREFIX_MAP.items()}
-
-
 def register_task(name: str) -> Callable:
     """
     Decorator to register a task class.
@@ -54,21 +39,17 @@ def register_task(name: str) -> Callable:
     return decorator
 
 
-def register_algorithm(name: str, config: Type) -> Callable:
+def register_algorithm(name: str) -> Callable:
     """
-    Decorator to register an algorithm with its config.
-
-    Interface selection is handled automatically based on task type.
+    Decorator to register an algorithm.
 
     Usage:
-        @register_algorithm("eoh", config=EoHConfig)
+        @register_algorithm("eoh")
         class EoH:
             ...
 
     Args:
         name: Unique name for the algorithm
-        config: Config class for this algorithm
-
     Returns:
         Decorator function
     """
@@ -76,7 +57,7 @@ def register_algorithm(name: str, config: Type) -> Callable:
     def decorator(algorithm_class: Type) -> Type:
         if name in _ALGORITHM_REGISTRY:
             raise ValueError(f"Algorithm '{name}' is already registered")
-        _ALGORITHM_REGISTRY[name] = {"class": algorithm_class, "config": config}
+        _ALGORITHM_REGISTRY[name] = {"class": algorithm_class}
         return algorithm_class
 
     return decorator
@@ -109,7 +90,7 @@ def get_algorithm_info(name: str) -> Dict[str, Any]:
         name: Algorithm name
 
     Returns:
-        Dictionary with 'class' and 'config' keys
+        Dictionary with the registered metadata for the algorithm
 
     Raises:
         ValueError: If algorithm name is not registered
@@ -118,89 +99,6 @@ def get_algorithm_info(name: str) -> Dict[str, Any]:
         available = ", ".join(_ALGORITHM_REGISTRY.keys())
         raise ValueError(f"Algorithm '{name}' not found. Available algorithms: {available}")
     return _ALGORITHM_REGISTRY[name]
-
-
-def get_interface_class(algorithm_name: str, task: BaseTask) -> Type[BaseMethodInterface]:
-    """
-    Automatically select and return the appropriate Interface class
-    based on algorithm name and task type.
-
-    Args:
-        algorithm_name: Name of the algorithm (e.g., 'eoh', 'evoengineer')
-        task: Task instance to determine interface type
-
-    Returns:
-        Interface class
-
-    Raises:
-        ValueError: If interface cannot be found for the algorithm-task combination
-    """
-    from evotoolkit.task.python_task import PythonTask
-    from evotoolkit.task.string_optimization import StringTask
-
-    try:
-        from evotoolkit.task.cuda_engineering import CudaTask
-    except Exception:  # pragma: no cover - optional dependency import
-        CudaTask = None
-
-    # Determine task type suffix
-    if isinstance(task, PythonTask):
-        task_suffix = "Python"
-        module_path = "evotoolkit.task.python_task"
-    elif isinstance(task, StringTask):
-        task_suffix = "String"
-        module_path = "evotoolkit.task.string_optimization"
-    elif CudaTask is not None and isinstance(task, CudaTask):
-        task_suffix = "Cuda"
-        module_path = "evotoolkit.task.cuda_engineering"
-    else:
-        raise ValueError(f"Unknown task type: {type(task)}")
-
-    # Get interface class name prefix
-    if algorithm_name not in _INTERFACE_PREFIX_MAP:
-        raise ValueError(f"No interface mapping for algorithm '{algorithm_name}'. Available: {list(_INTERFACE_PREFIX_MAP.keys())}")
-
-    prefix = _INTERFACE_PREFIX_MAP[algorithm_name]
-    interface_class_name = f"{prefix}{task_suffix}Interface"
-
-    # Dynamically import the interface class
-    try:
-        import importlib
-
-        module = importlib.import_module(module_path)
-        interface_class = getattr(module, interface_class_name)
-        return interface_class
-    except (ImportError, AttributeError) as e:
-        raise ValueError(f"Could not find interface '{interface_class_name}' in '{module_path}'. Error: {e}")
-
-
-def infer_algorithm_from_interface(interface: BaseMethodInterface) -> str:
-    """
-    Infer algorithm name from interface instance.
-
-    Args:
-        interface: Interface instance
-
-    Returns:
-        Algorithm name (e.g., 'eoh', 'evoengineer', 'funsearch')
-
-    Raises:
-        ValueError: If algorithm cannot be inferred from interface
-    """
-    interface_class_name = interface.__class__.__name__
-
-    # Try to match interface class name patterns
-    # e.g., EoHPythonInterface -> EoH, EvoEngineerCudaInterface -> EvoEngineer
-    for prefix, algo_name in _INTERFACE_TO_ALGORITHM_MAP.items():
-        if interface_class_name.startswith(prefix):
-            return algo_name
-
-    raise ValueError(
-        f"Cannot infer algorithm from interface '{interface_class_name}'. "
-        f"Expected interface name to start with one of: {list(_INTERFACE_TO_ALGORITHM_MAP.keys())}"
-    )
-
-
 def list_tasks() -> list[str]:
     """List all registered task names."""
     return list(_TASK_REGISTRY.keys())

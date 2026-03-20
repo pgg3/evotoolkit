@@ -16,19 +16,23 @@ class TestTopLevelAPI:
         assert hasattr(evotoolkit, "__author__")
         assert isinstance(evotoolkit.__author__, str)
 
-    def test_solve_is_callable(self):
-        assert callable(evotoolkit.solve)
-
-    def test_list_tasks_callable(self):
-        tasks = evotoolkit.list_tasks()
-        assert isinstance(tasks, list)
-
     def test_list_algorithms_callable(self):
         algos = evotoolkit.list_algorithms()
         assert isinstance(algos, list)
         assert "eoh" in algos
         assert "evoengineer" in algos
         assert "funsearch" in algos
+
+    def test_list_tasks_not_exported_at_top_level(self):
+        assert not hasattr(evotoolkit, "list_tasks")
+
+    def test_solve_is_not_exported(self):
+        assert not hasattr(evotoolkit, "solve")
+
+    def test_algorithm_classes_are_exported(self):
+        assert evotoolkit.EoH.__name__ == "EoH"
+        assert evotoolkit.EvoEngineer.__name__ == "EvoEngineer"
+        assert evotoolkit.FunSearch.__name__ == "FunSearch"
 
     def test_all_exports(self):
         for name in evotoolkit.__all__:

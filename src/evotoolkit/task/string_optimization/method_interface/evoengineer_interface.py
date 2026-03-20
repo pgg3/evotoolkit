@@ -40,7 +40,9 @@ class EvoEngineerStringInterface(EvoEngineerInterface):
         task_description = self.task.get_base_task_description()
 
         if current_best_sol is None:
-            current_best_sol = self.make_init_sol()
+            current_best_sol = self._make_baseline_solution()
+
+        current_best_score = self._format_solution_score(current_best_sol)
 
         if operator_name == "init":
             # Build the thoughts section if available
@@ -61,7 +63,7 @@ Here is the current best solution:
 
 <current_solution>
 <string>{current_best_sol.sol_string}</string>
-<score>{current_best_sol.evaluation_res.score:.5f}</score>
+<score>{current_best_score}</score>
 </current_solution>{thoughts_section}
 
 Think deeply about how to improve this solution. {"Reference insights are provided above - use them as inspiration if they seem relevant to your optimization approach." if random_thoughts and len(random_thoughts) > 0 else ""} Propose a new solution that:
@@ -98,10 +100,10 @@ Mutation insights (consider if relevant):
             prompt = f"""
 {task_description}
 
-Current best solution (Score: {current_best_sol.evaluation_res.score:.5f}):
+Current best solution (Score: {current_best_score}):
 {current_best_sol.sol_string}
 
-Solution to mutate (Score: {individual.evaluation_res.score:.5f}):
+Solution to mutate (Score: {self._format_solution_score(individual)}):
 {individual.sol_string}{thoughts_section}
 
 Create a substantially modified version of the solution to mutate. {"Use the mutation insights above if they seem relevant." if random_thoughts and len(random_thoughts) > 0 else ""} Your mutation should:
@@ -139,13 +141,13 @@ Crossover insights (consider if relevant):
             prompt = f"""
 {task_description}
 
-Current best solution (Score: {current_best_sol.evaluation_res.score:.5f}):
+Current best solution (Score: {current_best_score}):
 {current_best_sol.sol_string}
 
-Parent 1 (Score: {parent1.evaluation_res.score:.5f}):
+Parent 1 (Score: {self._format_solution_score(parent1)}):
 {parent1.sol_string}
 
-Parent 2 (Score: {parent2.evaluation_res.score:.5f}):
+Parent 2 (Score: {self._format_solution_score(parent2)}):
 {parent2.sol_string}{thoughts_section}
 
 Create a new solution by combining elements from both parents. {"Use the crossover insights above if they seem relevant." if random_thoughts and len(random_thoughts) > 0 else ""} Your crossover should:

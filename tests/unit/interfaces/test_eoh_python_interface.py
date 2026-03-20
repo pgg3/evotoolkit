@@ -5,23 +5,18 @@
 
 import pytest
 
-from evotoolkit.core import Solution
+from evotoolkit.core import EvaluationResult, Solution
 from evotoolkit.task.python_task.method_interface import EoHPythonInterface
 
 
-class TestEoHPythonInterfaceMakeInitSol:
-    def test_make_init_sol_returns_solution(self, eoh_interface):
-        sol = eoh_interface.make_init_sol()
+class TestEoHPythonInterfaceTaskInitSolution:
+    def test_task_init_solution_returns_solution(self, eoh_interface):
+        sol = eoh_interface.task.make_init_sol_wo_other_info()
         assert isinstance(sol, Solution)
 
-    def test_make_init_sol_has_algorithm_key(self, eoh_interface):
-        sol = eoh_interface.make_init_sol()
-        assert sol.other_info is not None
-        assert "algorithm" in sol.other_info
-
-    def test_make_init_sol_algorithm_is_none_string(self, eoh_interface):
-        sol = eoh_interface.make_init_sol()
-        assert sol.other_info["algorithm"] == "None"
+    def test_task_init_solution_has_no_algorithm_metadata(self, eoh_interface):
+        sol = eoh_interface.task.make_init_sol_wo_other_info()
+        assert sol.other_info is None
 
 
 class TestEoHPythonInterfacePrompts:
@@ -40,23 +35,22 @@ class TestEoHPythonInterfacePrompts:
         self._assert_prompt_valid(prompt)
 
     def test_get_prompt_e1(self, eoh_interface, valid_solution):
-        sol = eoh_interface.make_init_sol()
-        sol.evaluation_res = None
+        sol = eoh_interface.task.make_init_sol_wo_other_info()
         prompt = eoh_interface.get_prompt_e1([sol])
         self._assert_prompt_valid(prompt)
 
     def test_get_prompt_e2(self, eoh_interface, valid_solution):
-        sol = eoh_interface.make_init_sol()
+        sol = eoh_interface.task.make_init_sol_wo_other_info()
         prompt = eoh_interface.get_prompt_e2([sol, sol])
         self._assert_prompt_valid(prompt)
 
     def test_get_prompt_m1(self, eoh_interface):
-        sol = eoh_interface.make_init_sol()
+        sol = eoh_interface.task.make_init_sol_wo_other_info()
         prompt = eoh_interface.get_prompt_m1(sol)
         self._assert_prompt_valid(prompt)
 
     def test_get_prompt_m2(self, eoh_interface):
-        sol = eoh_interface.make_init_sol()
+        sol = eoh_interface.task.make_init_sol_wo_other_info()
         prompt = eoh_interface.get_prompt_m2(sol)
         self._assert_prompt_valid(prompt)
 
@@ -68,10 +62,18 @@ class TestEoHPythonInterfacePrompts:
 
     def test_e1_prompt_mentions_individuals(self, minimal_task):
         iface = EoHPythonInterface(minimal_task)
-        sol = iface.make_init_sol()
+        sol = iface.task.make_init_sol_wo_other_info()
         prompt = iface.get_prompt_e1([sol, sol])
         content = prompt[0]["content"]
         assert "2" in content  # mentions count of individuals
+
+    def test_prompts_tolerate_missing_other_info(self, eoh_interface):
+        sol = Solution(
+            "def f(x):\n    return x",
+            evaluation_res=EvaluationResult(valid=True, score=1.0, additional_info={}),
+        )
+        prompt = eoh_interface.get_prompt_m1(sol)
+        self._assert_prompt_valid(prompt)
 
 
 class TestEoHPythonInterfaceParseResponse:

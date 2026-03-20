@@ -2,16 +2,18 @@
 # Licensed under the MIT License
 
 
-from .adversarial_attack import AdversarialAttackTask
-from .control_box2d import (
-    EoHControlInterface,
-    EvoEngineerControlInterface,
-    FunSearchControlInterface,
-    LunarLanderTask,
-)
+"""Generic Python-task SDK for building extensions on top of EvoToolkit."""
+
 from .method_interface import (
     EoHPythonInterface,
     EvoEngineerPythonInterface,
     FunSearchPythonInterface,
 )
 from .python_task import PythonTask
+
+__all__ = [
+    "PythonTask",
+    "EoHPythonInterface",
+    "EvoEngineerPythonInterface",
+    "FunSearchPythonInterface",
+]

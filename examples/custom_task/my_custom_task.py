@@ -18,7 +18,7 @@ import os
 
 import numpy as np
 
-import evotoolkit
+from evotoolkit import EvoEngineer
 from evotoolkit.core import EvaluationResult, Solution
 from evotoolkit.task.python_task import EvoEngineerPythonInterface, PythonTask
 from evotoolkit.tools.llm import HttpsApi
@@ -232,12 +232,13 @@ def run_function_approximation_example():
     )
 
     # 求解
-    result = evotoolkit.solve(
+    algo = EvoEngineer(
         interface=interface,
         output_path="./results/custom_task_func_approx",
         running_llm=llm_api,
         max_generations=5,
     )
+    result = algo.run()
 
     print(f"\n最佳得分: {result.evaluation_res.score:.4f}")
     print(f"最佳 MSE: {result.evaluation_res.additional_info['mse']:.4f}")
@@ -266,12 +267,13 @@ def run_string_match_example():
     )
 
     # 求解
-    result = evotoolkit.solve(
+    algo = EvoEngineer(
         interface=interface,
         output_path="./results/custom_task_string_match",
         running_llm=llm_api,
         max_generations=5,
     )
+    result = algo.run()
 
     print(f"\n最佳得分: {result.evaluation_res.score:.4f}")
     print(f"编辑距离: {result.evaluation_res.additional_info['distance']}")
