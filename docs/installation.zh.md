@@ -1,26 +1,19 @@
 # 安装
 
-本节帮助您完成 EvoToolkit 的安装与环境设置。
-
----
-
-## 快速安装
+安装核心包：
 
 ```bash
 pip install evotoolkit
 ```
 
----
+这已经足够用于：
 
-## 内容导航
+- 开发你自己的 `PythonTask` 或 `StringTask`
+- 在自定义目标上运行内置算法
+- 作为另一个任务包的运行时依赖
 
-- **系统要求**： [系统要求](installation/requirements.zh.md)
-- **从 PyPI 安装**： [从 PyPI 安装](installation/pypi.zh.md)
-- **从源码安装**： [从源码安装](installation/from-source.zh.md)
-- **环境与包管理器**： [环境与包管理器](installation/env-managers.zh.md)
-- **LLM 设置与验证**： [LLM 设置与验证](installation/llm-and-verify.zh.md)
-- **常见问题**： [常见问题](installation/troubleshooting.zh.md)
+如果你是在当前仓库里开发：
 
----
-
-接下来可查看：[快速开始](getting-started.zh.md)
+```bash
+uv sync --group dev
+```

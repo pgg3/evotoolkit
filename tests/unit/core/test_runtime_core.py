@@ -8,7 +8,8 @@ import pytest
 
 from evotoolkit.core import (
     EvaluationResult,
-    Method,
+    IterationState,
+    IterativeMethod,
     MethodInterface,
     MethodState,
     PopulationState,
@@ -21,7 +22,7 @@ from evotoolkit.core import (
 
 class ConcreteTask(Task):
     def build_spec(self, data) -> TaskSpec:
-        return TaskSpec(name="dummy", prompt="Dummy task.", modality="generic", initial_solution="initial", extras={"source": "test"})
+        return TaskSpec(name="dummy", prompt="Dummy task.", modality="generic", extras={"source": "test"})
 
     def evaluate(self, solution: Solution) -> EvaluationResult:
         return EvaluationResult(valid=True, score=float(len(solution.sol_string)), additional_info={})
@@ -33,38 +34,33 @@ class DummyInterface(MethodInterface):
 
 
 @dataclass
-class DummyState(MethodState):
-    iteration: int = 0
+class DummyState(IterationState):
+    pass
 
 
-class DummyMethod(Method):
+class DummyMethod(IterativeMethod):
     algorithm_name = "dummy"
+    state_cls = DummyState
 
     def __init__(self, interface, output_path: str, *, max_iterations: int = 2, verbose: bool = False):
         self.max_iterations = max_iterations
         super().__init__(interface=interface, output_path=output_path, running_llm=None, verbose=verbose)
 
-    def _create_state(self) -> DummyState:
-        return DummyState(task_spec=self.task.spec.copy())
+    def initialize_iteration(self) -> None:
+        if self.state.sol_history:
+            return
 
-    def _initialize(self) -> None:
-        initial_solution = Solution(self.task.spec.initial_solution)
+        initial_solution = Solution("initial")
         if initial_solution.evaluation_res is None:
             initial_solution.evaluation_res = self.task.evaluate(initial_solution)
 
         score = None if initial_solution.evaluation_res is None else initial_solution.evaluation_res.score
-        if (
-            initial_solution.evaluation_res is None
-            or not initial_solution.evaluation_res.valid
-            or score is None
-            or not math.isfinite(score)
-        ):
+        if initial_solution.evaluation_res is None or not initial_solution.evaluation_res.valid or score is None or not math.isfinite(score):
             self.state.status = "failed"
             return
         self.state.sol_history.append(initial_solution)
-        self.state.status = "running"
 
-    def _step(self) -> None:
+    def step_iteration(self) -> None:
         self.state.iteration += 1
         self.state.sol_history.append(
             Solution(
@@ -73,11 +69,8 @@ class DummyMethod(Method):
             )
         )
 
-    def _should_stop(self) -> bool:
-        return self.state.status == "failed" or self.state.iteration >= self.max_iterations
-
-    def _select_best_solution(self) -> Solution | None:
-        return self._get_best_sol(self.state.sol_history)
+    def should_stop_iteration(self) -> bool:
+        return self.state.iteration >= self.max_iterations
 
 
 class TestTaskRuntime:
@@ -105,10 +98,15 @@ class TestMethodState:
         assert state.status == "created"
         assert state.initialized is False
 
+    def test_iteration_state_defaults(self):
+        state = IterationState()
+        assert state.iteration == 0
+        assert state.get_progress_index() == 0
+
     def test_population_state_defaults(self):
         state = PopulationState()
         assert state.generation == 0
-        assert state.tot_sample_nums == 0
+        assert state.sample_count == 0
         assert state.population == []
         assert state.best_per_generation == []
 

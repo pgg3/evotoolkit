@@ -194,13 +194,16 @@ task = AdversarialAttackTask(
     use_mock=False
 )
 
-# Get initial solution
-init_sol = task.make_init_sol_wo_other_info()
+from evotoolkit.core import Solution
 
-print(f"Initial algorithm:")
-print(init_sol.sol_string)
-print(f"\nScore: {init_sol.evaluation_res.score:.2f}")
-print(f"Avg L2 distance: {init_sol.evaluation_res.additional_info['avg_distance']:.2f}")
+# Evaluate any baseline algorithm directly
+baseline = Solution("def attack(model, image):\n    return image")
+result = task.evaluate(baseline)
+
+print("Initial algorithm:")
+print(baseline.sol_string)
+print(f"\nScore: {result.score:.2f}")
+print(f"Avg L2 distance: {result.additional_info['avg_distance']:.2f}")
 ```
 
 **Output:**

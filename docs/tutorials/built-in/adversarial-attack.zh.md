@@ -194,13 +194,16 @@ task = AdversarialAttackTask(
     use_mock=False
 )
 
-# 获取初始解
-init_sol = task.make_init_sol_wo_other_info()
+from evotoolkit.core import Solution
 
-print(f"初始算法:")
-print(init_sol.sol_string)
-print(f"\n得分: {init_sol.evaluation_res.score:.2f}")
-print(f"平均 L2 距离: {init_sol.evaluation_res.additional_info['avg_distance']:.2f}")
+# 直接评估任意 baseline 算法
+baseline = Solution("def attack(model, image):\n    return image")
+result = task.evaluate(baseline)
+
+print("初始算法:")
+print(baseline.sol_string)
+print(f"\n得分: {result.score:.2f}")
+print(f"平均 L2 距离: {result.additional_info['avg_distance']:.2f}")
 ```
 
 **输出：**

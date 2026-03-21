@@ -52,8 +52,8 @@ class TestEvoEngineerPythonInterfaceOperators:
 
 
 class TestEvoEngineerPythonInterfacePrompts:
-    def test_init_operator_prompt(self, iface, best_sol):
-        messages = iface.get_operator_prompt("init", [], best_sol, [])
+    def test_init_operator_prompt(self, iface):
+        messages = iface.get_operator_prompt("init", [], None, [])
         assert isinstance(messages, list)
         assert len(messages) == 1
         assert messages[0]["role"] == "user"
@@ -74,8 +74,8 @@ class TestEvoEngineerPythonInterfacePrompts:
         with pytest.raises(ValueError, match="Unknown operator"):
             iface.get_operator_prompt("nonexistent_op", [], best_sol, [])
 
-    def test_init_prompt_with_thoughts(self, iface, best_sol):
-        messages = iface.get_operator_prompt("init", [], best_sol, ["thought 1", "thought 2"])
+    def test_init_prompt_with_thoughts(self, iface):
+        messages = iface.get_operator_prompt("init", [], None, ["thought 1", "thought 2"])
         content = messages[0]["content"]
         assert "thought 1" in content
 
@@ -84,8 +84,8 @@ class TestEvoEngineerPythonInterfacePrompts:
         content = messages[0]["content"]
         assert "optimization hint" in content
 
-    def test_prompt_contains_task_description(self, iface, best_sol):
-        messages = iface.get_operator_prompt("init", [], best_sol, [])
+    def test_prompt_contains_task_description(self, iface):
+        messages = iface.get_operator_prompt("init", [], None, [])
         content = messages[0]["content"]
         # Task description should appear in prompt
         assert "Python" in content or "function" in content.lower()

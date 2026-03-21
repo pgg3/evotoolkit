@@ -33,20 +33,14 @@ class EvoEngineerStringInterface(EvoEngineerInterface):
         self,
         operator_name: str,
         selected_individuals: List[Solution],
-        current_best_sol: Solution,
+        current_best_sol: Solution | None,
         random_descriptions: List[str],
         **kwargs,
     ) -> List[dict]:
         """Generate prompt for any operator"""
         task_description = self.task.spec.prompt
 
-        if current_best_sol is None:
-            current_best_sol = self._make_initial_solution()
-
-        current_best_score = self._format_solution_score(current_best_sol)
-
         if operator_name == "init":
-            # Build the thoughts section if available
             thoughts_section = ""
             if random_descriptions:
                 thoughts_list = "\n".join([f"- {thought}" for thought in random_descriptions])
@@ -60,16 +54,11 @@ Reference insights (consider if relevant):
             prompt = f"""
 {task_description}
 
-Here is the current best solution:
-
-<current_solution>
-<string>{current_best_sol.sol_string}</string>
-<score>{current_best_score}</score>
-</current_solution>{thoughts_section}
-
-Think deeply about how to improve this solution. {"Reference insights are provided above - use them as inspiration if they seem relevant to your optimization approach." if random_descriptions else ""} Propose a new solution that:
-1. Analyzes the current solution to identify improvement opportunities
-2. Applies proven techniques and principles
+Generate a strong first candidate solution for this task.{thoughts_section}
+{"Reference insights are provided above - use them as inspiration if they seem relevant to your optimization approach." if random_descriptions else ""}
+Propose a new solution that:
+1. Directly targets the task objective
+2. Uses clear and effective wording
 3. Explains your rationale clearly
 
 MAKE SURE THE PROPOSED SOLUTION FOLLOWS THE REQUIRED FORMAT.
@@ -84,7 +73,12 @@ thought: The rationale for the improvement idea.
 """
             return [{"role": "user", "content": prompt}]
 
-        elif operator_name == "mutation":
+        if current_best_sol is None:
+            raise ValueError("current_best_sol must be provided by the method runtime")
+
+        current_best_score = self._format_solution_score(current_best_sol)
+
+        if operator_name == "mutation":
             # Build the thoughts section if available
             thoughts_section = ""
             if random_descriptions:
@@ -124,7 +118,7 @@ thought: The rationale for this mutation.
 """
             return [{"role": "user", "content": prompt}]
 
-        elif operator_name == "crossover":
+        if operator_name == "crossover":
             # Build the thoughts section if available
             thoughts_section = ""
             if random_descriptions:

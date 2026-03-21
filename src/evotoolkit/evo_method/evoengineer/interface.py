@@ -5,7 +5,7 @@
 from abc import abstractmethod
 from typing import List
 
-from evotoolkit.core import MethodInterface, Solution, SolutionMetadata, Task
+from evotoolkit.core import MethodInterface, Solution, Task
 
 from .operator import Operator
 
@@ -16,20 +16,6 @@ class EvoEngineerInterface(MethodInterface):
     def __init__(self, task: Task):
         super().__init__(task)
         self.valid_require = 2
-
-    def _make_initial_solution(self) -> Solution:
-        if not self.task.spec.initial_solution.strip():
-            raise ValueError("Task spec must define initial_solution")
-        init_sol = Solution(
-            self.task.spec.initial_solution,
-            metadata=SolutionMetadata(
-                name=self.task.spec.initial_name,
-                description=self.task.spec.initial_description,
-                extras=dict(self.task.spec.initial_extras),
-            ),
-        )
-        init_sol.metadata = init_sol.metadata.with_defaults(name="Initial", description="Initial")
-        return init_sol
 
     @staticmethod
     def _format_solution_score(solution: Solution) -> str:
@@ -50,7 +36,7 @@ class EvoEngineerInterface(MethodInterface):
         self,
         operator_name: str,
         selected_individuals: List[Solution],
-        current_best_sol: Solution,
+        current_best_sol: Solution | None,
         random_descriptions: List[str],
         **kwargs,
     ) -> List[dict]:

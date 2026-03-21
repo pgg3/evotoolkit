@@ -1,13 +1,13 @@
 # EvoToolkit Core
 
-EvoToolkit is now the reusable engine layer for LLM-guided evolutionary search.
+EvoToolkit is the stable runtime layer for LLM-guided evolutionary search.
 
 The core package provides:
 
-- search algorithms
-- shared run-state and history management
-- abstract base classes
-- generic Python and String task SDKs
-- generic Python and String interfaces
+- built-in methods: `EoH`, `EvoEngineer`, `FunSearch`
+- lifecycle bases: `Method`, `IterativeMethod`, `PopulationMethod`
+- checkpointing and readable artifacts through `RunStore`
+- generic `PythonTask` and `StringTask` SDKs
+- generic interfaces for Python and string optimization
 
-Concrete domains moved to `evotoolkit-tasks`.
+The package is designed to be extended. Keep concrete task families in your own package or repository, and build them on top of this core.

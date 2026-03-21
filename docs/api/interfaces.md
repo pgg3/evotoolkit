@@ -63,9 +63,9 @@ Base class for all method interfaces. See the reference page:
 
 **Key Methods:**
 
-- `make_init_sol()`: Create initial solution
-- `parse_response(response_str)`: Parse LLM response into Solution
-- `get_operator_prompt(operator, population, **kwargs)`: Generate LLM prompt for a given operator
+- `parse_response(response_str)`: Parse LLM response into `Solution`
+- method-specific prompt builders such as `get_operator_prompt(...)`
+- any optional helper methods your concrete interface needs
 
 **Creating Custom Interfaces:**
 
@@ -221,4 +221,3 @@ algorithm.run()
 - See [Tasks API](tasks.md) for available optimization tasks
 - Check [Methods API](methods.md) for evolutionary algorithms
 - Try the [Advanced Usage Tutorial](../tutorials/advanced-overview.md) for low-level API
-

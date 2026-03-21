@@ -17,7 +17,6 @@ class SimpleStringTask(StringTask):
             name="simple_string",
             prompt="Produce a string. Longer is better.",
             modality="string",
-            initial_solution="hello",
         )
 
     def _evaluate_string_impl(self, candidate_string: str) -> EvaluationResult:
@@ -36,7 +35,6 @@ class ErroringStringTask(StringTask):
             name="erroring_string",
             prompt="This task always errors.",
             modality="string",
-            initial_solution="start",
         )
 
     def _evaluate_string_impl(self, candidate_string: str) -> EvaluationResult:
@@ -78,8 +76,8 @@ class TestStringTaskBasics:
         assert result.score == float("-inf")
         assert "error" in result.additional_info
 
-    def test_spec_can_carry_initial_solution(self, simple_task):
-        assert simple_task.spec.initial_solution == "hello"
+    def test_spec_does_not_define_task_seed(self, simple_task):
+        assert not hasattr(simple_task.spec, "initial_solution")
 
     def test_task_prompt(self, simple_task):
         assert isinstance(simple_task.spec.prompt, str)

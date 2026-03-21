@@ -6,8 +6,14 @@ Install the core SDK:
 pip install evotoolkit
 ```
 
-If you need ready-made task families, install the companion package separately:
+This is enough if you want to:
+
+- build your own `PythonTask` or `StringTask`
+- run the built-in methods on your own objectives
+- use EvoToolkit as a runtime dependency in another package
+
+For local development inside the repository:
 
 ```bash
-pip install evotoolkit-tasks
+uv sync --group dev
 ```

@@ -104,11 +104,12 @@ class MyStringTask(StringTask):
             additional_info={}
         )
 
-    def get_base_task_description(self) -> str:
-        return "Optimize a string solution..."
-
-    def make_init_sol_wo_other_info(self) -> Solution:
-        return Solution("initial string")
+    def build_string_spec(self, data) -> TaskSpec:
+        return TaskSpec(
+            name="my_string_task",
+            prompt="Optimize a string solution...",
+            modality="string",
+        )
 ```
 
 **Constructor:**
@@ -120,8 +121,7 @@ def __init__(self, data, timeout_seconds: float = 30.0)
 **Abstract Methods:**
 
 - `_evaluate_string_impl(candidate_string: str) -> EvaluationResult`
-- `get_base_task_description() -> str`
-- `make_init_sol_wo_other_info() -> Solution`
+- `build_string_spec(data) -> TaskSpec`
 
 ---
 
@@ -429,11 +429,12 @@ class MyOptimizationTask(PythonTask):
                 additional_info={'error': str(e)}
             )
 
-    def get_base_task_description(self) -> str:
-        return "Optimize a function to fit the data..."
-
-    def make_init_sol_wo_other_info(self) -> Solution:
-        return Solution("def my_function(x): return x")
+    def build_python_spec(self, data) -> TaskSpec:
+        return TaskSpec(
+            name="function_approximation",
+            prompt="Optimize a function to fit the data...",
+            modality="python",
+        )
 ```
 
 See [Custom Task Tutorial](../tutorials/customization/custom-task.md) for details.

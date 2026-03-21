@@ -47,8 +47,11 @@ class TestTopLevelAPI:
             "Task",
             "TaskSpec",
             "Method",
+            "IterativeMethod",
+            "PopulationMethod",
             "MethodInterface",
             "MethodState",
+            "IterationState",
             "PopulationState",
             "RunStore",
         }

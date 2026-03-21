@@ -1,32 +1,50 @@
-# Migration To 3.0
+# Migration From RC Releases
 
-`3.0.0` is a breaking release.
+`1.0.0` is the first stable release of the standalone EvoToolkit core.
 
-Key changes:
+If you used earlier RC releases, these are the important changes:
 
-- `evotoolkit` keeps only the reusable SDK
-- concrete task imports move to `evotoolkit_tasks...`
-- hardware-backed workflows no longer ship with the core package
-- `evotoolkit.solve(...)` is removed; instantiate a method explicitly and call `run()`
+- `evotoolkit.solve(...)` is gone; instantiate a method class directly and call `run()`
+- the core package no longer ships concrete domain tasks
+- task classes now describe themselves through `TaskSpec`
+- interfaces do not build initial solutions anymore
+- initialization is owned by each concrete method or its prompting strategy
 
-Examples:
+## Task API Mapping
+
+If you have custom tasks written against the older RC API, migrate them like this:
+
+- `get_base_task_description()` -> `TaskSpec.prompt`
+- `_process_data()` -> plain `__init__()` state plus `build_*_spec()`
+- `evaluate_code(...)` / `evaluate_string(...)` helpers -> `evaluate()` or `_evaluate_*_impl()`
+
+Example:
 
 ```python
-# old
-from evotoolkit.task.python_task.scientific_regression import ScientificRegressionTask
+from evotoolkit.core import TaskSpec
+from evotoolkit.task.python_task import PythonTask
 
-# new
-from evotoolkit_tasks.python_task.scientific_regression import ScientificRegressionTask
+
+class MyTask(PythonTask):
+    def build_python_spec(self, data) -> TaskSpec:
+        return TaskSpec(
+            name="my_task",
+            prompt="Describe the optimization target here.",
+            modality="python",
+        )
 ```
 
-Generic SDK imports stay in the core package:
+If you previously returned a baseline candidate from the task layer, remove that hook. Put any bootstrap examples directly into method prompts or into your custom interface logic instead.
+
+## Runtime Usage Mapping
+
+Old:
 
 ```python
-from evotoolkit.task.python_task import PythonTask, EvoEngineerPythonInterface
-from evotoolkit.task.string_optimization import StringTask, EoHStringInterface
+result = evotoolkit.solve(interface=interface, output_path="./results", running_llm=llm_api)
 ```
 
-Low-level runtime usage is now explicit:
+New:
 
 ```python
 from evotoolkit import EvoEngineer
@@ -39,3 +57,5 @@ algo = EvoEngineer(
 )
 result = algo.run()
 ```
+
+If you previously relied on built-in domain tasks from the RC era, move them into your own package first, then reintroduce them on top of the current core runtime.

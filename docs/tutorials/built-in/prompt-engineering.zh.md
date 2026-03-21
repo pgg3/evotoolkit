@@ -119,12 +119,15 @@ task = PromptOptimizationTask(
 ### 步骤 3：测试初始模板
 
 ```python
-# 获取初始解决方案
-init_sol = task.make_init_sol_wo_other_info()
+from evotoolkit.core import Solution
 
-print(f"初始模板：{init_sol.sol_string}")
-print(f"准确率：{init_sol.evaluation_res.score:.2%}")
-print(f"正确数：{init_sol.evaluation_res.additional_info['correct']}/{init_sol.evaluation_res.additional_info['total']}")
+# 如果你手头有一个 baseline 模板，直接评估它
+baseline = Solution("请认真作答，并逐步解释。")
+result = task.evaluate(baseline)
+
+print(f"初始模板：{baseline.sol_string}")
+print(f"准确率：{result.score:.2%}")
+print(f"正确数：{result.additional_info['correct']}/{result.additional_info['total']}")
 ```
 
 **输出：**

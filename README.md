@@ -1,56 +1,46 @@
 # EvoToolkit
 
-EvoToolkit is the core SDK for LLM-driven evolutionary search over executable or structured solutions.
+EvoToolkit is the stable core SDK for LLM-driven evolutionary search over executable or structured solutions.
 
-As of `3.0.0`, this repository intentionally focuses on the reusable runtime layer:
+`1.0.0` is the first stable release of the standalone runtime. The package intentionally ships only reusable building blocks:
 
-- evolutionary algorithms (`EoH`, `EvoEngineer`, `FunSearch`)
-- explicit method lifecycle and checkpointing
-- abstract task and interface contracts
-- generic `PythonTask` / `StringTask` SDK layers
-- generic Python / String method interfaces
-- explicit algorithm instantiation and `run()`
+- evolutionary algorithms: `EoH`, `EvoEngineer`, `FunSearch`
+- runtime lifecycle bases: `Method`, `IterativeMethod`, `PopulationMethod`
+- checkpointing and readable artifacts through `RunStore`
+- generic `PythonTask` and `StringTask` SDK layers
+- generic Python and String interfaces for the built-in methods
 
-Concrete task families no longer live in the core package. They were moved to the companion package [`evotoolkit-tasks`](../tasks/README.md).
+Concrete domain tasks should live in external packages or in your own repository on top of this core.
 
 ## Install
 
-Core SDK only:
-
 ```bash
 pip install evotoolkit
-```
-
-Core SDK plus concrete task families:
-
-```bash
-pip install evotoolkit-tasks
 ```
 
 ## Quick Start
 
 ```python
 from evotoolkit import EvoEngineer
-from evotoolkit.core import EvaluationResult, Solution
+from evotoolkit.core import EvaluationResult, TaskSpec
 from evotoolkit.task.python_task import EvoEngineerPythonInterface, PythonTask
 from evotoolkit.tools import HttpsApi
 
 
 class SquareTask(PythonTask):
-    def _process_data(self, data):
-        self.task_info = {"name": "square"}
+    def build_python_spec(self, data) -> TaskSpec:
+        return TaskSpec(
+            name="square",
+            prompt="Write a Python function `f(x)` that returns a numeric value.",
+            modality="python",
+        )
 
     def _evaluate_code_impl(self, candidate_code: str) -> EvaluationResult:
         namespace = {}
         exec(candidate_code, namespace)  # noqa: S102
-        score = float(namespace["f"](3))
-        return EvaluationResult(valid=True, score=score, additional_info={})
-
-    def get_base_task_description(self) -> str:
-        return "Write a Python function `f(x)` that returns a numeric value."
-
-    def make_init_sol_wo_other_info(self) -> Solution:
-        return Solution("def f(x):\n    return x")
+        if "f" not in namespace:
+            return EvaluationResult(valid=False, score=float("-inf"), additional_info={"error": "Function `f` was not defined."})
+        return EvaluationResult(valid=True, score=float(namespace["f"](3)), additional_info={})
 
 
 task = SquareTask(data=None)
@@ -69,19 +59,18 @@ algo = EvoEngineer(
 result = algo.run()
 ```
 
-## Package Boundary
+## Building On Top
 
-- `evotoolkit`: core SDK
-- `evotoolkit-tasks`: concrete domains, hardware-backed workflows, reproducibility examples
+The intended extension workflow is explicit:
 
-Examples of moved task families:
+1. Define a `PythonTask` or `StringTask`.
+2. Return a `TaskSpec` from `build_python_spec()` or `build_string_spec()`.
+3. Pair the task with a generic interface such as `EvoEngineerPythonInterface`.
+4. Instantiate a method class directly and call `run()`.
 
-- scientific regression
-- prompt optimization
-- adversarial attacks
-- control Box2D
-- CUDA engineering
-- CANN init
+If you need a domain package, keep those concrete tasks outside `src/evotoolkit` and expose them through your own package imports.
+
+A runnable reference implementation lives in `examples/custom_task/my_custom_task.py`.
 
 ## Development
 
@@ -91,10 +80,6 @@ uv run pytest
 uv run mkdocs build
 uv build --out-dir dist
 ```
-
-## Companion Package
-
-The workspace directory [`../tasks`](../tasks/README.md) contains the first companion package produced by the split. It keeps the existing domain implementations intact while the core package stays small and reusable.
 
 ## Runtime Artifacts
 

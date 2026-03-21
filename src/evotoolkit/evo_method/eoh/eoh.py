@@ -3,19 +3,19 @@
 
 
 import concurrent.futures
-import math
 from typing import List
 
-from evotoolkit.core import Method, Solution, SolutionMetadata
+from evotoolkit.core import PopulationMethod, Solution
 from evotoolkit.registry import register_algorithm
 
 from .state import EoHState
 
 
 @register_algorithm("eoh")
-class EoH(Method):
+class EoH(PopulationMethod):
     algorithm_name = "eoh"
-    history_layout = "generation"
+    startup_title = "EOH ALGORITHM STARTED"
+    state_cls = EoHState
 
     def __init__(
         self,
@@ -51,148 +51,52 @@ class EoH(Method):
             verbose=verbose,
         )
 
-    def _create_state(self) -> EoHState:
-        return EoHState(task_spec=self.task.spec.copy())
-
-    def _initialize(self) -> None:
-        self.verbose_title("EOH ALGORITHM STARTED")
-
-        if not self.state.sol_history:
-            try:
-                if not self.task.spec.initial_solution.strip():
-                    raise ValueError("Task spec must define initial_solution")
-                init_sol = Solution(
-                    self.task.spec.initial_solution,
-                    metadata=SolutionMetadata(
-                        name=self.task.spec.initial_name,
-                        description=self.task.spec.initial_description,
-                        extras=dict(self.task.spec.initial_extras),
-                    ),
-                )
-                if init_sol.evaluation_res is None:
-                    init_sol.evaluation_res = self.task.evaluate(init_sol)
-            except Exception as exc:
-                self.verbose_info(f"Failed to create initial solution: {exc}")
-                self.state.status = "failed"
-                return
-
-            score = None if init_sol.evaluation_res is None else init_sol.evaluation_res.score
-            if (
-                init_sol.evaluation_res is None
-                or not init_sol.evaluation_res.valid
-                or score is None
-                or not math.isfinite(score)
-            ):
-                self.verbose_info("Failed to create a valid initial solution.")
-                self.state.status = "failed"
-                return
-
-            self.state.sol_history.append(init_sol)
-            self.state.population.append(init_sol)
-            self.verbose_info(f"Initialized with initial solution (score: {score})")
-
+    def initialize_iteration(self) -> None:
         if self.state.generation == 0:
             self._initialize_population()
 
-        valid_population = self._get_valid_population(self.state.population)
+        valid_population = self._get_valid_population()
         if len(valid_population) < self.selection_num:
-            self.verbose_info(
-                f"The search is terminated since EoH unable to obtain {self.selection_num} feasible algorithms during initialization."
-            )
+            self.verbose_info(f"The search is terminated since EoH unable to obtain {self.selection_num} feasible algorithms during initialization.")
             self.state.status = "failed"
             return
 
         self.state.status = "running"
 
-    def _step(self) -> None:
+    def step_iteration(self) -> None:
         self.verbose_info(
-            f"Generation {self.state.generation} - Sample {self.state.tot_sample_nums + 1} - "
-            f"{self.state.tot_sample_nums + self.num_samplers} / {self.max_sample_nums or 'unlimited'}"
+            f"Generation {self.state.generation} - Sample {self.state.sample_count + 1} - "
+            f"{self.state.sample_count + self.num_samplers} / {self.max_sample_nums or 'unlimited'}"
         )
 
         new_solutions = self._apply_operators_parallel()
         for sol in new_solutions:
-            self.state.sol_history.append(sol)
-            self.state.population.append(sol)
-            self.state.current_generation_solutions.append(sol)
-            self.state.tot_sample_nums += 1
+            self._register_population_solution(sol)
 
-        self._manage_population_size()
+        self._trim_population(self.pop_size)
         self.state.generation += 1
 
-    def _should_stop(self) -> bool:
-        return (
-            self.state.status == "failed"
-            or self.state.generation >= self.max_generations
-            or self.state.tot_sample_nums >= self.max_sample_nums
-        )
-
-    def _select_best_solution(self) -> Solution | None:
-        return self._get_best_sol(self.state.sol_history)
-
-    def _save_artifacts(self) -> None:
-        if not self.state.current_generation_solutions:
-            return
-
-        valid_sols = [s for s in self.state.current_generation_solutions if s.evaluation_res and s.evaluation_res.valid]
-        statistics = {
-            "total_solutions": len(self.state.current_generation_solutions),
-            "valid_solutions": len(valid_sols),
-            "valid_rate": len(valid_sols) / len(self.state.current_generation_solutions),
-        }
-        if valid_sols:
-            scores = [s.evaluation_res.score for s in valid_sols]
-            statistics["avg_score"] = sum(scores) / len(scores)
-            statistics["best_score"] = max(scores)
-            statistics["worst_score"] = min(scores)
-
-        completed_generation = max(self.state.generation - 1, 0)
-        self.store.save_generation_history(
-            generation=completed_generation,
-            solutions=self.state.current_generation_solutions,
-            usage=self.state.current_generation_usage,
-            statistics=statistics,
-        )
-        self.store.save_usage_history(self.state.usage_history)
-
-        best_solution = self._select_best_solution()
-        if best_solution and best_solution.evaluation_res:
-            self.state.best_per_generation.append(
-                {
-                    "generation": completed_generation,
-                    "score": best_solution.evaluation_res.score,
-                    "sol_string": best_solution.sol_string,
-                }
-            )
-            self.store.save_best_per_generation(self.state.best_per_generation)
-
-        self.state.current_generation_solutions = []
-        self.state.current_generation_usage = []
+    def should_stop_iteration(self) -> bool:
+        return self.state.status == "failed" or self.state.generation >= self.max_generations or self.state.sample_count >= self.max_sample_nums
 
     def _initialize_population(self) -> None:
         self.verbose_info("Initializing population...")
 
-        while (
-            len(self._get_valid_population(self.state.population)) < self.pop_size
-            and self.state.tot_sample_nums < self.max_sample_nums
-        ):
+        while len(self._get_valid_population()) < self.pop_size and self.state.sample_count < self.max_sample_nums:
             evaluated_solutions = self._generate_and_evaluate_initial_solutions()
             for sol in evaluated_solutions:
-                self.state.sol_history.append(sol)
-                self.state.population.append(sol)
-                self.state.current_generation_solutions.append(sol)
-                self.state.tot_sample_nums += 1
+                self._register_population_solution(sol)
 
                 score_str = "None" if not sol.evaluation_res or sol.evaluation_res.score is None else f"{sol.evaluation_res.score}"
                 valid_str = "Valid" if sol.evaluation_res and sol.evaluation_res.valid else "Invalid"
-                self.verbose_info(f"Initial sample {self.state.tot_sample_nums} - Score: {score_str} ({valid_str})")
+                self.verbose_info(f"Initial sample {self.state.sample_count} - Score: {score_str} ({valid_str})")
 
-            valid_count = len(self._get_valid_population(self.state.population))
+            valid_count = len(self._get_valid_population())
             self.verbose_info(f"Valid solutions: {valid_count}/{self.pop_size}")
 
             self._persist_runtime()
 
-        valid_population = self._get_valid_population(self.state.population)
+        valid_population = self._get_valid_population()
         if len(valid_population) >= self.selection_num:
             self.state.generation = 1
             self.verbose_info(f"Initialization completed with {len(valid_population)} valid solutions")
@@ -212,8 +116,7 @@ class EoH(Method):
             for future in concurrent.futures.as_completed(generate_futures):
                 try:
                     new_sol, usage = future.result()
-                    self.state.usage_history["sample"].append(usage)
-                    self.state.current_generation_usage.append(usage)
+                    self._record_generation_usage(usage)
 
                     if new_sol.sol_string.strip():
                         eval_futures.append((executor.submit(self.task.evaluate, new_sol), new_sol))
@@ -242,29 +145,26 @@ class EoH(Method):
             self.verbose_info(f"Sampler {sampler_id}: Failed to generate initial solution - {exc}")
             return Solution(""), {}
 
-    def _get_valid_population(self, population: List[Solution]) -> List[Solution]:
-        return [sol for sol in population if sol.evaluation_res and sol.evaluation_res.valid]
-
     def _apply_operators_parallel(self) -> List[Solution]:
         new_solutions = []
         operator_tasks = []
 
-        selected_individuals = self._select_individuals(self.selection_num)
+        selected_individuals = self._select_ranked_individuals(self.selection_num)
         if selected_individuals:
             operator_tasks.append(("E1", self.interface.get_prompt_e1(selected_individuals)))
 
         if self.use_e2_operator:
-            selected_individuals = self._select_individuals(self.selection_num)
+            selected_individuals = self._select_ranked_individuals(self.selection_num)
             if selected_individuals:
                 operator_tasks.append(("E2", self.interface.get_prompt_e2(selected_individuals)))
 
         if self.use_m1_operator:
-            selected_individuals = self._select_individuals(1)
+            selected_individuals = self._select_ranked_individuals(1)
             if selected_individuals:
                 operator_tasks.append(("M1", self.interface.get_prompt_m1(selected_individuals[0])))
 
         if self.use_m2_operator:
-            selected_individuals = self._select_individuals(1)
+            selected_individuals = self._select_ranked_individuals(1)
             if selected_individuals:
                 operator_tasks.append(("M2", self.interface.get_prompt_m2(selected_individuals[0])))
 
@@ -297,8 +197,7 @@ class EoH(Method):
                 operator_name = future_to_operator[future]
                 try:
                     solution, usage = future.result()
-                    self.state.usage_history["sample"].append(usage)
-                    self.state.current_generation_usage.append(usage)
+                    self._record_generation_usage(usage)
 
                     if solution.sol_string.strip():
                         eval_futures.append((executor.submit(self.task.evaluate, solution), solution, operator_name))
@@ -319,58 +218,6 @@ class EoH(Method):
                 new_solutions.append(solution)
 
         return new_solutions
-
-    def _manage_population_size(self) -> None:
-        if len(self.state.population) <= self.pop_size:
-            return
-
-        valid_solutions = self._get_valid_population(self.state.population)
-        invalid_solutions = [sol for sol in self.state.population if sol not in valid_solutions]
-
-        valid_solutions.sort(
-            key=lambda x: x.evaluation_res.score if x.evaluation_res and x.evaluation_res.score is not None else float("-inf"),
-            reverse=True,
-        )
-
-        new_population = valid_solutions[: min(len(valid_solutions), self.pop_size)]
-
-        remaining_slots = self.pop_size - len(new_population)
-        if remaining_slots > 0 and invalid_solutions:
-            new_population.extend(invalid_solutions[-remaining_slots:])
-
-        self.state.population = new_population
-        valid_count = len(self._get_valid_population(new_population))
-        self.verbose_info(f"Population managed: {len(new_population)} total ({valid_count} valid, {len(new_population) - valid_count} invalid)")
-
-    def _select_individuals(self, num_select: int) -> List[Solution]:
-        import math
-
-        import numpy as np
-
-        if num_select <= 0:
-            return []
-
-        funcs = [
-            sol
-            for sol in self.state.population
-            if sol.evaluation_res
-            and sol.evaluation_res.valid
-            and sol.evaluation_res.score is not None
-            and not math.isinf(sol.evaluation_res.score)
-            and not math.isnan(sol.evaluation_res.score)
-        ]
-
-        if not funcs:
-            return self.state.population[:num_select] if self.state.population else []
-
-        ranked = sorted(funcs, key=lambda f: f.evaluation_res.score, reverse=True)
-        probabilities = np.array([1 / (r + len(ranked)) for r in range(len(ranked))])
-        probabilities = probabilities / np.sum(probabilities)
-
-        selected = []
-        for _ in range(min(num_select, len(ranked))):
-            selected.append(np.random.choice(ranked, p=probabilities))
-        return selected
 
     def _generate_single_operator_solution(self, prompt_content: List[dict], operator_type: str, sampler_id: int) -> tuple[Solution, dict]:
         try:

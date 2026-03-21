@@ -104,11 +104,12 @@ class MyStringTask(StringTask):
             additional_info={}
         )
 
-    def get_base_task_description(self) -> str:
-        return "优化一个字符串解..."
-
-    def make_init_sol_wo_other_info(self) -> Solution:
-        return Solution("初始字符串")
+    def build_string_spec(self, data) -> TaskSpec:
+        return TaskSpec(
+            name="my_string_task",
+            prompt="优化一个字符串解...",
+            modality="string",
+        )
 ```
 
 **构造函数：**
@@ -120,8 +121,7 @@ def __init__(self, data, timeout_seconds: float = 30.0)
 **抽象方法：**
 
 - `_evaluate_string_impl(candidate_string: str) -> EvaluationResult`
-- `get_base_task_description() -> str`
-- `make_init_sol_wo_other_info() -> Solution`
+- `build_string_spec(data) -> TaskSpec`
 
 ---
 
@@ -429,11 +429,12 @@ class MyOptimizationTask(PythonTask):
                 additional_info={'error': str(e)}
             )
 
-    def get_base_task_description(self) -> str:
-        return "优化一个函数以拟合数据..."
-
-    def make_init_sol_wo_other_info(self) -> Solution:
-        return Solution("def my_function(x): return x")
+    def build_python_spec(self, data) -> TaskSpec:
+        return TaskSpec(
+            name="function_approximation",
+            prompt="优化一个函数以拟合数据...",
+            modality="python",
+        )
 ```
 
 详见 [自定义任务教程](../tutorials/customization/custom-task.zh.md)。

@@ -119,12 +119,15 @@ task = PromptOptimizationTask(
 ### Step 3: Test Initial Template
 
 ```python
-# Get initial solution
-init_sol = task.make_init_sol_wo_other_info()
+from evotoolkit.core import Solution
 
-print(f"Initial template: {init_sol.sol_string}")
-print(f"Accuracy: {init_sol.evaluation_res.score:.2%}")
-print(f"Correct: {init_sol.evaluation_res.additional_info['correct']}/{init_sol.evaluation_res.additional_info['total']}")
+# If you have a baseline template, evaluate it directly
+baseline = Solution("Answer carefully and explain each step.")
+result = task.evaluate(baseline)
+
+print(f"Initial template: {baseline.sol_string}")
+print(f"Accuracy: {result.score:.2%}")
+print(f"Correct: {result.additional_info['correct']}/{result.additional_info['total']}")
 ```
 
 **Output:**

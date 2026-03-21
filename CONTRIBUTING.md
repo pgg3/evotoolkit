@@ -46,19 +46,32 @@ uv run pytest -m "not cuda and not llm"   # CI-compatible subset
 
 ## Adding a New Task
 
-1. Create a subclass of `BaseTask` (for Python tasks use `PythonTask`; for string tasks use `StringTask`)
-2. Implement required methods: `evaluate_solution()`, `get_base_task_description()`, `make_init_sol_wo_other_info()`
-3. Create a corresponding `MethodInterface` subclass (e.g., `EoHPythonInterface`, `EvoEngineerPythonInterface`)
-4. Register the task with `@register_task`
-5. Add tests in `tests/unit/tasks/` and update documentation
+1. Keep concrete domain tasks outside the core package by default; `src/evotoolkit` should stay focused on reusable SDK surfaces
+2. Create a subclass of `Task` (for Python tasks use `PythonTask`; for string tasks use `StringTask`)
+3. Build a `TaskSpec` in `build_spec()`, `build_python_spec()`, or `build_string_spec()`
+4. Implement `evaluate()` or the task-type-specific evaluation hook
+5. Reuse a generic `MethodInterface` when possible; only add a custom interface when the prompt/response contract really differs
+6. Register the task with `@register_task` only if you need registry integration; explicit imports are the default workflow
+7. Add tests in `tests/unit/tasks/` and update documentation
+
+Do not put initial-solution lifecycle into the task API. If a method needs special bootstrap behavior, keep it inside that method or its prompt design.
 
 ## Adding a New Algorithm
 
-1. Create a subclass of `Method`
+1. Prefer subclassing `IterativeMethod` for new step-wise algorithms
 2. Register with `@register_algorithm`
-3. Implement `run()` and `_get_run_state_class()`
-4. Create a corresponding `Config` class (subclass of `BaseConfig`)
-5. Add tests in `tests/unit/methods/`
+3. Implement `step_iteration()` and `should_stop_iteration()`
+4. Optionally implement `prepare_initialization()`, `initialize_iteration()`, or a custom `state_cls`
+5. Drop down to raw `Method` only if you need a non-standard lifecycle
+6. Add tests in `tests/unit/methods/`
+
+`IterativeMethod` already provides:
+
+- default state construction from `task.spec`
+- default best-solution selection from `state.sol_history`
+- standard checkpoint persistence through `RunStore`
+
+For generation-based population algorithms, `PopulationMethod` is the higher-level base and adds population helpers plus generation artifact flushing.
 
 ## Pull Request Process
 

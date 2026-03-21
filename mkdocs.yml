@@ -2,6 +2,16 @@ site_name: EvoToolkit
 site_description: Core SDK for LLM-driven evolutionary search
 site_author: Ping Guo
 docs_dir: docs
+exclude_docs: |
+  api/**
+  development/**
+  getting-started/**
+  getting-started.md
+  getting-started.zh.md
+  index.zh.md
+  installation/**
+  installation.zh.md
+  tutorials/**
 
 theme:
   name: material

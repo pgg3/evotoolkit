@@ -11,15 +11,6 @@ from evotoolkit.evo_method.evoengineer import EvoEngineer
 from evotoolkit.evo_method.funsearch import FunSearch
 
 
-def _make_initial_solution(interface) -> Solution:
-    return interface.make_solution(
-        interface.task.spec.initial_solution,
-        name=interface.task.spec.initial_name,
-        description=interface.task.spec.initial_description,
-        extras=interface.task.spec.initial_extras,
-    )
-
-
 class MockLLM:
     """Deterministic mock LLM used by algorithm execution tests."""
 
@@ -61,7 +52,7 @@ class TestEoHExecution:
 
         assert isinstance(result, Solution)
         assert algo.state.status == "completed"
-        assert algo.state.tot_sample_nums > 0
+        assert algo.state.sample_count > 0
         assert len(algo.state.population) <= algo.pop_size
         assert Path(tmp_output, "checkpoint", "state.pkl").exists()
         assert Path(tmp_output, "checkpoint", "manifest.json").exists()
@@ -102,7 +93,7 @@ class TestEoHExecution:
         )
         restored.load_checkpoint()
 
-        assert restored.state.tot_sample_nums == algo.state.tot_sample_nums
+        assert restored.state.sample_count == algo.state.sample_count
         assert restored.state.generation == algo.state.generation
 
     def test_generate_single_initial_solution_handles_llm_errors(self, eoh_interface, tmp_output):
@@ -138,7 +129,7 @@ class TestEvoEngineerExecution:
 
         assert isinstance(result, Solution)
         assert algo.state.status == "completed"
-        assert algo.state.tot_sample_nums > 0
+        assert algo.state.sample_count > 0
         assert len(algo.state.population) <= algo.pop_size
         assert len(algo.state.usage_history["sample"]) > 0
         assert Path(tmp_output, "checkpoint", "state.pkl").exists()
@@ -171,7 +162,7 @@ class TestEvoEngineerExecution:
         restored.load_checkpoint()
 
         assert restored.state.generation == algo.state.generation
-        assert restored.state.tot_sample_nums == algo.state.tot_sample_nums
+        assert restored.state.sample_count == algo.state.sample_count
 
     def test_generate_single_solution_handles_llm_errors(self, evoengineer_interface, tmp_output):
         algo = EvoEngineer(
@@ -207,7 +198,7 @@ class TestFunSearchExecution:
 
         assert isinstance(result, Solution)
         assert algo.state.status == "completed"
-        assert algo.state.tot_sample_nums == 4
+        assert algo.state.sample_count == 4
         assert algo.state.programs_database is not None
         assert Path(tmp_output, "checkpoint", "state.pkl").exists()
         assert not Path(tmp_output, "programs_database.json").exists()
@@ -242,7 +233,7 @@ class TestFunSearchExecution:
         restored.run()
 
         assert restored.state.programs_database is not None
-        assert restored.state.tot_sample_nums == 4
+        assert restored.state.sample_count == 4
 
     def test_generate_single_program_handles_llm_errors(self, funsearch_interface, tmp_output):
         algo = FunSearch(
@@ -256,9 +247,7 @@ class TestFunSearchExecution:
             num_evaluators=1,
             programs_per_prompt=1,
         )
-        prompt_solutions = [_make_initial_solution(funsearch_interface)]
-
-        solution, usage = algo._generate_single_program(prompt_solutions, 0)
+        solution, usage = algo._generate_single_program([], 0)
 
         assert solution.sol_string == ""
         assert usage == {}

@@ -137,14 +137,16 @@ The goal of scientific symbolic regression is to **discover mathematical equatio
 ### Step 3: Test with Initial Solution
 
 ```python
-# Get initial solution (simple linear model)
-init_sol = task.make_init_sol_wo_other_info()
+# Wrap any baseline equation as a normal Solution
+from evotoolkit.core import Solution
+
+baseline = Solution("def my_function(x):\n    return x")
 
 print("Initial solution code:")
-print(init_sol.sol_string)
+print(baseline.sol_string)
 
 # Evaluate it
-result = task.evaluate_code(init_sol.sol_string)
+result = task.evaluate(baseline)
 print(f"Score: {result.score:.6f}")
 print(f"Test MSE: {result.additional_info['test_mse']:.6f}")
 ```

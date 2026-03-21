@@ -18,10 +18,6 @@ class TaskSpec:
     name: str = ""
     prompt: str = ""
     modality: str = "generic"
-    initial_solution: str = ""
-    initial_name: str = ""
-    initial_description: str = ""
-    initial_extras: dict[str, Any] = field(default_factory=dict)
     extras: dict[str, Any] = field(default_factory=dict)
 
     def copy(self) -> "TaskSpec":
@@ -29,10 +25,6 @@ class TaskSpec:
             name=self.name,
             prompt=self.prompt,
             modality=self.modality,
-            initial_solution=self.initial_solution,
-            initial_name=self.initial_name,
-            initial_description=self.initial_description,
-            initial_extras=dict(self.initial_extras),
             extras=dict(self.extras),
         )
 

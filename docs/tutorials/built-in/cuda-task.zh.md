@@ -526,12 +526,15 @@ CUDA 版本: 12.4.1
 def main():
     # ... (前面的步骤 3 代码)
 
-    # 获取初始解决方案
-    init_sol = task.make_init_sol_wo_other_info()
+    from evotoolkit.core import Solution
+
+    # 直接评估任意 baseline kernel
+    baseline = Solution("def kernel(x):\n    return x")
+    result = task.evaluate(baseline)
 
     print("初始内核信息：")
-    print(f"运行时间: {-init_sol.evaluation_res.score:.4f} ms")
-    print(f"得分: {init_sol.evaluation_res.score:.6f}")
+    print(f"运行时间: {-result.score:.4f} ms")
+    print(f"得分: {result.score:.6f}")
 
 
 if __name__ == '__main__':

@@ -23,22 +23,14 @@ class LengthStringTask(StringTask):
             name="length_task",
             prompt="Generate a string. Longer strings score higher.",
             modality="string",
-            initial_solution="start string",
-            initial_name="init",
-            initial_description="Initial solution",
         )
 
     def _evaluate_string_impl(self, candidate_string: str) -> EvaluationResult:
         return EvaluationResult(valid=True, score=float(len(candidate_string)), additional_info={})
 
 
-def _make_initial_solution(interface) -> Solution:
-    return interface.make_solution(
-        interface.task.spec.initial_solution,
-        name=interface.task.spec.initial_name,
-        description=interface.task.spec.initial_description,
-        extras=interface.task.spec.initial_extras,
-    )
+def _make_solution(interface, text: str, *, name: str = "", description: str = "") -> Solution:
+    return interface.make_solution(text, name=name, description=description)
 
 
 @pytest.fixture
@@ -99,8 +91,8 @@ class TestEvoEngineerStringInterfaceOperators:
 
 
 class TestEvoEngineerStringInterfacePrompts:
-    def test_init_prompt(self, ee_iface, best_sol):
-        msgs = ee_iface.get_operator_prompt("init", [], best_sol, [])
+    def test_init_prompt(self, ee_iface):
+        msgs = ee_iface.get_operator_prompt("init", [], None, [])
         assert isinstance(msgs, list)
         assert msgs[0]["role"] == "user"
         assert len(msgs[0]["content"]) > 0
@@ -122,13 +114,13 @@ class TestEvoEngineerStringInterfacePrompts:
         result = ee_iface.get_operator_prompt("unknown_op", [], best_sol, [])
         assert result == []
 
-    def test_init_prompt_with_thoughts(self, ee_iface, best_sol):
-        msgs = ee_iface.get_operator_prompt("init", [], best_sol, ["try longer words"])
+    def test_init_prompt_with_thoughts(self, ee_iface):
+        msgs = ee_iface.get_operator_prompt("init", [], None, ["try longer words"])
         content = msgs[0]["content"]
         assert "longer words" in content
 
-    def test_make_initial_solution(self, ee_iface):
-        sol = ee_iface._make_initial_solution()
+    def test_make_solution(self, ee_iface):
+        sol = _make_solution(ee_iface, "start string", name="init", description="Initial solution")
         assert isinstance(sol, Solution)
         assert sol.metadata.name == "init"
         assert sol.metadata.description == "Initial solution"
@@ -166,6 +158,6 @@ class TestFunSearchStringInterfacePrompts:
         assert isinstance(msgs, list)
         assert len(msgs) == 1
 
-    def test_task_initial_solution(self, fs_iface):
-        sol = _make_initial_solution(fs_iface)
+    def test_make_solution(self, fs_iface):
+        sol = _make_solution(fs_iface, "start string")
         assert isinstance(sol, Solution)

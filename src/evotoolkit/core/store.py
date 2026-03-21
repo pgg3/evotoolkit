@@ -16,7 +16,7 @@ from .solution import Solution
 class RunStore:
     """Persistence layer for checkpoints and readable run artifacts."""
 
-    format_version = "3.0.0"
+    format_version = "1.0.0"
 
     def __init__(self, output_path: str):
         self.output_path = output_path

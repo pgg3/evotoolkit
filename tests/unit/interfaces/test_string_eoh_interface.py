@@ -20,7 +20,6 @@ class MinimalStringTask(StringTask):
             name="string_test",
             prompt="Produce a long and interesting string.",
             modality="string",
-            initial_solution="hello world",
         )
 
     def _evaluate_string_impl(self, candidate_string: str) -> EvaluationResult:

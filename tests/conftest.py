@@ -30,7 +30,6 @@ class MinimalPythonTask(PythonTask):
             name="minimal",
             prompt="Implement a Python function f(x) that returns a numeric value.",
             modality="python",
-            initial_solution="def f(x):\n    return x",
         )
 
     def _evaluate_code_impl(self, candidate_code: str) -> EvaluationResult:
@@ -46,7 +45,7 @@ class AlwaysValidTask(Task):
     """Task that always returns a valid result with a fixed score."""
 
     def build_spec(self, data) -> TaskSpec:
-        return TaskSpec(name="always_valid", prompt="Always valid task.", modality="generic", initial_solution="code_string")
+        return TaskSpec(name="always_valid", prompt="Always valid task.", modality="generic")
 
     def evaluate(self, solution: Solution) -> EvaluationResult:
         return EvaluationResult(valid=True, score=1.0, additional_info={"code": solution.sol_string})
@@ -56,7 +55,7 @@ class AlwaysInvalidTask(Task):
     """Task that always returns an invalid result."""
 
     def build_spec(self, data) -> TaskSpec:
-        return TaskSpec(name="always_invalid", prompt="Always invalid task.", modality="generic", initial_solution="bad_code")
+        return TaskSpec(name="always_invalid", prompt="Always invalid task.", modality="generic")
 
     def evaluate(self, solution: Solution) -> EvaluationResult:
         return EvaluationResult(valid=False, score=float("-inf"), additional_info={"error": "always invalid"})
@@ -70,7 +69,6 @@ class MinimalStringTask(StringTask):
             name="minimal_string",
             prompt="Return a concise string solution.",
             modality="string",
-            initial_solution="baseline string",
         )
 
     def _evaluate_string_impl(self, candidate_string: str) -> EvaluationResult:
@@ -123,7 +121,7 @@ class MinimalEvoEngineerInterface(EvoEngineerInterface):
         operator_name,
         selected_individuals,
         current_best_sol,
-        random_thoughts,
+        random_descriptions,
         **kwargs,
     ) -> List[dict]:
         return [{"role": "user", "content": f"Operator: {operator_name}"}]

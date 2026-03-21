@@ -105,9 +105,11 @@ print(f"动作维度: {task.task_info['action_dim']}")
 ### 步骤 2：测试基线策略
 
 ```python
-# 获取内置基线策略
-init_sol = task.make_init_sol_wo_other_info()
-result = task.evaluate_code(init_sol.sol_string)
+# 直接评估一个 baseline 策略
+from evotoolkit.core import Solution
+
+baseline = Solution("def policy(obs):\n    return 0")
+result = task.evaluate(baseline)
 
 print(f"基线得分: {result.score:.2f}")
 if result.valid:
@@ -236,8 +238,7 @@ class LunarLanderTask(PythonTask):
 
 | 方法 | 描述 |
 |------|------|
-| `evaluate_code(code_str)` | 评估策略字符串，返回 `EvaluationResult` |
-| `make_init_sol_wo_other_info()` | 获取内置基线策略作为 Solution |
+| `evaluate(solution)` | 评估策略候选，返回 `EvaluationResult` |
 
 **`EvaluationResult.additional_info` 的键：**
 

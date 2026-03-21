@@ -5,9 +5,9 @@
 """Core runtime types for EvoToolkit."""
 
 from .interface import MethodInterface
-from .method import Method
+from .method import IterativeMethod, Method, PopulationMethod
 from .solution import EvaluationResult, Solution, SolutionMetadata
-from .state import MethodState, PopulationState
+from .state import IterationState, MethodState, PopulationState
 from .store import RunStore
 from .task import Task, TaskSpec
 
@@ -18,7 +18,10 @@ __all__ = [
     "Task",
     "TaskSpec",
     "Method",
+    "IterativeMethod",
+    "PopulationMethod",
     "MethodState",
+    "IterationState",
     "PopulationState",
     "RunStore",
     "MethodInterface",

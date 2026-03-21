@@ -105,9 +105,11 @@ print(f"Action dimensions: {task.task_info['action_dim']}")
 ### Step 2: Test the Baseline Policy
 
 ```python
-# Get the built-in baseline policy
-init_sol = task.make_init_sol_wo_other_info()
-result = task.evaluate_code(init_sol.sol_string)
+# Evaluate a baseline policy directly
+from evotoolkit.core import Solution
+
+baseline = Solution("def policy(obs):\n    return 0")
+result = task.evaluate(baseline)
 
 print(f"Baseline score: {result.score:.2f}")
 if result.valid:
@@ -236,8 +238,7 @@ class LunarLanderTask(PythonTask):
 
 | Method | Description |
 |--------|-------------|
-| `evaluate_code(code_str)` | Evaluate a policy string, returns `EvaluationResult` |
-| `make_init_sol_wo_other_info()` | Get the built-in baseline policy as a Solution |
+| `evaluate(solution)` | Evaluate a policy candidate, returns `EvaluationResult` |
 
 **`EvaluationResult.additional_info` keys:**
 

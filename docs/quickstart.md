@@ -1,34 +1,34 @@
 # Quick Start
 
-The core `3.0.0` workflow is:
+The stable `1.0.0` workflow is:
 
-1. Define or import a task object.
-2. Wrap it with a generic interface.
-3. Instantiate a method explicitly.
-4. Call `run()`.
+1. Define a task.
+2. Return a `TaskSpec`.
+3. Wrap the task with a method interface.
+4. Instantiate a method explicitly.
+5. Call `run()`.
 
 ```python
 from evotoolkit import EvoEngineer
-from evotoolkit.core import EvaluationResult, Solution
+from evotoolkit.core import EvaluationResult, TaskSpec
 from evotoolkit.task.python_task import EvoEngineerPythonInterface, PythonTask
 from evotoolkit.tools import HttpsApi
 
 
 class SquareTask(PythonTask):
-    def _process_data(self, data):
-        self.task_info = {"name": "square"}
+    def build_python_spec(self, data) -> TaskSpec:
+        return TaskSpec(
+            name="square",
+            prompt="Write a Python function `f(x)` that returns a numeric value.",
+            modality="python",
+        )
 
     def _evaluate_code_impl(self, candidate_code: str) -> EvaluationResult:
         namespace = {}
         exec(candidate_code, namespace)  # noqa: S102
-        score = float(namespace["f"](3))
-        return EvaluationResult(valid=True, score=score, additional_info={})
-
-    def get_base_task_description(self) -> str:
-        return "Write a Python function `f(x)` that returns a numeric value."
-
-    def make_init_sol_wo_other_info(self) -> Solution:
-        return Solution("def f(x):\n    return x")
+        if "f" not in namespace:
+            return EvaluationResult(valid=False, score=float("-inf"), additional_info={"error": "Function `f` was not defined."})
+        return EvaluationResult(valid=True, score=float(namespace["f"](3)), additional_info={})
 
 
 task = SquareTask(data=None)
@@ -44,7 +44,9 @@ algo = EvoEngineer(
     running_llm=llm_api,
     max_generations=5,
 )
-result = algo.run()
+best_solution = algo.run()
 ```
 
-Ready-made domains such as scientific regression and CUDA workflows now live in `evotoolkit-tasks`.
+For string problems, use `StringTask` together with `EoHStringInterface`, `EvoEngineerStringInterface`, or `FunSearchStringInterface`.
+
+For a runnable end-to-end example, see `examples/custom_task/my_custom_task.py` in the repository.

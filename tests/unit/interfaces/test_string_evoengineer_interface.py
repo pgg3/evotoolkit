@@ -16,7 +16,6 @@ class MinimalStringTask(StringTask):
             name="test_string",
             prompt="Optimize the string to maximize length.",
             modality="string",
-            initial_solution="initial string",
         )
 
     def _evaluate_string_impl(self, candidate_string: str) -> EvaluationResult:
@@ -58,16 +57,14 @@ class TestEvoEngineerStringInterfaceOperators:
 
 class TestGetOperatorPrompt:
     def test_init_operator_prompt(self, string_interface):
-        best = _make_scored_solution("best solution", 10.0)
-        prompt = string_interface.get_operator_prompt("init", [], best, [])
+        prompt = string_interface.get_operator_prompt("init", [], None, [])
         assert isinstance(prompt, list)
         assert len(prompt) == 1
         assert "user" in prompt[0]["role"]
 
     def test_init_operator_with_thoughts(self, string_interface):
-        best = _make_scored_solution("best", 5.0)
         thoughts = ["try longer", "add detail"]
-        prompt = string_interface.get_operator_prompt("init", [], best, thoughts)
+        prompt = string_interface.get_operator_prompt("init", [], None, thoughts)
         content = prompt[0]["content"]
         assert "try longer" in content
         assert "add detail" in content
@@ -111,10 +108,10 @@ class TestGetOperatorPrompt:
         result = string_interface.get_operator_prompt("unknown_op", [], best, [])
         assert result == []
 
-    def test_init_with_none_best_sol_uses_initial_fallback(self, string_interface):
+    def test_init_with_none_best_sol_is_allowed(self, string_interface):
         prompt = string_interface.get_operator_prompt("init", [], None, [])
         assert isinstance(prompt, list)
-        assert "<score>None</score>" in prompt[0]["content"]
+        assert len(prompt) == 1
 
 
 class TestParseResponse:

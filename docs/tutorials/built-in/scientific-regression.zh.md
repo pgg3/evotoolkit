@@ -137,14 +137,16 @@ print(f"测试集大小: {task.task_info['test_size']}")
 ### 步骤 3: 使用初始解测试
 
 ```python
-# 获取初始解（简单线性模型）
-init_sol = task.make_init_sol_wo_other_info()
+# 将任意 baseline 方程包装成普通 Solution
+from evotoolkit.core import Solution
+
+baseline = Solution("def my_function(x):\n    return x")
 
 print("初始解代码:")
-print(init_sol.sol_string)
+print(baseline.sol_string)
 
 # 评估它
-result = task.evaluate_code(init_sol.sol_string)
+result = task.evaluate(baseline)
 print(f"得分: {result.score:.6f}")
 print(f"测试 MSE: {result.additional_info['test_mse']:.6f}")
 ```

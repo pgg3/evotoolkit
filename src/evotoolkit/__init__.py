@@ -19,7 +19,7 @@ try:
     __version__ = version("evotoolkit")
 except Exception:
     # Fallback for development/editable install
-    __version__ = "3.0.0.dev0"
+    __version__ = "1.0.0.dev0"
 
 
 # Export public API

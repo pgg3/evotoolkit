@@ -3,9 +3,8 @@
 
 
 import concurrent.futures
-import math
 
-from evotoolkit.core import Method, Solution, SolutionMetadata
+from evotoolkit.core import IterativeMethod, Solution
 from evotoolkit.registry import register_algorithm
 
 from .programs_database import ProgramsDatabase
@@ -13,9 +12,11 @@ from .state import FunSearchState
 
 
 @register_algorithm("funsearch")
-class FunSearch(Method):
+class FunSearch(IterativeMethod):
     algorithm_name = "funsearch"
     history_layout = "batch"
+    startup_title = "FUNSEARCH ALGORITHM STARTED"
+    state_cls = FunSearchState
 
     def __init__(
         self,
@@ -51,72 +52,42 @@ class FunSearch(Method):
             batch_size=max(self.num_samplers, 1),
         )
 
-    def _initialize(self) -> None:
-        self.verbose_title("FUNSEARCH ALGORITHM STARTED")
-
+    def prepare_initialization(self) -> None:
         if self.state.programs_database is None:
             self.state.programs_database = ProgramsDatabase(
                 num_islands=self.num_islands,
                 solutions_per_prompt=self.programs_per_prompt,
                 reset_period=4 * 60 * 60,
             )
-            self.verbose_info("Initialized new programs database")
+            existing_valid_solutions = [
+                solution for solution in self.state.sol_history if solution.evaluation_res is not None and solution.evaluation_res.valid
+            ]
+            for solution in existing_valid_solutions:
+                self.state.programs_database.register_solution(solution)
+            if existing_valid_solutions:
+                self.verbose_info(f"Rebuilt programs database from {len(existing_valid_solutions)} saved solutions")
+            else:
+                self.verbose_info("Initialized new programs database")
 
-        if not self.state.sol_history:
-            try:
-                if not self.task.spec.initial_solution.strip():
-                    raise ValueError("Task spec must define initial_solution")
-                init_sol = Solution(
-                    self.task.spec.initial_solution,
-                    metadata=SolutionMetadata(
-                        name=self.task.spec.initial_name,
-                        description=self.task.spec.initial_description,
-                        extras=dict(self.task.spec.initial_extras),
-                    ),
-                )
-                if init_sol.evaluation_res is None:
-                    init_sol.evaluation_res = self.task.evaluate(init_sol)
-            except Exception as exc:
-                self.verbose_info(f"Failed to create initial solution: {exc}")
-                self.state.status = "failed"
-                return
+    def initialize_iteration(self) -> None:
+        if self.state.sol_history or self.state.sample_count > 0:
+            self.verbose_info(f"Continuing from sample {self.state.sample_count} with {len(self.state.sol_history)} solutions in history")
 
-            score = None if init_sol.evaluation_res is None else init_sol.evaluation_res.score
-            if (
-                init_sol.evaluation_res is None
-                or not init_sol.evaluation_res.valid
-                or score is None
-                or not math.isfinite(score)
-            ):
-                self.verbose_info("Failed to create a valid initial solution.")
-                self.state.status = "failed"
-                return
-
-            self.state.programs_database.register_solution(init_sol)
-            self.state.sol_history.append(init_sol)
-            self.verbose_info(f"Initialized with initial program (score: {score})")
-        else:
-            self.verbose_info(
-                f"Continuing from sample {self.state.tot_sample_nums} with {len(self.state.sol_history)} solutions in history"
-            )
-
-        self.state.status = "running"
-
-    def _step(self) -> None:
-        start_sample = self.state.tot_sample_nums + 1
-        end_sample = self.state.tot_sample_nums + self.num_samplers
+    def step_iteration(self) -> None:
+        start_sample = self.state.sample_count + 1
+        end_sample = self.state.sample_count + self.num_samplers
         self.verbose_info(f"Samples {start_sample} - {end_sample} / {self.max_sample_nums or 'unlimited'}")
 
         prompt_solutions, island_id = self.state.programs_database.get_prompt_solutions()
-        if not prompt_solutions:
-            self.verbose_info("No solutions available for prompting")
-            return
-
-        self.verbose_info(f"Selected {len(prompt_solutions)} solutions from island {island_id}")
+        if prompt_solutions:
+            self.verbose_info(f"Selected {len(prompt_solutions)} solutions from island {island_id}")
+        else:
+            self.verbose_info(f"No prior programs available on island {island_id}; bootstrapping from the task prompt")
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.num_samplers + self.num_evaluators) as executor:
             generate_futures = []
             eval_futures = []
+            database_bootstrapped = self.state.programs_database.get_best_solution() is not None
 
             for sampler_id in range(self.num_samplers):
                 generate_futures.append(executor.submit(self._generate_single_program, prompt_solutions, sampler_id))
@@ -140,29 +111,33 @@ class FunSearch(Method):
 
                 self.state.sol_history.append(program)
                 self.state.current_batch_solutions.append(program)
-                self.state.tot_sample_nums += 1
+                self.state.sample_count += 1
 
                 if program.evaluation_res and program.evaluation_res.valid:
-                    self.state.programs_database.register_solution(program, island_id)
+                    if not database_bootstrapped:
+                        self.state.programs_database.register_solution(program)
+                        database_bootstrapped = True
+                        self.verbose_info("Bootstrapped all islands with the first valid program")
+                    else:
+                        self.state.programs_database.register_solution(program, island_id)
                     score_str = f"{program.evaluation_res.score:.6f}" if program.evaluation_res.score is not None else "None"
                     self.verbose_info(f"Registered valid program to island {island_id} (score: {score_str})")
                 else:
-                    self.verbose_info(f"Added invalid program to history (sample {self.state.tot_sample_nums})")
+                    self.verbose_info(f"Added invalid program to history (sample {self.state.sample_count})")
 
         best_solution = self.state.programs_database.get_best_solution()
         if best_solution and best_solution.evaluation_res:
             best_score_str = f"{best_solution.evaluation_res.score:.6f}" if best_solution.evaluation_res.score is not None else "None"
             self.verbose_info(f"Current best score: {best_score_str}")
 
-        if self.state.tot_sample_nums % 50 == 0:
+        if self.state.sample_count % 50 == 0:
             stats = self.state.programs_database.get_statistics()
             self.verbose_info(
-                f"Database stats: {stats['total_programs']} total programs, {stats['num_islands']} islands, "
-                f"best score: {stats['global_best_score']:.6f}"
+                f"Database stats: {stats['total_programs']} total programs, {stats['num_islands']} islands, best score: {stats['global_best_score']:.6f}"
             )
 
-    def _should_stop(self) -> bool:
-        return self.state.status == "failed" or self.state.tot_sample_nums >= self.max_sample_nums
+    def should_stop_iteration(self) -> bool:
+        return self.state.status == "failed" or self.state.sample_count >= self.max_sample_nums
 
     def _select_best_solution(self) -> Solution | None:
         if self.state.programs_database is not None:
@@ -175,7 +150,7 @@ class FunSearch(Method):
             return
 
         batch_id = self.state.current_batch_id
-        sample_range = (self.state.current_batch_start, self.state.tot_sample_nums)
+        sample_range = (self.state.current_batch_start, self.state.sample_count)
         metadata = {
             "valid_count": sum(1 for s in self.state.current_batch_solutions if s.evaluation_res and s.evaluation_res.valid),
         }
@@ -199,7 +174,7 @@ class FunSearch(Method):
             )
             self.store.save_summary("best_per_batch.json", self.state.best_per_batch)
 
-        self.state.current_batch_start = self.state.tot_sample_nums
+        self.state.current_batch_start = self.state.sample_count
         self.state.current_batch_solutions = []
         self.state.current_batch_usage = []
 

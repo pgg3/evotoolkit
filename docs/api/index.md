@@ -1,6 +1,6 @@
 # API Docs Status
 
-This API section still contains pages that originated before `3.0.0`, so some details may lag behind the current core runtime.
+This API section still contains pages that originated before `1.0.0`, so some details may lag behind the current stable core runtime.
 
 For the current public surface, start with:
 

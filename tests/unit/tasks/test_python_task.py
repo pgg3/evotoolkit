@@ -15,8 +15,8 @@ class TestMinimalPythonTask:
         assert isinstance(minimal_task.spec.prompt, str)
         assert len(minimal_task.spec.prompt) > 0
 
-    def test_spec_can_carry_initial_solution(self, minimal_task):
-        assert minimal_task.spec.initial_solution.startswith("def f")
+    def test_spec_does_not_define_task_seed(self, minimal_task):
+        assert not hasattr(minimal_task.spec, "initial_solution")
 
 
 class TestPythonTaskEvaluate:

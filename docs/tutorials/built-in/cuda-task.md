@@ -526,12 +526,15 @@ Initial runtime: 2.3456 ms
 def main():
     # ... (previous Step 3 code)
 
-    # Get initial solution
-    init_sol = task.make_init_sol_wo_other_info()
+    from evotoolkit.core import Solution
+
+    # Evaluate any baseline kernel directly
+    baseline = Solution("def kernel(x):\n    return x")
+    result = task.evaluate(baseline)
 
     print("Initial kernel info:")
-    print(f"Runtime: {-init_sol.evaluation_res.score:.4f} ms")
-    print(f"Score: {init_sol.evaluation_res.score:.6f}")
+    print(f"Runtime: {-result.score:.4f} ms")
+    print(f"Score: {result.score:.6f}")
 
 
 if __name__ == '__main__':

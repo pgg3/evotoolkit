@@ -9,12 +9,9 @@ from evotoolkit.core import EvaluationResult, Solution
 from evotoolkit.task.python_task.funsearch_interface import FunSearchPythonInterface
 
 
-def _make_initial_solution(interface) -> Solution:
+def _make_solution(interface) -> Solution:
     return interface.make_solution(
-        interface.task.spec.initial_solution,
-        name=interface.task.spec.initial_name,
-        description=interface.task.spec.initial_description,
-        extras=interface.task.spec.initial_extras,
+        "def f(x):\n    return x",
     )
 
 
@@ -64,8 +61,8 @@ class TestFunSearchPythonInterfacePrompts:
         content = messages[0]["content"]
         assert "Python" in content or "function" in content.lower()
 
-    def test_task_initial_solution_returns_solution(self, iface):
-        sol = _make_initial_solution(iface)
+    def test_can_make_solution(self, iface):
+        sol = _make_solution(iface)
         assert isinstance(sol, Solution)
         assert len(sol.sol_string) > 0
 

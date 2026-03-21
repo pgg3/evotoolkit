@@ -32,20 +32,14 @@ class EvoEngineerPythonInterface(EvoEngineerInterface):
         self,
         operator_name: str,
         selected_individuals: List[Solution],
-        current_best_sol: Solution,
+        current_best_sol: Solution | None,
         random_descriptions: List[str],
         **kwargs,
     ) -> List[dict]:
         """Generate prompt for any operator"""
         task_description = self.task.spec.prompt
 
-        if current_best_sol is None:
-            current_best_sol = self._make_initial_solution()
-
-        current_best_score = self._format_solution_score(current_best_sol)
-
         if operator_name == "init":
-            # Build the thoughts section if available
             thoughts_section = ""
             if random_descriptions:
                 thoughts_list = "\n".join([f"- {thought}" for thought in random_descriptions])
@@ -54,21 +48,13 @@ class EvoEngineerPythonInterface(EvoEngineerInterface):
             prompt = f"""# PYTHON FUNCTION OPTIMIZATION TASK
 {task_description}
 
-## INITIAL SOLUTION
-**Name:** {current_best_sol.metadata.name or "Initial"}
-**Score:** {current_best_score}
-**Current Approach:** {current_best_sol.metadata.description or "Initial"}
-**Function Code:**
-```python
-{current_best_sol.sol_string}
-```
-
-## OPTIMIZATION INSIGHTS
+## SEARCH CONTEXT
 {thoughts_section}
 
-## OPTIMIZATION STRATEGY
-{"Use the insights above if relevant as optimization guidance." if random_descriptions else ""}
-Propose a new Python function that aims to improve the score while ensuring it returns the correct result.
+## INITIALIZATION STRATEGY
+Generate a strong first candidate for this task.
+{"Use the insights above if relevant as inspiration." if random_descriptions else ""}
+Focus on a concrete, correct implementation instead of discussing alternatives.
 
 ## RESPONSE FORMAT:
 name: [descriptive_name_with_underscores]
@@ -83,7 +69,12 @@ thought: [The rationale for the improvement idea.]
 2. MAKE SURE THE PROPOSAL CODE IS VALID PYTHON CODE."""
             return [{"role": "user", "content": prompt}]
 
-        elif operator_name == "crossover":
+        if current_best_sol is None:
+            raise ValueError("current_best_sol must be provided by the method runtime")
+
+        current_best_score = self._format_solution_score(current_best_sol)
+
+        if operator_name == "crossover":
             # Build the thoughts section if available
             thoughts_section = ""
             if random_descriptions:
@@ -141,7 +132,7 @@ thought: [The rationale for the improvement idea.]
 2. MAKE SURE THE PROPOSAL CODE IS VALID PYTHON CODE."""
             return [{"role": "user", "content": prompt}]
 
-        elif operator_name == "mutation":
+        if operator_name == "mutation":
             individual = selected_individuals[0]
 
             # Build the thoughts section if available
@@ -191,8 +182,8 @@ thought: [The rationale for the improvement idea.]
 1. The code MUST be wrapped in ```python and ``` markers
 2. MAKE SURE THE PROPOSAL CODE IS VALID PYTHON CODE."""
             return [{"role": "user", "content": prompt}]
-        else:
-            raise ValueError(f"Unknown operator: {operator_name}")
+
+        raise ValueError(f"Unknown operator: {operator_name}")
 
     def parse_response(self, response_str: str) -> Solution:
         """Improved parser with multiple fallback strategies"""
