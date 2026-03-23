@@ -1,26 +1,40 @@
+import atexit
 from pathlib import Path
 from shutil import copy2
 
+_registered = False
+_site_dir: Path | None = None
 
-def on_post_build(config, **kwargs):
-    """Mirror the root sitemap into translated subdirectories for RTD addons."""
-    i18n_plugin = config.plugins.get("i18n")
-    if i18n_plugin is None:
+
+def _mirror_sitemaps() -> None:
+    if _site_dir is None:
         return
 
-    site_dir = Path(config.site_dir)
+    site_dir = _site_dir
     sitemap_files = [site_dir / "sitemap.xml", site_dir / "sitemap.xml.gz"]
     if not any(path.exists() for path in sitemap_files):
         return
 
-    for language in i18n_plugin.config.languages:
-        if not language.build or language.default or language.locale == "null":
-            continue
+    target_dirs = {site_dir}
+    target_dirs.update(index.parent for index in site_dir.rglob("index.html"))
 
-        target_dir = site_dir / str(language.locale)
-        if not target_dir.exists():
-            continue
-
+    for target_dir in target_dirs:
         for source in sitemap_files:
-            if source.exists():
-                copy2(source, target_dir / source.name)
+            if not source.exists():
+                continue
+
+            destination = target_dir / source.name
+            if destination.resolve() == source.resolve():
+                continue
+
+            copy2(source, destination)
+
+
+def on_post_build(config, **kwargs):
+    """Mirror the root sitemap into every page directory for RTD addons."""
+    global _registered, _site_dir
+
+    _site_dir = Path(config.site_dir)
+    if not _registered:
+        atexit.register(_mirror_sitemaps)
+        _registered = True
