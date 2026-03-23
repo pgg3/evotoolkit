@@ -11,4 +11,4 @@ The core package provides:
 - generic Python and string interfaces for the built-in methods
 - OpenAI-compatible HTTP client helpers in `evotoolkit.tools`
 
-The stable `1.0.1` repository documents only the reusable core. Keep concrete task families, datasets, and hardware-specific workflows in your own package or repository, and build them on top of this runtime.
+The stable `1.0.2` repository documents only the reusable core. Keep concrete task families, datasets, and hardware-specific workflows in your own package or repository, and build them on top of this runtime.

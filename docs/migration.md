@@ -1,6 +1,6 @@
 # Migration From Pre-1.0 Releases
 
-`v1.0.1` is the current stable release of the standalone EvoToolkit core. The `1.0.0` release established the stable explicit-runtime surface, and `1.0.1` keeps that runtime unchanged.
+`v1.0.2` is the current stable release of the standalone EvoToolkit core. The `1.0.0` release established the stable explicit-runtime surface, and `1.0.2` keeps that runtime unchanged.
 
 If you used earlier pre-`1.0` releases or legacy APIs, these are the important changes:
 

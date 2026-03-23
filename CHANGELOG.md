@@ -2,9 +2,9 @@
 
 All notable user-facing changes to EvoToolkit are documented here.
 
-## [1.0.1] - 2026-03-23
+## [1.0.2] - 2026-03-23
 
-This stable patch release keeps the runtime API unchanged while republishing the finalized core-only package surface under a fresh PyPI version.
+This stable patch release keeps the runtime API unchanged while republishing the finalized core-only package surface under a fresh PyPI version after `1.0.1` was blocked by PyPI filename reuse rules.
 
 ### Highlights
 
@@ -14,7 +14,7 @@ This stable patch release keeps the runtime API unchanged while republishing the
 
 ### Packaging
 
-- Published metadata for the stable `1.0.1` release line.
+- Published metadata for the stable `1.0.2` release line.
 - Kept runtime dependencies minimal: `numpy` and `scipy`.
 - Shipped a runnable custom-task example in `examples/custom_task/my_custom_task.py`.
 
