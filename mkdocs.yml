@@ -31,6 +31,9 @@ plugins:
 markdown_extensions:
   - toc:
       permalink: true
+  - pymdownx.highlight:
+      pygments_lang_class: true
+  - pymdownx.superfences
 
 nav:
   - Home: index.md
