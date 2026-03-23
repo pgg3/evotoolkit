@@ -2,7 +2,7 @@
 
 EvoToolkit is the core SDK for LLM-driven evolutionary search over executable or structured solutions.
 
-The stable `1.0.0` package intentionally ships only reusable building blocks:
+The stable `1.0.1` package intentionally ships only reusable building blocks:
 
 - built-in methods: `EoH`, `EvoEngineer`, `FunSearch`
 - runtime lifecycle bases: `Method`, `IterativeMethod`, `PopulationMethod`

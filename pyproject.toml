@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "evotoolkit"
-version = "1.0.0"
+version = "1.0.1"
 description = "Core SDK for LLM-driven evolutionary search over executable or structured solutions."
 readme = "README.md"
 requires-python = ">=3.10"

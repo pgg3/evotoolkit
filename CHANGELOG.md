@@ -2,9 +2,9 @@
 
 All notable user-facing changes to EvoToolkit are documented here.
 
-## [1.0.0] - 2026-03-23
+## [1.0.1] - 2026-03-23
 
-This stable release finalizes the core-only repository surface for public distribution.
+This stable patch release keeps the runtime API unchanged while republishing the finalized core-only package surface under a fresh PyPI version.
 
 ### Highlights
 
@@ -14,7 +14,7 @@ This stable release finalizes the core-only repository surface for public distri
 
 ### Packaging
 
-- Published metadata for the stable `1.0.0` release line.
+- Published metadata for the stable `1.0.1` release line.
 - Kept runtime dependencies minimal: `numpy` and `scipy`.
 - Shipped a runnable custom-task example in `examples/custom_task/my_custom_task.py`.
 
@@ -30,3 +30,7 @@ This stable release finalizes the core-only repository surface for public distri
 - Standardized persistence around `RunStore`, `checkpoint/state.pkl`, and `checkpoint/manifest.json`.
 - Removed the old high-level `evotoolkit.solve(...)` entry point from the stable public API.
 - Earlier `1.0.0rc*` prereleases existed for validation before the stable surface was locked.
+
+## [1.0.0] - 2026-03-23
+
+This was the first stable release of the standalone EvoToolkit core package.
