@@ -12,7 +12,7 @@ build:
     post_checkout:
       # Cancel building pull requests when a new commit is pushed
       - |
-        if [ "$READTHEDOCS_VERSION_TYPE" = "external" ] && git diff --quiet origin/$READTHEDOCS_GIT_IDENTIFIER..HEAD -- docs/ mkdocs.yml .readthedocs.yaml;
+        if [ "$READTHEDOCS_VERSION_TYPE" = "external" ] && git diff --quiet origin/$READTHEDOCS_GIT_IDENTIFIER..HEAD -- docs/ mkdocs.yml mkdocs_hooks.py requirements-docs.txt .readthedocs.yaml;
         then
           echo "No changes to docs, cancelling build"
           exit 183  # Read the Docs cancellation code

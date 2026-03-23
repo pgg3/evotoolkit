@@ -3,6 +3,8 @@ site_description: Core SDK for LLM-driven evolutionary search
 site_author: Ping Guo
 site_url: !ENV [READTHEDOCS_CANONICAL_URL, ""]
 docs_dir: docs
+hooks:
+  - mkdocs_hooks.py
 
 theme:
   name: material
