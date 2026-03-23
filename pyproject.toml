@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "evotoolkit"
-version = "1.0.1rc1"
+version = "1.0.0"
 description = "Core SDK for LLM-driven evolutionary search over executable or structured solutions."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -46,11 +46,17 @@ Repository = "https://github.com/pgg3/evotoolkit"
 Documentation = "https://evotoolkit.readthedocs.io/"
 Changelog = "https://github.com/pgg3/evotoolkit/blob/main/CHANGELOG.md"
 
+[tool.hatch.build]
+ignore-vcs = true
+exclude = [
+    "/.gitignore",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/evotoolkit"]
 
 [tool.hatch.build.targets.sdist]
-include = [
+only-include = [
     "src/evotoolkit",
     "README.md",
     "LICENSE",

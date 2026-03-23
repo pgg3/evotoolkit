@@ -1,8 +1,8 @@
-# Migration From RC Releases
+# Migration From Pre-1.0 Releases
 
-`v1.0.0` was the first stable release of the standalone EvoToolkit core. The current `1.0.1rc1` line keeps the same explicit runtime model while collecting post-release feedback.
+`v1.0.0` is the stable release of the standalone EvoToolkit core.
 
-If you used earlier RC releases, these are the important changes:
+If you used earlier pre-`1.0` releases or legacy APIs, these are the important changes:
 
 - `evotoolkit.solve(...)` is gone; instantiate a method class directly and call `run()`
 - the core package no longer ships concrete domain tasks
@@ -12,7 +12,7 @@ If you used earlier RC releases, these are the important changes:
 
 ## Task API Mapping
 
-If you have custom tasks written against the older RC API, migrate them like this:
+If you have custom tasks written against the older prerelease API, migrate them like this:
 
 - `get_base_task_description()` -> `TaskSpec.prompt`
 - `_process_data()` -> plain `__init__()` state plus `build_*_spec()`
@@ -58,4 +58,4 @@ algo = EvoEngineer(
 result = algo.run()
 ```
 
-If you previously relied on built-in domain tasks from the RC era, move them into your own package first, then reintroduce them on top of the current core runtime.
+If you previously relied on built-in domain tasks from earlier prerelease branches, move them into your own package first, then reintroduce them on top of the current core runtime.

@@ -1,6 +1,6 @@
 # Quick Start
 
-The current `1.0.1rc1` workflow is:
+The stable `1.0.0` workflow is:
 
 1. Define a task.
 2. Return a `TaskSpec`.

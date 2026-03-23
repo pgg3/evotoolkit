@@ -2,7 +2,7 @@
 
 EvoToolkit is the core SDK for LLM-driven evolutionary search over executable or structured solutions.
 
-This branch prepares `1.0.1rc1`, a release candidate built on top of the `v1.0.0` stable runtime line. The package intentionally ships only reusable building blocks:
+The stable `1.0.0` package intentionally ships only reusable building blocks:
 
 - built-in methods: `EoH`, `EvoEngineer`, `FunSearch`
 - runtime lifecycle bases: `Method`, `IterativeMethod`, `PopulationMethod`
@@ -17,12 +17,6 @@ Concrete domain tasks, hardware-backed workflows, and application-specific examp
 
 ```bash
 pip install evotoolkit
-```
-
-To test release candidates after they are published:
-
-```bash
-pip install --pre evotoolkit
 ```
 
 ## Quick Start
