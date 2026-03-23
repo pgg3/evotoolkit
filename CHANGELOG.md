@@ -2,6 +2,26 @@
 
 All notable user-facing changes to EvoToolkit are documented here.
 
+## [1.0.1rc1] - 2026-03-23
+
+This release candidate is intended for hands-on validation before the next stable patch release.
+
+### Highlights
+
+- Kept the runtime API unchanged while preparing a new RC build on top of the `v1.0.0` stable line.
+- Cleaned the public repository surface down to a strict core-only package layout.
+- Removed legacy docs that still described deleted APIs, old task families, and unsupported extras.
+
+### Documentation
+
+- Reduced the public docs to a small bilingual core set: index, installation, quickstart, extensions, and migration.
+- Updated the docs and README to describe the current RC line and the explicit method-instantiation workflow.
+- Removed hidden documentation trees that were only being excluded from MkDocs builds.
+
+### Notes
+
+- The latest stable GitHub release remains `v1.0.0`; `1.0.1rc1` is the preview line for user testing and feedback.
+
 ## [1.0.0] - 2026-03-21
 
 This is the first stable release of the standalone EvoToolkit core package.

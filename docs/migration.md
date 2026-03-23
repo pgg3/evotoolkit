@@ -1,6 +1,6 @@
 # Migration From RC Releases
 
-`1.0.0` is the first stable release of the standalone EvoToolkit core.
+`v1.0.0` was the first stable release of the standalone EvoToolkit core. The current `1.0.1rc1` line keeps the same explicit runtime model while collecting post-release feedback.
 
 If you used earlier RC releases, these are the important changes:
 

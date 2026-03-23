@@ -1,0 +1,4 @@
+# Documentation build requirements for Read the Docs
+mkdocs>=1.6.1
+mkdocs-material>=9.6.21
+mkdocs-static-i18n>=1.3.0

@@ -1,21 +1,28 @@
-# EvoToolkit
+# EvoToolkit Core
 
-EvoToolkit is the stable core SDK for LLM-driven evolutionary search over executable or structured solutions.
+EvoToolkit is the core SDK for LLM-driven evolutionary search over executable or structured solutions.
 
-`1.0.0` is the first stable release of the standalone runtime. The package intentionally ships only reusable building blocks:
+This branch prepares `1.0.1rc1`, a release candidate built on top of the `v1.0.0` stable runtime line. The package intentionally ships only reusable building blocks:
 
-- evolutionary algorithms: `EoH`, `EvoEngineer`, `FunSearch`
+- built-in methods: `EoH`, `EvoEngineer`, `FunSearch`
 - runtime lifecycle bases: `Method`, `IterativeMethod`, `PopulationMethod`
 - checkpointing and readable artifacts through `RunStore`
 - generic `PythonTask` and `StringTask` SDK layers
-- generic Python and String interfaces for the built-in methods
+- generic Python and string interfaces for the built-in methods
+- OpenAI-compatible HTTP client utilities in `evotoolkit.tools`
 
-Concrete domain tasks should live in external packages or in your own repository on top of this core.
+Concrete domain tasks, hardware-backed workflows, and application-specific examples should live in your own package or repository on top of this core.
 
 ## Install
 
 ```bash
 pip install evotoolkit
+```
+
+To test release candidates after they are published:
+
+```bash
+pip install --pre evotoolkit
 ```
 
 ## Quick Start
@@ -56,30 +63,31 @@ algo = EvoEngineer(
     running_llm=llm_api,
     max_generations=5,
 )
-result = algo.run()
+best_solution = algo.run()
 ```
 
-## Building On Top
+## Documentation
 
-The intended extension workflow is explicit:
+The published documentation mirrors the `docs/` directory and keeps the core pages in English and Chinese:
 
-1. Define a `PythonTask` or `StringTask`.
-2. Return a `TaskSpec` from `build_python_spec()` or `build_string_spec()`.
-3. Pair the task with a generic interface such as `EvoEngineerPythonInterface`.
-4. Instantiate a method class directly and call `run()`.
-
-If you need a domain package, keep those concrete tasks outside `src/evotoolkit` and expose them through your own package imports.
-
-A runnable reference implementation lives in `examples/custom_task/my_custom_task.py`.
+- `index`
+- `installation`
+- `quickstart`
+- `extensions`
+- `migration`
 
 ## Development
 
 ```bash
 uv sync --group dev
 uv run pytest
+uv run ruff check .
+uv run ruff format --check .
 uv run mkdocs build
 uv build --out-dir dist
 ```
+
+The runnable repository example lives in `examples/custom_task/my_custom_task.py`.
 
 ## Runtime Artifacts
 

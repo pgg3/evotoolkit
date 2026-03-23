@@ -1,6 +1,6 @@
 # EvoToolkit Core
 
-EvoToolkit is the stable runtime layer for LLM-guided evolutionary search.
+EvoToolkit is the runtime layer for LLM-driven evolutionary search.
 
 The core package provides:
 
@@ -8,6 +8,7 @@ The core package provides:
 - lifecycle bases: `Method`, `IterativeMethod`, `PopulationMethod`
 - checkpointing and readable artifacts through `RunStore`
 - generic `PythonTask` and `StringTask` SDKs
-- generic interfaces for Python and string optimization
+- generic Python and string interfaces for the built-in methods
+- OpenAI-compatible HTTP client helpers in `evotoolkit.tools`
 
-The package is designed to be extended. Keep concrete task families in your own package or repository, and build them on top of this core.
+This branch prepares `1.0.1rc1`, a release candidate on top of the `v1.0.0` stable line. The repository documents only the reusable core. Keep concrete task families, datasets, and hardware-specific workflows in your own package or repository, and build them on top of this runtime.

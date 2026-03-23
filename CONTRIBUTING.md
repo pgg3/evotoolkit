@@ -1,96 +1,64 @@
 # Contributing to EvoToolkit
 
-Thank you for your interest in contributing to EvoToolkit! This guide will help you get started.
+This repository publishes the reusable core SDK. Contributions should keep `src/evotoolkit` focused on generic runtime behavior, not application-specific task packages.
 
 ## Development Setup
 
-1. **Fork and clone** the repository:
-   ```bash
-   git clone https://github.com/<your-username>/evotoolkit.git
-   cd evotoolkit
-   ```
-
-2. **Install dependencies** (requires [uv](https://docs.astral.sh/uv/)):
-   ```bash
-   uv sync --group dev
-   ```
-
-3. **Verify** your setup:
-   ```bash
-   uv run pytest
-   ```
-
-## Code Style
-
-We use [Ruff](https://docs.astral.sh/ruff/) for linting and formatting:
-
 ```bash
-uv run ruff format .        # Format code
-uv run ruff check .         # Lint code
-uv run ruff check . --fix   # Auto-fix lint issues
+git clone https://github.com/<your-username>/evotoolkit.git
+cd evotoolkit
+uv sync --group dev
 ```
 
-- Line length: 160 characters
-- Quote style: double quotes
-- Import sorting: handled by Ruff (isort rules)
-
-## Running Tests
+Verify the environment before opening a change:
 
 ```bash
-uv run pytest                              # Run all tests
-uv run pytest --cov --cov-report=html      # With coverage report
-uv run pytest -m "not slow"               # Skip slow tests
-uv run pytest -m "not cuda"               # Skip CUDA tests
-uv run pytest -m "not cuda and not llm"   # CI-compatible subset
+uv run pytest
+uv run ruff check .
+uv run ruff format --check .
+uv run mkdocs build
 ```
 
-## Adding a New Task
+## Working on the Core SDK
 
-1. Keep concrete domain tasks outside the core package by default; `src/evotoolkit` should stay focused on reusable SDK surfaces
-2. Create a subclass of `Task` (for Python tasks use `PythonTask`; for string tasks use `StringTask`)
-3. Build a `TaskSpec` in `build_spec()`, `build_python_spec()`, or `build_string_spec()`
-4. Implement `evaluate()` or the task-type-specific evaluation hook
-5. Reuse a generic `MethodInterface` when possible; only add a custom interface when the prompt/response contract really differs
-6. Register the task with `@register_task` only if you need registry integration; explicit imports are the default workflow
-7. Add tests in `tests/unit/tasks/` and update documentation
+Task-related contributions should stay within the generic SDK surface:
 
-Do not put initial-solution lifecycle into the task API. If a method needs special bootstrap behavior, keep it inside that method or its prompt design.
+1. Subclass `PythonTask` or `StringTask`.
+2. Return a `TaskSpec` from `build_python_spec()` or `build_string_spec()`.
+3. Implement the matching evaluation hook.
+4. Reuse a generic interface when possible, or add a custom `MethodInterface` if the prompt/response contract genuinely differs.
+5. Add tests in `tests/unit/tasks/` and update the public docs when behavior changes.
 
-## Adding a New Algorithm
+Do not add concrete domain datasets, hardware-specific evaluation flows, or application-specific task families to this repository.
 
-1. Prefer subclassing `IterativeMethod` for new step-wise algorithms
-2. Register with `@register_algorithm`
-3. Implement `step_iteration()` and `should_stop_iteration()`
-4. Optionally implement `prepare_initialization()`, `initialize_iteration()`, or a custom `state_cls`
-5. Drop down to raw `Method` only if you need a non-standard lifecycle
-6. Add tests in `tests/unit/methods/`
+## Working on Methods
 
-`IterativeMethod` already provides:
+Algorithm contributions should build on the runtime lifecycle that already exists:
 
-- default state construction from `task.spec`
-- default best-solution selection from `state.sol_history`
-- standard checkpoint persistence through `RunStore`
+1. Prefer subclassing `IterativeMethod` for step-wise search.
+2. Use `PopulationMethod` for generation-based search with population helpers.
+3. Drop down to raw `Method` only if you need a non-standard lifecycle.
+4. Add tests in `tests/unit/methods/` and checkpoint coverage when persistence behavior changes.
 
-For generation-based population algorithms, `PopulationMethod` is the higher-level base and adds population helpers plus generation artifact flushing.
+## Documentation Expectations
 
-## Pull Request Process
+The public documentation surface is intentionally small and bilingual. If you change public behavior, keep these English and Chinese pages aligned:
 
-1. **Fork** the repository and create a feature branch
-2. **Implement** your changes with tests
-3. **Ensure** all tests pass: `uv run pytest`
-4. **Ensure** code style: `uv run ruff check . && uv run ruff format --check .`
-5. **Submit** a pull request with a clear description
+- `docs/index*.md`
+- `docs/installation*.md`
+- `docs/quickstart*.md`
+- `docs/extensions*.md`
+- `docs/migration*.md`
 
-### PR Requirements
+## Packaging Checks
 
-- All existing tests must pass
-- New features must include tests
-- Code must pass Ruff linting and formatting checks
-- Documentation should be updated if the public API changes
+If you change packaging or release metadata, also verify:
+
+```bash
+uv build --out-dir dist
+uvx twine check dist/*
+```
 
 ## Reporting Issues
 
-Please use [GitHub Issues](https://github.com/pgg3/evotoolkit/issues) to report bugs or request features. Include:
-
-- **Bug reports**: Python version, OS, minimal reproduction steps, full error traceback
-- **Feature requests**: Use case description, proposed API design (if applicable)
+Please use [GitHub Issues](https://github.com/pgg3/evotoolkit/issues) for bug reports and feature requests. Include Python version, OS, reproduction steps, and the full traceback when applicable.

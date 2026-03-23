@@ -1,3 +1,0 @@
-# HistoryManager
-
-::: evotoolkit.core.HistoryManager

@@ -1,3 +1,0 @@
-# HttpsApi
-
-::: evotoolkit.tools.HttpsApi

@@ -1,28 +1,26 @@
 # Testing
 
-The core SDK should be testable without any concrete task package installed.
+The core SDK should be testable without any external task package installed.
 
 ## Core Test Suite
 
 ```bash
-uv run pytest tests/ -m "not cuda and not llm and not slow"
+uv run pytest
 ```
 
 This suite validates:
 
-- generic Python task abstractions
-- generic String task abstractions
-- algorithm execution
-- registry behavior
-- top-level `solve(...)`
+- runtime state, checkpointing, and persistence
+- built-in methods: `EoH`, `EvoEngineer`, and `FunSearch`
+- generic Python and string task SDK layers
+- generic Python and string interfaces
+- top-level package exports and `HttpsApi`
 
 ## Coverage
 
 ```bash
 uv run pytest tests/ --cov --cov-config=coverage-full.ini --cov-report=term-missing -m "not cuda and not llm and not slow"
 ```
-
-`coverage-reviewed.ini` is kept as a compatibility alias for the same core-only source tree.
 
 ## Docs And Packaging
 
@@ -31,7 +29,3 @@ uv run mkdocs build
 uv build --out-dir dist
 uvx twine check dist/*
 ```
-
-## Companion Package
-
-Concrete domain tests now belong in `evotoolkit-tasks` and should be run from the `tasks/` workspace package.

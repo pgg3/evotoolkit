@@ -1,12 +1,12 @@
-# Quick Start
+# 快速开始
 
-The current `1.0.1rc1` workflow is:
+当前 `1.0.1rc1` 的工作流如下：
 
-1. Define a task.
-2. Return a `TaskSpec`.
-3. Wrap the task with a method interface.
-4. Instantiate a method explicitly.
-5. Call `run()`.
+1. 定义一个 task。
+2. 返回 `TaskSpec`。
+3. 用 method interface 包装 task。
+4. 显式实例化一个方法类。
+5. 调用 `run()`。
 
 ```python
 from evotoolkit import EvoEngineer
@@ -47,6 +47,6 @@ algo = EvoEngineer(
 best_solution = algo.run()
 ```
 
-For string problems, use `StringTask` together with `EoHStringInterface`, `EvoEngineerStringInterface`, or `FunSearchStringInterface`.
+对于字符串问题，请使用 `StringTask`，并搭配 `EoHStringInterface`、`EvoEngineerStringInterface` 或 `FunSearchStringInterface`。
 
-For a runnable end-to-end example, see `examples/custom_task/my_custom_task.py` in the repository.
+如果你想看一个可直接运行的完整示例，请参考仓库中的 `examples/custom_task/my_custom_task.py`。

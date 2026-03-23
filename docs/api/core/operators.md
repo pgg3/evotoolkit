@@ -1,3 +1,0 @@
-# Operator
-
-::: evotoolkit.core.Operator

@@ -19,7 +19,7 @@ try:
     __version__ = version("evotoolkit")
 except Exception:
     # Fallback for development/editable install
-    __version__ = "1.0.0.dev0"
+    __version__ = "1.0.1rc1.dev0"
 
 
 def list_algorithms() -> list[str]:

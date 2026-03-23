@@ -26,11 +26,11 @@ mkdocs:
 # Install dependencies required for building the documentation
 python:
   install:
-    # Install the project itself (so mkdocstrings can find the code)
+    # Install the project itself so the docs build against the packaged metadata
     - method: pip
       path: .
     # Install documentation build dependencies
-    - requirements: docs/requirements.txt
+    - requirements: requirements-docs.txt
 
 # Optional: Enable PDF/EPUB builds
 # formats:
