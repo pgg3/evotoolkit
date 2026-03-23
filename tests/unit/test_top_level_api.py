@@ -19,10 +19,7 @@ class TestTopLevelAPI:
 
     def test_list_algorithms_callable(self):
         algos = evotoolkit.list_algorithms()
-        assert isinstance(algos, list)
-        assert "eoh" in algos
-        assert "evoengineer" in algos
-        assert "funsearch" in algos
+        assert algos == ["eoh", "evoengineer", "funsearch"]
 
     def test_list_tasks_not_exported_at_top_level(self):
         assert not hasattr(evotoolkit, "list_tasks")

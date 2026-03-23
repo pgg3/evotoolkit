@@ -4,11 +4,11 @@
 
 """EvoToolkit core SDK public entry points."""
 
-# Import algorithms to trigger registration decorators
 from evotoolkit.evo_method.eoh import EoH
 from evotoolkit.evo_method.evoengineer import EvoEngineer
 from evotoolkit.evo_method.funsearch import FunSearch
-from evotoolkit.registry import list_algorithms
+
+_BUILTIN_METHODS = (EoH, EvoEngineer, FunSearch)
 
 __author__ = "Ping Guo"
 
@@ -20,6 +20,12 @@ try:
 except Exception:
     # Fallback for development/editable install
     __version__ = "1.0.0.dev0"
+
+
+def list_algorithms() -> list[str]:
+    """Return the built-in algorithm names shipped with EvoToolkit."""
+
+    return [method.algorithm_name for method in _BUILTIN_METHODS]
 
 
 # Export public API

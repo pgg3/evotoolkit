@@ -50,28 +50,21 @@ EvoToolkit 设计注重模块化和可扩展性。
 - 实现任务特定的算子
 - 协调评估
 
-### 4. 注册表 (`evotoolkit.registry`)
-任务和算法的自动发现和注册。
-
-**功能:**
-- 自动注册任务和方法
-- 提供查找和枚举
-- 支持插件扩展
-
 ---
 
 ## 设计模式
 
-### 工厂模式
-`evotoolkit.solve()` 创建算法实例：
+### 显式组合
+当前运行时通过显式实例化算法类来组装执行：
 
 ```python
-def solve(interface, **kwargs):
-    # 根据接口类型自动选择算法
-    method_class = registry.get_method_for_interface(interface)
-    config = create_config(interface, **kwargs)
-    algorithm = method_class(config)
-    return algorithm.run()
+algorithm = EvoEngineer(
+    interface=interface,
+    output_path="./results",
+    running_llm=llm_api,
+    max_generations=10,
+)
+result = algorithm.run()
 ```
 
 ### 策略模式
@@ -131,7 +124,6 @@ evotoolkit/
 ├── tools/                  # 工具
 │   ├── llm/               # LLM API 客户端
 │   └── data/              # 数据集管理
-└── registry.py            # 组件注册
 ```
 
 ---
@@ -141,9 +133,9 @@ evotoolkit/
 ### 1. 初始化流程
 
 ```
-用户 → evotoolkit.solve()
+用户 → 显式创建 Method 实例
     ↓
-创建 Config (interface, llm_api, params)
+传入 interface, llm_api 和运行参数
     ↓
 创建 Method 实例 (EvoEngineer/FunSearch/EoH)
     ↓
@@ -184,7 +176,6 @@ Method.get_best_solution()
 
 1. 继承 `BaseTask` 或 `PythonTask`/`CudaTask`
 2. 实现 `evaluate()` 方法
-3. （可选）在注册表中注册
 
 ```python
 from evotoolkit.core import BaseTask
@@ -200,7 +191,6 @@ class MyNewTask(BaseTask):
 1. 继承 `BaseMethod`
 2. 实现 `run()` 和相关方法
 3. 创建对应的 `Config` 类
-4. 在注册表中注册
 
 ```python
 from evotoolkit.core import BaseMethod

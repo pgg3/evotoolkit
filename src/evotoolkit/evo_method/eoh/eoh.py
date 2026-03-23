@@ -6,12 +6,10 @@ import concurrent.futures
 from typing import List
 
 from evotoolkit.core import PopulationMethod, Solution
-from evotoolkit.registry import register_algorithm
 
 from .state import EoHState
 
 
-@register_algorithm("eoh")
 class EoH(PopulationMethod):
     algorithm_name = "eoh"
     startup_title = "EOH ALGORITHM STARTED"

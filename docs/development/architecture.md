@@ -12,17 +12,14 @@ Define optimization problems and evaluation logic.
 ### 2. Methods (`evotoolkit.evo_method`)
 Implement evolutionary algorithms (EoH, EvoEngineer, FunSearch).
 
-### 3. Interfaces (`evotoolkit.core.method_interface`)
+### 3. Interfaces (`evotoolkit.core.interface`)
 Bridge between tasks and methods, handling algorithm-specific adaptations.
-
-### 4. Registry (`evotoolkit.registry`)
-Automatic discovery and registration of tasks and algorithms.
 
 ---
 
 ## Design Patterns
 
-- **Factory Pattern**: `evotoolkit.solve()` creates algorithm instances
+- **Explicit Composition**: users instantiate a method class and call `run()`
 - **Strategy Pattern**: Interfaces provide algorithm-specific strategies
 - **Template Method**: Base classes define workflow, subclasses customize
 
@@ -35,8 +32,7 @@ evotoolkit/
 ├── core/               # Base classes and abstractions
 ├── evo_method/         # Algorithm implementations
 ├── task/               # Task implementations
-├── tools/              # Utilities (LLM API, etc.)
-└── registry.py         # Component registration
+└── tools/              # Utilities (LLM API, etc.)
 ```
 
 ---

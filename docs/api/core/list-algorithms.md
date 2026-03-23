@@ -4,6 +4,8 @@
 
 ---
 
+Returns the built-in algorithm names exposed by the package.
+
 ## Example
 
 ```python

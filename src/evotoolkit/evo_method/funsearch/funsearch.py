@@ -5,13 +5,11 @@
 import concurrent.futures
 
 from evotoolkit.core import IterativeMethod, Solution
-from evotoolkit.registry import register_algorithm
 
 from .programs_database import ProgramsDatabase
 from .state import FunSearchState
 
 
-@register_algorithm("funsearch")
 class FunSearch(IterativeMethod):
     algorithm_name = "funsearch"
     history_layout = "batch"

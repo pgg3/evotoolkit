@@ -535,29 +535,17 @@ best_sol = algorithm.run_state_dict.get_best_solution()
 print(f"Best score: {best_sol.evaluation_res.score}")
 ```
 
-#### 步骤 5：注册算法（可选）
+#### 步骤 5：直接暴露算法类
 
-如果希望算法能被 `evotoolkit.solve()` 自动识别，需要注册：
+当前 EvoToolkit 不再提供基于注册表的自动发现。
 
-```python
-from evotoolkit.registry import register_algorithm
+自定义算法就是普通的 Python 类：
 
-@register_algorithm("my_algorithm", config=MyAlgorithmConfig)
-class MyAlgorithm(Method):
-    # ...
-```
+- 在您自己的模块中定义它
+- 直接导入这个类
+- 显式实例化并调用 `run()`
 
-然后可以这样使用：
-
-```python
-result = evotoolkit.solve(
-    interface=interface,
-    output_path='./results',
-    running_llm=llm_api,
-    algorithm="my_algorithm",  # 指定算法名称
-    max_generations=20
-)
-```
+这比维护额外的注册层更直接，也更容易调试。
 
 ### 2.4 学习现有算法实现
 

@@ -6,12 +6,10 @@ import concurrent.futures
 from typing import List
 
 from evotoolkit.core import PopulationMethod, Solution
-from evotoolkit.registry import register_algorithm
 
 from .state import EvoEngineerState
 
 
-@register_algorithm("evoengineer")
 class EvoEngineer(PopulationMethod):
     algorithm_name = "evoengineer"
     startup_title = "EVOENGINEER ALGORITHM STARTED"
