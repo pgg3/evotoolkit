@@ -1,19 +1,22 @@
-# EvoToolkit Core
+# EvoToolkit
 
-EvoToolkit is the core SDK for LLM-driven evolutionary search over executable or structured solutions.
+[![CI](https://github.com/pgg3/evotoolkit/actions/workflows/ci.yml/badge.svg)](https://github.com/pgg3/evotoolkit/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/evotoolkit)](https://pypi.org/project/evotoolkit/)
+[![Python](https://img.shields.io/pypi/pyversions/evotoolkit)](https://pypi.org/project/evotoolkit/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Docs](https://readthedocs.org/projects/evotoolkit/badge/?version=latest)](https://evotoolkit.readthedocs.io/)
 
-The stable `1.0.2` package intentionally ships only reusable building blocks:
+**EvoToolkit** is a Python toolkit for LLM-driven evolutionary optimization. It provides a modular, three-layer architecture — **Method**, **Interface**, and **Task** — that decouples search algorithms from problem definitions, making it easy to apply evolutionary strategies to diverse domains.
 
-- built-in methods: `EoH`, `EvoEngineer`, `FunSearch`
-- runtime lifecycle bases: `Method`, `IterativeMethod`, `PopulationMethod`
-- checkpointing and readable artifacts through `RunStore`
-- generic `PythonTask` and `StringTask` SDK layers
-- generic Python and string interfaces for the built-in methods
-- OpenAI-compatible HTTP client utilities in `evotoolkit.tools`
+## Key Features
 
-Concrete domain tasks, hardware-backed workflows, and application-specific examples should live in your own package or repository on top of this core.
+- **Built-in evolutionary methods**: `EoH`, `EvoEngineer`, and `FunSearch`, ready to use out of the box
+- **Extensible task system**: define custom optimization problems via `PythonTask` or `StringTask`
+- **LLM-agnostic**: works with any OpenAI-compatible API endpoint
+- **Checkpointing**: automatic state persistence and resumable runs
+- **Lightweight**: minimal core dependencies (`numpy`, `scipy`)
 
-## Install
+## Installation
 
 ```bash
 pip install evotoolkit
@@ -28,68 +31,37 @@ from evotoolkit.task.python_task import EvoEngineerPythonInterface, PythonTask
 from evotoolkit.tools import HttpsApi
 
 
-class SquareTask(PythonTask):
+class MyTask(PythonTask):
     def build_python_spec(self, data) -> TaskSpec:
         return TaskSpec(
             name="square",
-            prompt="Write a Python function `f(x)` that returns a numeric value.",
+            prompt="Write a Python function `f(x)` that returns x squared.",
             modality="python",
         )
 
     def _evaluate_code_impl(self, candidate_code: str) -> EvaluationResult:
         namespace = {}
         exec(candidate_code, namespace)  # noqa: S102
-        if "f" not in namespace:
-            return EvaluationResult(valid=False, score=float("-inf"), additional_info={"error": "Function `f` was not defined."})
-        return EvaluationResult(valid=True, score=float(namespace["f"](3)), additional_info={})
+        fn = namespace.get("f")
+        if fn is None:
+            return EvaluationResult(valid=False, score=float("-inf"), additional_info={})
+        score = -abs(fn(5) - 25)  # closer to 25 is better
+        return EvaluationResult(valid=True, score=score, additional_info={})
 
 
-task = SquareTask(data=None)
+task = MyTask(data=None)
 interface = EvoEngineerPythonInterface(task)
-llm_api = HttpsApi(
-    api_url="https://api.openai.com/v1/chat/completions",
-    key="your-api-key",
-    model="gpt-4o",
-)
-algo = EvoEngineer(
-    interface=interface,
-    output_path="./results",
-    running_llm=llm_api,
-    max_generations=5,
-)
-best_solution = algo.run()
+llm = HttpsApi(api_url="https://api.openai.com/v1/chat/completions", key="your-key", model="gpt-4o")
+algo = EvoEngineer(interface=interface, output_path="./results", running_llm=llm, max_generations=5)
+best = algo.run()
 ```
+
+See [`examples/custom_task/`](examples/custom_task/) for a complete runnable example.
 
 ## Documentation
 
-The published documentation mirrors the `docs/` directory and keeps the core pages in English and Chinese:
+Full documentation (English & Chinese) is available at [evotoolkit.readthedocs.io](https://evotoolkit.readthedocs.io/).
 
-- `index`
-- `installation`
-- `quickstart`
-- `extensions`
-- `migration`
+## License
 
-## Development
-
-```bash
-uv sync --group dev
-uv run pytest
-uv run ruff check .
-uv run ruff format --check .
-uv run mkdocs build
-uv build --out-dir dist
-```
-
-The runnable repository example lives in `examples/custom_task/my_custom_task.py`.
-
-## Runtime Artifacts
-
-Each run writes:
-
-- `checkpoint/state.pkl`
-- `checkpoint/manifest.json`
-- readable `history/*.json`
-- readable `summary/*.json`
-
-Checkpoint restore is explicit: recreate the algorithm object, call `load_checkpoint()`, then call `run()` again.
+[MIT](LICENSE)

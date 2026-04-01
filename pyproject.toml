@@ -44,7 +44,6 @@ dev = [
 Homepage = "https://github.com/pgg3/evotoolkit"
 Repository = "https://github.com/pgg3/evotoolkit"
 Documentation = "https://evotoolkit.readthedocs.io/"
-Changelog = "https://github.com/pgg3/evotoolkit/blob/main/CHANGELOG.md"
 
 [tool.hatch.build]
 ignore-vcs = true
@@ -60,7 +59,6 @@ only-include = [
     "src/evotoolkit",
     "README.md",
     "LICENSE",
-    "CHANGELOG.md",
     "examples/custom_task",
 ]
 
