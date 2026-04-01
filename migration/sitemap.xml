@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+    <url>
+        <loc>./</loc>
+        <lastmod>2026-04-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href=""/>
+        <xhtml:link rel="alternate" hreflang="zh" href="zh/"/>
+    </url>
+    <url>
+        <loc>extensions/</loc>
+        <lastmod>2026-04-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="extensions/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="zh/extensions/"/>
+    </url>
+    <url>
+        <loc>installation/</loc>
+        <lastmod>2026-04-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="installation/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="zh/installation/"/>
+    </url>
+    <url>
+        <loc>migration/</loc>
+        <lastmod>2026-04-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="migration/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="zh/migration/"/>
+    </url>
+    <url>
+        <loc>quickstart/</loc>
+        <lastmod>2026-04-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="quickstart/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="zh/quickstart/"/>
+    </url>
+    <url>
+        <loc>zh/</loc>
+        <lastmod>2026-04-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="zh/"/>
+        <xhtml:link rel="alternate" hreflang="en" href=""/>
+    </url>
+    <url>
+        <loc>zh/extensions/</loc>
+        <lastmod>2026-04-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="zh/extensions/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="extensions/"/>
+    </url>
+    <url>
+        <loc>zh/installation/</loc>
+        <lastmod>2026-04-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="zh/installation/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="installation/"/>
+    </url>
+    <url>
+        <loc>zh/migration/</loc>
+        <lastmod>2026-04-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="zh/migration/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="migration/"/>
+    </url>
+    <url>
+        <loc>zh/quickstart/</loc>
+        <lastmod>2026-04-01</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="zh/quickstart/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="quickstart/"/>
+    </url>
+</urlset>
