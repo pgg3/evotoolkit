@@ -293,6 +293,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    快速开始
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -309,6 +327,36 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        断点续跑
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -388,6 +436,25 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        断点续跑
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -451,6 +518,32 @@
 </code></pre></div>
 <p>对于字符串问题，请使用 <code>StringTask</code>，并搭配 <code>EoHStringInterface</code>、<code>EvoEngineerStringInterface</code> 或 <code>FunSearchStringInterface</code>。</p>
 <p>如果你想看一个可直接运行的完整示例，请参考仓库中的 <code>examples/custom_task/my_custom_task.py</code>。</p>
+<h2 id="_2">断点续跑<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>EvoToolkit 在每次迭代结束后会自动保存 checkpoint。如果运行被中断，可以在调用 <code>run()</code> 前加载 checkpoint 来恢复进度：</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">algo</span> <span class="o">=</span> <span class="n">EvoEngineer</span><span class="p">(</span>
+    <span class="n">interface</span><span class="o">=</span><span class="n">interface</span><span class="p">,</span>
+    <span class="n">output_path</span><span class="o">=</span><span class="s2">&quot;./results&quot;</span><span class="p">,</span>
+    <span class="n">running_llm</span><span class="o">=</span><span class="n">llm_api</span><span class="p">,</span>
+    <span class="n">max_generations</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># 如果存在 checkpoint，则从断点恢复</span>
+<span class="k">if</span> <span class="n">algo</span><span class="o">.</span><span class="n">checkpoint_exists</span><span class="p">():</span>
+    <span class="n">algo</span><span class="o">.</span><span class="n">load_checkpoint</span><span class="p">()</span>
+
+<span class="n">best_solution</span> <span class="o">=</span> <span class="n">algo</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</code></pre></div>
+<p>每次运行会生成如下输出结构：</p>
+<div class="language-text highlight"><pre><span></span><code>output_path/
+├── checkpoint/
+│   ├── state.pkl        # 完整算法状态（pickle 序列化）
+│   └── manifest.json    # 元数据（算法类型、代数、运行状态等）
+├── history/
+│   └── gen_0.json, ...  # 每代的解记录
+└── summary/
+    └── best_per_generation.json, usage_history.json
+</code></pre></div>
+<p>checkpoint 包含完整的算法状态——种群、代数、解历史和 LLM 用量——因此续跑可以无缝衔接。</p>
 
 
 
