@@ -50,3 +50,37 @@ best_solution = algo.run()
 For string problems, use `StringTask` together with `EoHStringInterface`, `EvoEngineerStringInterface`, or `FunSearchStringInterface`.
 
 For a runnable end-to-end example, see `examples/custom_task/my_custom_task.py` in the repository.
+
+## Checkpoint and Resume
+
+EvoToolkit automatically saves a checkpoint after every iteration. If a run is interrupted, you can resume from where it left off by loading the checkpoint before calling `run()`:
+
+```python
+algo = EvoEngineer(
+    interface=interface,
+    output_path="./results",
+    running_llm=llm_api,
+    max_generations=20,
+)
+
+# Resume from checkpoint if one exists
+if algo.checkpoint_exists():
+    algo.load_checkpoint()
+
+best_solution = algo.run()
+```
+
+Each run produces the following output structure:
+
+```
+output_path/
+├── checkpoint/
+│   ├── state.pkl        # Full algorithm state (pickle)
+│   └── manifest.json    # Metadata (algorithm, generation, status, ...)
+├── history/
+│   └── gen_0.json, ...  # Per-generation solution records
+└── summary/
+    └── best_per_generation.json, usage_history.json
+```
+
+The checkpoint contains the complete algorithm state — population, generation count, solution history, and LLM usage — so the resumed run continues seamlessly.

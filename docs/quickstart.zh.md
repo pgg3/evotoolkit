@@ -50,3 +50,37 @@ best_solution = algo.run()
 对于字符串问题，请使用 `StringTask`，并搭配 `EoHStringInterface`、`EvoEngineerStringInterface` 或 `FunSearchStringInterface`。
 
 如果你想看一个可直接运行的完整示例，请参考仓库中的 `examples/custom_task/my_custom_task.py`。
+
+## 断点续跑
+
+EvoToolkit 在每次迭代结束后会自动保存 checkpoint。如果运行被中断，可以在调用 `run()` 前加载 checkpoint 来恢复进度：
+
+```python
+algo = EvoEngineer(
+    interface=interface,
+    output_path="./results",
+    running_llm=llm_api,
+    max_generations=20,
+)
+
+# 如果存在 checkpoint，则从断点恢复
+if algo.checkpoint_exists():
+    algo.load_checkpoint()
+
+best_solution = algo.run()
+```
+
+每次运行会生成如下输出结构：
+
+```
+output_path/
+├── checkpoint/
+│   ├── state.pkl        # 完整算法状态（pickle 序列化）
+│   └── manifest.json    # 元数据（算法类型、代数、运行状态等）
+├── history/
+│   └── gen_0.json, ...  # 每代的解记录
+└── summary/
+    └── best_per_generation.json, usage_history.json
+```
+
+checkpoint 包含完整的算法状态——种群、代数、解历史和 LLM 用量——因此续跑可以无缝衔接。
