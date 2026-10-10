@@ -14,7 +14,7 @@ The example supplies twelve proposals, scores a Python function against sin(x), 
 ```python
 from evotoolkit import EvaluationResult, Runner, TaskSpec
 from evotoolkit.proposers import ChatProposer
-from evotoolkit.strategies import EoHStrategy
+from evotoolkit.strategies import EvoEngineerStrategy
 
 class GreetingEvaluator:
     spec = TaskSpec("greeting", "Write hello in answer.txt.", "string", "answer.txt")
@@ -25,14 +25,14 @@ class GreetingEvaluator:
 # llm.get_response(messages) returns (response_text, usage_dict).
 evaluator = GreetingEvaluator()
 proposer = ChatProposer(llm)
-strategy = EoHStrategy(evaluator.spec)
+strategy = EvoEngineerStrategy(evaluator.spec)
 runner = Runner(evaluator=evaluator, proposer=proposer, strategy=strategy,
                 output_dir="results/greeting", budget=20, seed=42,
                 propose_workers=4, eval_workers=4, mode="generational")
 best = runner.run()
 ```
 
-Replace the strategy with `EvoEngineerStrategy(spec)` or `FunSearchStrategy(spec)` without changing the loop. Scores are scalar and higher is better. Invalid results use `EvaluationResult(False, None, feedback)`.
+Replace the strategy with `EoHStrategy(spec)` or `FunSearchStrategy(spec)` without changing the loop. Scores are scalar and higher is better. Invalid results use `EvaluationResult(False, None, feedback)`.
 
 ## Budgets and concurrency
 
@@ -46,7 +46,7 @@ Replace the strategy with `EvoEngineerStrategy(spec)` or `FunSearchStrategy(spec
 
 ```python
 runner = Runner.resume("results/greeting", evaluator=evaluator,
-                       proposer=ChatProposer(llm), strategy=EoHStrategy(evaluator.spec))
+                       proposer=ChatProposer(llm), strategy=EvoEngineerStrategy(evaluator.spec))
 best = runner.run()
 ```
 

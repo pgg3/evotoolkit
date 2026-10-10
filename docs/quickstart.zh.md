@@ -15,7 +15,7 @@ uv run python examples/custom_task/my_custom_task.py --offline --mode steady --o
 ```python
 from evotoolkit import EvaluationResult, Runner, TaskSpec
 from evotoolkit.proposers import ChatProposer
-from evotoolkit.strategies import EoHStrategy
+from evotoolkit.strategies import EvoEngineerStrategy
 
 class GreetingEvaluator:
     spec = TaskSpec("greeting", "在 answer.txt 中写 hello。", "string", "answer.txt")
@@ -26,13 +26,13 @@ class GreetingEvaluator:
 # llm.get_response(messages) 返回 (响应文本, usage 字典)。
 evaluator = GreetingEvaluator()
 runner = Runner(evaluator=evaluator, proposer=ChatProposer(llm),
-                strategy=EoHStrategy(evaluator.spec), output_dir="results/greeting",
+                strategy=EvoEngineerStrategy(evaluator.spec), output_dir="results/greeting",
                 budget=20, seed=42, propose_workers=4, eval_workers=4,
                 mode="generational")
 best = runner.run()
 ```
 
-可直接替换为 `EvoEngineerStrategy(spec)` 或 `FunSearchStrategy(spec)`。分数越大越好；失败返回 `EvaluationResult(False, None, feedback)`。
+可直接替换为 `EoHStrategy(spec)` 或 `FunSearchStrategy(spec)`。分数越大越好；失败返回 `EvaluationResult(False, None, feedback)`。
 
 ## 预算与并发
 
@@ -46,7 +46,7 @@ best = runner.run()
 
 ```python
 runner = Runner.resume("results/greeting", evaluator=evaluator,
-                       proposer=ChatProposer(llm), strategy=EoHStrategy(evaluator.spec))
+                       proposer=ChatProposer(llm), strategy=EvoEngineerStrategy(evaluator.spec))
 best = runner.run()
 ```
 

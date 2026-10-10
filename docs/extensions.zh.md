@@ -21,8 +21,8 @@ ProposalContext 包含任务、父代、指令、最佳解、提示和请求数�
 
 - `RankedPopulation(max_size=5)`：只保存有效、有限分数、内容唯一的解；排名加权有放回采样。
 - `IslandArchive(num_islands=5, reset_interval=30000, ...)`：分数聚类、温度采样、簇内偏好短产物。首个有效解播种所有岛；后续按内容哈希分配，并按已接受的唯一解数量重置弱岛。它替代旧版的采样岛分配和墙钟重置，以保证日志重放。
-- `EoHStrategy(spec, pop_size=5, selection_num=2)`：i1、e1、e2、m1、m2。
 - `EvoEngineerStrategy(spec, pop_size=5)`：init、crossover、mutation，附带最佳解和思路提示。
+- `EoHStrategy(spec, pop_size=5, selection_num=2)`：i1、e1、e2、m1、m2。
 - `FunSearchStrategy(spec, num_islands=5, num_parents=2, reset_interval=30000)`：岛屿父代采样和改进指令。
 
 内置策略由 Runner 的预算或调用上限停止；自定义停止规则实现 should_stop。

@@ -21,8 +21,8 @@ Strategy code runs serially on the Runner thread; proposal and evaluation calls 
 
 - `RankedPopulation(max_size=5)`: finite valid unique solutions, descending scores and rank-weighted sampling with replacement.
 - `IslandArchive(num_islands=5, reset_interval=30000, ...)`: score clusters, temperature-weighted sampling, shorter artifacts within clusters. The first valid candidate seeds every island. Content hashes route later candidates; accepted unique solution counts trigger weak-island resets. These deterministic rules replace v1's sampled-island routing and wall-clock resets so replay reconstructs the archive.
-- `EoHStrategy(spec, pop_size=5, selection_num=2)`: i1, e1, e2, m1, m2 instructions.
 - `EvoEngineerStrategy(spec, pop_size=5)`: init, crossover and mutation, best candidate and rationale hints.
+- `EoHStrategy(spec, pop_size=5, selection_num=2)`: i1, e1, e2, m1, m2 instructions.
 - `FunSearchStrategy(spec, num_islands=5, num_parents=2, reset_interval=30000)`: island sampling with one improvement instruction.
 
 The built-ins stop on Runner's budget/call cap. For a custom stop criterion implement `should_stop(step)` in your strategy.

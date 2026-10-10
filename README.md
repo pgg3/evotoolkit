@@ -22,7 +22,7 @@ EvoToolkit is a small Python harness for evolving executable artifacts with lang
 
 | | |
 |---|---|
-| **One loop, many strategies** | `EoHStrategy`, `EvoEngineerStrategy` and `FunSearchStrategy` share the same `Runner`, budget accounting and log format, so results are comparable. |
+| **One loop, many strategies** | `EvoEngineerStrategy`, `EoHStrategy` and `FunSearchStrategy` share the same `Runner`, budget accounting and log format, so results are comparable. |
 | **Chat models or coding agents** | `ChatProposer` wraps any chat-completions endpoint. `AgentProposer` drives Claude Code, Codex and friends through [headless-cli](https://github.com/RobertTLange/headless-cli). |
 | **Artifacts are file sets** | A solution is `dict[path, content]` with a content-hash identity. Single-file tasks set `main_file` and never notice. |
 | **Replayable, no pickle** | Every solution, failed call and RNG snapshot goes to `events.jsonl`; full prompts and transcripts go to `traces/`. `Runner.resume()` rebuilds state from the log. |
@@ -42,7 +42,7 @@ Python 3.10+. The only runtime dependency is NumPy.
 ```python
 from evotoolkit import EvaluationResult, Runner, TaskSpec
 from evotoolkit.proposers import ChatProposer
-from evotoolkit.strategies import EoHStrategy
+from evotoolkit.strategies import EvoEngineerStrategy
 from evotoolkit.tools import HttpsApi
 
 
@@ -59,7 +59,7 @@ llm = HttpsApi(api_url="https://api.openai.com/v1/chat/completions", key="your-k
 runner = Runner(
     evaluator=evaluator,
     proposer=ChatProposer(llm),
-    strategy=EoHStrategy(evaluator.spec),
+    strategy=EvoEngineerStrategy(evaluator.spec),
     output_dir="results/greeting",
     budget=20,
     seed=0,
@@ -68,7 +68,7 @@ best = runner.run()
 print(best.files if best else "No valid result")
 ```
 
-Swap `EoHStrategy` for `EvoEngineerStrategy` or `FunSearchStrategy` without touching the rest. To try it without an API key, run the bundled offline example:
+Swap `EvoEngineerStrategy` for `EoHStrategy` or `FunSearchStrategy` without touching the rest. To try it without an API key, run the bundled offline example:
 
 ```bash
 git clone https://github.com/pgg3/evotoolkit && cd evotoolkit
@@ -91,7 +91,7 @@ Components are protocols, not base classes: any object with the right methods wo
 
 ```python
 runner = Runner.resume("results/greeting", evaluator=evaluator,
-                       proposer=ChatProposer(llm), strategy=EoHStrategy(evaluator.spec))
+                       proposer=ChatProposer(llm), strategy=EvoEngineerStrategy(evaluator.spec))
 best = runner.run()
 ```
 

@@ -22,7 +22,7 @@ EvoToolkit 是一个用语言模型演化可执行产物的轻量 Python 框架�
 
 | | |
 |---|---|
-| **一个循环，多种策略** | `EoHStrategy`、`EvoEngineerStrategy`、`FunSearchStrategy` 共用同一个 `Runner`、同一套预算计数和日志格式，结果可直接比较。 |
+| **一个循环，多种策略** | `EvoEngineerStrategy`、`EoHStrategy`、`FunSearchStrategy` 共用同一个 `Runner`、同一套预算计数和日志格式，结果可直接比较。 |
 | **聊天模型或编码 agent** | `ChatProposer` 适配任意 chat-completions 接口；`AgentProposer` 通过 [headless-cli](https://github.com/RobertTLange/headless-cli) 驱动 Claude Code、Codex 等。 |
 | **产物是文件集合** | 一个解就是 `dict[路径, 内容]`，以内容哈希作为身份。单文件任务只需设置 `main_file`。 |
 | **可回放，不用 pickle** | 每个解、每次失败调用和 RNG 快照都写入 `events.jsonl`，完整提示与对话记录写入 `traces/`。`Runner.resume()` 从日志重建状态。 |
@@ -42,7 +42,7 @@ pip install evotoolkit
 ```python
 from evotoolkit import EvaluationResult, Runner, TaskSpec
 from evotoolkit.proposers import ChatProposer
-from evotoolkit.strategies import EoHStrategy
+from evotoolkit.strategies import EvoEngineerStrategy
 from evotoolkit.tools import HttpsApi
 
 
@@ -59,7 +59,7 @@ llm = HttpsApi(api_url="https://api.openai.com/v1/chat/completions", key="your-k
 runner = Runner(
     evaluator=evaluator,
     proposer=ChatProposer(llm),
-    strategy=EoHStrategy(evaluator.spec),
+    strategy=EvoEngineerStrategy(evaluator.spec),
     output_dir="results/greeting",
     budget=20,
     seed=0,
@@ -68,7 +68,7 @@ best = runner.run()
 print(best.files if best else "No valid result")
 ```
 
-把 `EoHStrategy` 换成 `EvoEngineerStrategy` 或 `FunSearchStrategy`，其余代码不变。不想配 API key，可以直接跑自带的离线示例：
+把 `EvoEngineerStrategy` 换成 `EoHStrategy` 或 `FunSearchStrategy`，其余代码不变。不想配 API key，可以直接跑自带的离线示例：
 
 ```bash
 git clone https://github.com/pgg3/evotoolkit && cd evotoolkit
@@ -91,7 +91,7 @@ Runner ──► Strategy ──► Archive        选哪些父代、用哪条�
 
 ```python
 runner = Runner.resume("results/greeting", evaluator=evaluator,
-                       proposer=ChatProposer(llm), strategy=EoHStrategy(evaluator.spec))
+                       proposer=ChatProposer(llm), strategy=EvoEngineerStrategy(evaluator.spec))
 best = runner.run()
 ```
 
