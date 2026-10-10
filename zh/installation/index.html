@@ -27,7 +27,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -35,7 +35,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
       
 
@@ -348,14 +348,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../migration/" class="md-nav__link">
+      <a href="../design/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    迁移
+    2.0 设计
   
 
     
@@ -404,19 +404,15 @@
 
 
 <h1 id="_1">安装<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
-<p>安装最新的稳定核心包：</p>
+<p>需要 Python 3.10 或更新版本。</p>
 <div class="language-bash highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>evotoolkit
 </code></pre></div>
-<p>这已经足够用于：</p>
-<ul>
-<li>开发你自己的 <code>PythonTask</code> 或 <code>StringTask</code></li>
-<li>在自定义目标上运行内置算法</li>
-<li>作为另一个任务包的运行时依赖</li>
-</ul>
-<p>如果你是在当前仓库里开发：</p>
+<p>从源码仓库开发：</p>
 <div class="language-bash highlight"><pre><span></span><code>uv<span class="w"> </span>sync<span class="w"> </span>--group<span class="w"> </span>dev
+uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/
 </code></pre></div>
-<p>核心包本身不再附带具体应用任务依赖。如果你是在 EvoToolkit 之上构建任务包，请在自己的项目里单独声明这些依赖。</p>
+<p>核心仅依赖 NumPy。ChatProposer 可接收任意提供 get_response(messages) 的客户端；内置 HttpsApi 使用 chat-completions 格式。真实模型访问需要配置自己的地址和密钥。</p>
+<p>AgentProposer 另需安装 headless-cli 并认证对应后端，详见<a href="../extensions/">扩展</a>。导入 EvoToolkit 不会安装 agent 依赖。</p>
 
 
 
@@ -469,7 +465,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

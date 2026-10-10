@@ -1,0 +1,1191 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Core SDK for LLM-driven evolutionary search">
+      
+      
+        <meta name="author" content="Ping Guo">
+      
+      
+      
+        <link rel="prev" href="../extensions/">
+      
+      
+      
+        
+          <link rel="alternate" href="../../design/" hreflang="en">
+        
+          <link rel="alternate" href="./" hreflang="zh">
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>2.0 设计 - EvoToolkit Core</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#evotoolkit-20" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../" title="EvoToolkit Core" class="md-header__button md-logo" aria-label="EvoToolkit Core" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            EvoToolkit Core
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              2.0 设计
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="选择当前语言">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="../../design/" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="./" hreflang="zh" class="md-select__link">
+              简体中文
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../" title="EvoToolkit Core" class="md-nav__button md-logo" aria-label="EvoToolkit Core" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    EvoToolkit Core
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    安装
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    快速开始
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../extensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    扩展
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.0 设计
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    2.0 设计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 范围
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. 范围">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#evotoolkit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EvoToolkit 是什么
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        谁用它
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        使用场景
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 结构
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 结构">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        组件
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        数据对象
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        不变量
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 接口契约
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 接口契约">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#proposer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        内置 Proposer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#evaluator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        内置 Evaluator 辅助
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#archive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        内置 Archive
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        内置 Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-v1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 持久化布局（v1）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 行为基线
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 推迟的决定
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 决策
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 范围
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. 范围">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#evotoolkit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        EvoToolkit 是什么
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        谁用它
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        使用场景
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 结构
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 结构">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        组件
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        数据对象
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        不变量
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 接口契约
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 接口契约">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#proposer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        内置 Proposer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#evaluator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        内置 Evaluator 辅助
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#archive" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        内置 Archive
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#strategy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        内置 Strategy
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-v1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 持久化布局（v1）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 行为基线
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 推迟的决定
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 决策
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="evotoolkit-20">EvoToolkit 2.0 设计<a class="headerlink" href="#evotoolkit-20" title="Permanent link">&para;</a></h1>
+<p>状态：已实现并作为 2.0.0 发布。实现与原草案不一致的地方，都记在它所属的小节里。使用方式见 <code>extensions.zh.md</code>。</p>
+<p>2.0 与 1.x 彻底切断：没有兼容 shim，没有弃用路径。
+英文版见 <code>design.md</code>，以英文版为准。</p>
+<h2 id="1">1. 范围<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<h3 id="evotoolkit">EvoToolkit 是什么<a class="headerlink" href="#evotoolkit" title="Permanent link">&para;</a></h3>
+<p>一个最小化的 LLM 驱动程序搜索 harness。它服务的问题形状是：</p>
+<ul>
+<li>一个<strong>可执行的产物</strong>，以文件集的形式存储（一个 Python 模块、一个 CUDA 内核加它的 launcher、一个 prompt 文件……），</li>
+<li>一个<strong>评估器</strong>，运行产物并返回分数，</li>
+<li>一个<strong>预算</strong>（提案次数，外加 proposer 调用次数上限；见不变量 6）。</li>
+</ul>
+<p>工具做的全部事情就是：从 archive 里挑父代，让 proposer 产出新产物，评估它们，记录它们，重复。</p>
+<h3 id="_1">谁用它<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>用户</th>
+<th>需要什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>对比搜索策略的研究者</td>
+<td>FunSearch、EoH、EvoEngineer 和新策略跑在同一个循环、同一套预算记账、同一种事件日志上。</td>
+</tr>
+<tr>
+<td>对比 proposer 的研究者</td>
+<td>API 模型和 coding agent（Claude Code、Codex……）在同一任务上对比，成本有记录。</td>
+</tr>
+<tr>
+<td>优化内核或启发式的实践者</td>
+<td>写一个 <code>Evaluator</code>，选一个策略，跑。</td>
+</tr>
+<tr>
+<td>分析者</td>
+<td>读 JSONL 事件日志，重建谱系、分数轨迹、停滞情况。</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_2">使用场景<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<ol>
+<li>组合优化的启发式设计。评估器在实例集上取平均 gap。</li>
+<li>内核或算子优化（EvoEngineer）。评估器负责编译、正确性检查、profiling。</li>
+<li>数学构造。评估器是 checker。</li>
+<li>prompt 或配置搜索。评估器是下游任务分数。</li>
+<li>以后：对指令模板本身做元层面搜索。现在不做，但设计不能堵死它。</li>
+</ol>
+<h2 id="2">2. 结构<a class="headerlink" href="#2" title="Permanent link">&para;</a></h2>
+<h3 id="_3">组件<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<p>五个组件，每个只回答一个问题。箭头表示允许的依赖方向。</p>
+<div class="language-text highlight"><pre><span></span><code>Runner  --&gt;  Strategy  --&gt;  Archive
+  |             |
+  |             +---&gt;  (指令模板：是数据，不是代码)
+  +---&gt;  Proposer
+  +---&gt;  Evaluator
+  +---&gt;  EventLog
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>回答的问题</th>
+<th>知道什么</th>
+<th>不许知道什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Evaluator</td>
+<td>这个产物多好？</td>
+<td>产物的文件</td>
+<td>proposer、archive、线程</td>
+</tr>
+<tr>
+<td>Proposer</td>
+<td>给定父代和指令，能产出哪些新产物？</td>
+<td>ProposalContext</td>
+<td>archive、打分、线程</td>
+</tr>
+<tr>
+<td>Archive</td>
+<td>存什么、怎么采样父代？</td>
+<td>Solution 和分数</td>
+<td>LLM、prompt、磁盘文件</td>
+</tr>
+<tr>
+<td>Strategy</td>
+<td>这一步选哪些父代、下什么指令？</td>
+<td>Archive、模板</td>
+<td>LLM 调用、线程、磁盘文件</td>
+</tr>
+<tr>
+<td>Runner</td>
+<td>循环、并发、预算、持久化。</td>
+<td>以上全部</td>
+<td>prompt 文本、选择策略</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_4">数据对象<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span class="n">Files</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>          <span class="c1"># 相对路径 -&gt; 内容</span>
+
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TaskSpec</span><span class="p">:</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span>                 <span class="c1"># 给 proposer 看的任务描述</span>
+    <span class="n">modality</span><span class="p">:</span> <span class="nb">str</span>               <span class="c1"># "python" | "cuda" | "string" | ...</span>
+    <span class="n">main_file</span><span class="p">:</span> <span class="nb">str</span>              <span class="c1"># 单文件 proposer 写的那个文件，如 "solution.py"</span>
+    <span class="n">extras</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">EvaluationResult</span><span class="p">:</span>
+    <span class="n">valid</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">score</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span>         <span class="c1"># 越大越好</span>
+    <span class="n">feedback</span><span class="p">:</span> <span class="nb">str</span>               <span class="c1"># 人和 LLM 可读：报错、profiler 输出……</span>
+    <span class="n">metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>     <span class="c1"># 结构化的附加指标，包括任何目标向量</span>
+    <span class="n">cost_seconds</span><span class="p">:</span> <span class="nb">float</span>
+
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Instruction</span><span class="p">:</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>                   <span class="c1"># "i1", "e1", "funsearch", "diff_refine", ...</span>
+    <span class="n">num_parents</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>                   <span class="c1"># 与模态无关；可用 {modality}、{main_file} 占位</span>
+    <span class="n">output_format</span><span class="p">:</span> <span class="nb">str</span>          <span class="c1"># "code_block" | "name_code_thought" | "files"</span>
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ProposalContext</span><span class="p">:</span>
+    <span class="n">spec</span><span class="p">:</span> <span class="n">TaskSpec</span>
+    <span class="n">parents</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="s2">"Solution"</span><span class="p">]</span>
+    <span class="n">instruction</span><span class="p">:</span> <span class="n">Instruction</span>
+    <span class="n">best</span><span class="p">:</span> <span class="s2">"Solution | None"</span>
+    <span class="n">hints</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>            <span class="c1"># 自由文本，例如其他解的描述</span>
+    <span class="n">num_proposals</span><span class="p">:</span> <span class="nb">int</span>          <span class="c1"># Strategy 这次想要几个提案</span>
+    <span class="n">call_id</span><span class="p">:</span> <span class="nb">str</span>                <span class="c1"># Runner 分发前分配，proposer 原样回填</span>
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Proposal</span><span class="p">:</span>
+    <span class="n">call_id</span><span class="p">:</span> <span class="nb">str</span>                <span class="c1"># 同一次 proposer 调用产出的提案共享</span>
+    <span class="n">files</span><span class="p">:</span> <span class="n">Files</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">rationale</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">usage</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>       <span class="c1"># 按调用记，不按提案记；用 call_id 去重</span>
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Solution</span><span class="p">:</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span>                     <span class="c1"># 文件内容哈希，取 16 位十六进制</span>
+    <span class="n">files</span><span class="p">:</span> <span class="n">Files</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">rationale</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">parent_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">instruction</span><span class="p">:</span> <span class="nb">str</span>            <span class="c1"># Instruction.name</span>
+    <span class="n">proposer</span><span class="p">:</span> <span class="nb">str</span>               <span class="c1"># Proposer.name</span>
+    <span class="n">call_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">usage</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="n">evaluation</span><span class="p">:</span> <span class="n">EvaluationResult</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">created_step</span><span class="p">:</span> <span class="nb">int</span>
+</code></pre></div>
+<p><code>Solution.id = sha256("\0".join(f"{path}\0{content}" for path in sorted(files)))[:16]</code>。</p>
+<p>数据模型里不再有 GA 的标签。crossover 就是 <code>num_parents=2</code> 的指令，mutation 就是 <code>num_parents=1</code> 的指令。EoH 的五个算子和 FunSearch 的一个算子都变成模板表里的行。</p>
+<h3 id="_5">不变量<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>先写日志再进 archive。</strong> Solution 先追加进事件日志，再插入 archive。日志只追加不修改。</li>
+<li><strong>状态是日志的函数。</strong> <code>Runner.resume()</code> 通过重放日志重建 archive 和计数器。不用 pickle。</li>
+<li><strong>Strategy 是纯的。</strong> <code>Strategy.next_batch()</code> 读 archive、返回 context。不做 I/O，不调 LLM，不开线程。并行度完全归 Runner：Runner 通过 <code>max_n</code> 告诉 Strategy 现在有几个空位，并且串行调用 <code>observe</code>，所以 Strategy 内部永远不需要锁。</li>
+<li><strong>Proposer 跨调用无状态。</strong> 任何记忆都放在 archive 或日志里。</li>
+<li><strong>内容寻址的身份。</strong> 文件完全相同的两个解 <code>id</code> 相同。archive 可以拒绝重复，但日志仍然记录这次尝试。</li>
+<li><strong>预算只在 Runner 里计数，按提案数计。</strong> Strategy 看到的 <code>remaining_budget</code> 是一个数字，它从不扣减。失败的 proposer 调用产出零个提案，不消耗提案预算；另有 <code>max_calls</code> 上限约束总调用次数。</li>
+<li><strong>提案之间唯一的共享通道是 archive。</strong> 任何不经过 archive 的依赖都是某个 Proposer 内部的事，记录在它的 trace 里。跨评估的依赖由 Strategy 通过 <code>observe</code> 和下一次 <code>next_batch</code> 表达；多个 proposer 串联则组合成一个 Proposer。核心不建模提案之间的依赖图。</li>
+<li><strong>Evaluator 永不抛异常。</strong> 失败就是 <code>valid=False</code> 并填写 <code>feedback</code>。隔离和超时是 Evaluator 的职责；Runner 只测 <code>cost_seconds</code>，并作为最后兜底捕获异常。</li>
+</ol>
+<h2 id="3">3. 接口契约<a class="headerlink" href="#3" title="Permanent link">&para;</a></h2>
+<p>所有契约都是 <code>typing.Protocol</code>。实现方不继承。</p>
+<div class="language-python highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Evaluator</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="n">spec</span><span class="p">:</span> <span class="n">TaskSpec</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files</span><span class="p">:</span> <span class="n">Files</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EvaluationResult</span><span class="p">:</span> <span class="o">...</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Proposer</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">propose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">ProposalContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Proposal</span><span class="p">]:</span> <span class="o">...</span>   <span class="c1"># 可以抛异常</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Archive</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">solution</span><span class="p">:</span> <span class="n">Solution</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Solution</span><span class="p">]:</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">best</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Solution</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span> <span class="o">...</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Strategy</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">archive</span><span class="p">:</span> <span class="n">Archive</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">next_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">max_n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">remaining_budget</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ProposalContext</span><span class="p">]:</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">observe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">solutions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Solution</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>   <span class="c1"># 加进 archive、裁剪等</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">should_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span> <span class="o">...</span>
+</code></pre></div>
+<p>Runner 是具体类，不是 protocol：</p>
+<div class="language-python highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Runner</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">evaluator</span><span class="p">,</span> <span class="n">proposer</span><span class="p">,</span> <span class="n">strategy</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">budget</span><span class="p">,</span>
+                 <span class="n">max_calls</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">propose_workers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">eval_workers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+                 <span class="n">mode</span><span class="o">=</span><span class="s2">"generational"</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Solution</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resume</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">evaluator</span><span class="p">,</span> <span class="n">proposer</span><span class="p">,</span> <span class="n">strategy</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Runner"</span><span class="p">:</span> <span class="o">...</span>
+</code></pre></div>
+<p><code>Runner.step()</code> 只做这些事：<code>ctxs = strategy.next_batch(...)</code>，把它们送进两级流水线，构造 Solution，逐个追加到日志，<code>strategy.observe(solutions)</code>，更新计数器，写 checkpoint 标记。</p>
+<p>两级流水线，并行度各自独立：</p>
+<ol>
+<li><strong>提案级</strong>：<code>propose_workers</code> 个线程并发调用 <code>proposer.propose(ctx)</code>，每次调用返回一个列表。抛异常则记一条 <code>call_failed</code> 事件。</li>
+<li><strong>评估级</strong>：每个返回的列表立即拆开，逐个提交给 <code>eval_workers</code> 个线程跑 <code>evaluator.evaluate</code>，不等同批其他调用。</li>
+</ol>
+<p>两种调度模式，同一个 Strategy 都能跑：</p>
+<ul>
+<li><code>generational</code>：发一批，等全部回来，再要下一批。EoH 和 EvoEngineer 的行为，golden 基线按它录。</li>
+<li><code>steady</code>：哪个 worker 空了就立刻 <code>next_batch(max_n=1)</code> 再要一个，不等别人。FunSearch 原版和 AlphaEvolve 的行为。LLM 延迟方差大或评估很快时吞吐更高。</li>
+</ul>
+<h3 id="proposer">内置 Proposer<a class="headerlink" href="#proposer" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>ChatProposer(llm, templates)</code>：用指令的 <code>text</code> 和 <code>output_format</code> 把 <code>ctx</code> 格式化成 messages，调 LLM，按 <code>output_format</code> 解析成 <code>Files</code>。<code>code_block</code> 和 <code>name_code_thought</code> 写入 <code>spec.main_file</code>；<code>files</code> 解析多个带路径标记的围栏块。把现在的六个 interface 文件吸收成一张模板表。</li>
+<li><code>AgentProposer(backend, workdir_factory)</code>：物化一个工作区（<code>TASK.md</code> 描述全部父代，落盘最后一个父代的文件，<code>evaluate.py</code> 仅在 <code>workdir_factory</code> 或 <code>evaluation_command</code> 提供时生成），通过 <code>headless-cli</code> 跑 headless coding agent，读回主文件、父代路径以及 <code>ARTIFACTS.json</code> 声明的文件。agent 轨迹就是 trace。</li>
+</ul>
+<h3 id="evaluator">内置 Evaluator 辅助<a class="headerlink" href="#evaluator" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>subprocess_evaluate(files, entry, timeout)</code>：把文件写进临时目录，在子进程里带超时运行 <code>entry</code>，返回 stdout、stderr 和退出码。任务族自行选用；核心不强制隔离。</li>
+</ul>
+<h3 id="archive">内置 Archive<a class="headerlink" href="#archive" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>RankedPopulation(max_size)</code>：1.x 的 <code>PopulationState</code> 加基于排名的采样。偏离：无效解一律不存；1.x 在种群有空位时会用无效解填充。</li>
+<li><code>IslandArchive(num_islands, ...)</code>：1.x 的 <code>ProgramsDatabase</code>，为了让 <code>resume</code> 只靠日志就能重建，做了两处有意的改动。新解按内容哈希分配到岛屿，而不是随机抽；弱岛在每累计 <code>reset_interval</code> 个被接受的唯一解后重置，而不是按墙钟定时。</li>
+</ul>
+<h3 id="strategy">内置 Strategy<a class="headerlink" href="#strategy" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>FunSearchStrategy</code>：一个指令，<code>num_parents</code> 2，IslandArchive。</li>
+<li><code>EoHStrategy</code>：指令 i1、e1、e2、m1、m2，保留算子语义、统一改写到共享模板（模板还会加入分数、反馈和当前最优），RankedPopulation。偏离：1.x 每代把每个算子在整个种群上跑一遍；2.0 把算子轮流分配到 Runner 给出的空位上，一次 <code>next_batch(max_n=4)</code> 得到 e1、e2、m1、m2 各一个。</li>
+<li><code>EvoEngineerStrategy</code>：init、crossover、mutation，带当前最优和 hints，RankedPopulation。</li>
+</ul>
+<p>每个都远少于 150 行。</p>
+<h2 id="4-v1">4. 持久化布局（v1）<a class="headerlink" href="#4-v1" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code>&lt;output_dir&gt;/
+  events.jsonl            只追加，每行一个 JSON 对象
+  traces/&lt;call_id&gt;.json   完整的 prompt messages 和原始回复，或 agent 轨迹
+</code></pre></div>
+<p>事件类型：</p>
+<div class="language-json highlight"><pre><span></span><code><span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"run_start"</span><span class="p">,</span><span class="w"> </span><span class="nt">"ts"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"task"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="err">TaskSpec</span><span class="p">},</span><span class="w"> </span><span class="nt">"strategy"</span><span class="p">:</span><span class="w"> </span><span class="s2">"eoh"</span><span class="p">,</span><span class="w"> </span><span class="nt">"proposer"</span><span class="p">:</span><span class="w"> </span><span class="s2">"chat:gpt-4o"</span><span class="p">,</span><span class="w"> </span><span class="nt">"seed"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">"budget"</span><span class="p">:</span><span class="w"> </span><span class="mi">45</span><span class="p">,</span><span class="w"> </span><span class="nt">"config"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"max_calls"</span><span class="p">:</span><span class="w"> </span><span class="mi">135</span><span class="p">,</span><span class="w"> </span><span class="nt">"propose_workers"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">"eval_workers"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">"mode"</span><span class="p">:</span><span class="w"> </span><span class="s2">"generational"</span><span class="p">,</span><span class="w"> </span><span class="nt">"verbose"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">},</span><span class="w"> </span><span class="nt">"env"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"python"</span><span class="p">:</span><span class="w"> </span><span class="s2">"3.12.1"</span><span class="p">,</span><span class="w"> </span><span class="nt">"platform"</span><span class="p">:</span><span class="w"> </span><span class="s2">"linux"</span><span class="p">,</span><span class="w"> </span><span class="nt">"evotoolkit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2.0.0"</span><span class="p">}}</span>
+<span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"call_started"</span><span class="p">,</span><span class="w"> </span><span class="nt">"ts"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"step"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="nt">"call_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"instruction"</span><span class="p">:</span><span class="w"> </span><span class="s2">"e1"</span><span class="p">,</span><span class="w"> </span><span class="nt">"rng_state"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="err">...</span><span class="p">}}</span>
+<span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"solution"</span><span class="p">,</span><span class="w"> </span><span class="nt">"ts"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"step"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="nt">"solution"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="err">Solu</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span><span class="p">}}</span>
+<span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"call_failed"</span><span class="p">,</span><span class="w"> </span><span class="nt">"ts"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"step"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="nt">"call_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"instruction"</span><span class="p">:</span><span class="w"> </span><span class="s2">"e1"</span><span class="p">,</span><span class="w"> </span><span class="nt">"error"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">}</span>
+<span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"step_end"</span><span class="p">,</span><span class="w"> </span><span class="nt">"ts"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"step"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="nt">"archive_size"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="nt">"best_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ab12..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"best_score"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.91</span><span class="p">,</span><span class="w"> </span><span class="nt">"proposals"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">"valid"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="nt">"calls"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="nt">"failed_calls"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">"rng_state"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="err">...</span><span class="p">}}</span>
+<span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"run_end"</span><span class="p">,</span><span class="w"> </span><span class="nt">"ts"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"completed"</span><span class="p">,</span><span class="w"> </span><span class="nt">"steps"</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="nt">"samples"</span><span class="p">:</span><span class="w"> </span><span class="mi">45</span><span class="p">}</span>
+</code></pre></div>
+<p><code>call_started</code> 事件和 <code>config</code>、<code>rng_state</code> 字段是实现期间加的。<code>call_started</code> 让 <code>resume</code> 能数到那些没产出结果的调用，<code>max_calls</code> 在崩溃后仍然有效。<code>rng_state</code> 是 numpy 位生成器在每次调用前和每步结束时的状态，恢复后父代选择沿着原来的随机流继续，而不是从头开始。</p>
+<p>规则：任何破坏性字段变更都要升 <code>v</code>。读取方必须忽略未知字段。<code>Solution.files</code> 在日志里完整保存；<code>feedback</code> 由 Runner 在解进入 archive 之前截断到 4 kB，因此运行中的 archive、据此生成的 prompt 和恢复后的 archive 完全一致（日志写入方保留 <code>feedback_truncated: true</code> 兜底）。<code>run_start.config.strategy</code> 记录策略超参数，<code>resume</code> 拒绝 <code>config</code> 不一致的策略。每次调用的 <code>call_id</code> 由 Runner 生成一次，<code>call_started</code>、<code>call_failed</code>、所有产出的 <code>solution</code> 和 trace 文件共用。trace 永不截断。进程被打断留下的末尾半行，读取方跳过，下一次以写模式打开日志时删除；其他格式错误的行一律报错。</p>
+<h2 id="5">5. 行为基线<a class="headerlink" href="#5" title="Permanent link">&para;</a></h2>
+<p><code>tests/golden/</code> 用脚本化 LLM 和固定种子，为每个内置策略记录：每一步的 <code>(主文件内容, valid, score, 父代 id)</code> 排序多重集、下发的指令、最优分数、失败调用数；以及最终的样本数、调用数和状态。</p>
+<p>原计划是用 1.x 录制、要求 2.0 复现。这在构造上做不到：不变量 6 规定无法解析的回复是一次失败调用、不扣预算，而 1.x 把它算作一个无效样本，所以同样的脚本化回复下，步骤边界和样本数必然不同。因此 1.x 快照已退役（重写前的 git 历史里还有），<code>*-v2.json</code> 改为用 2.0 录制。人工核对过的较弱证据：三个策略在 1.x 和 2.0 下产出的有效程序集合和最终最优分完全一致。</p>
+<p>v2 文件现在防的是 2.0 自身的意外漂移，不是相对 1.x 的漂移。只有在有意改变行为时才重录，并在提交信息里说明。</p>
+<p>已知上限：线程完成顺序不确定，所以基线记录的是每步的多重集而不是序列。父代选择发生在主线程、分发之前，且 generational 批次按 id 排序后再交给 <code>observe</code>，所以 archive 状态和选择都能由种子复现（加入父代 id 列后，才发现岛屿播种此前依赖线程完成顺序）。</p>
+<h2 id="6">6. 推迟的决定<a class="headerlink" href="#6" title="Permanent link">&para;</a></h2>
+<p>考虑过、暂不做、等到有真实需求再回头看的东西。每条写清楚触发条件。</p>
+<ul>
+<li><strong>提案依赖图。</strong> 见不变量 7。触发条件：接入 agent 后，出现一种依赖形态既不在一次调用内部、又不经过 archive。</li>
+<li><strong>steady 模式的基线。</strong> 结果依赖时序，不能用 golden 对比，只能验证不变量（日志解数等于预算、每个解的父代 id 都在它之前出现）。</li>
+<li><strong>多目标选择。</strong> <code>score</code> 保持单个浮点数、越大越好；目标向量放 <code>metrics</code>。多目标是一个按 <code>metrics</code> 采样的新 Archive 实现，核心不用改。触发条件：某个任务族和某个策略都需要它。</li>
+<li><strong>元层面搜索。</strong> 指令模板是数据，能序列化成文件，所以一张模板表可以当 Solution。它的 Evaluator 用小预算跑一个内层 <code>Runner</code>，给内层最优打分。核心已有的东西够用。触发条件：场景 5 有人真的要做。</li>
+</ul>
+<h2 id="7">7. 决策<a class="headerlink" href="#7" title="Permanent link">&para;</a></h2>
+<p><strong>Python，不是 Node 或 Rust。</strong> 评估器活在 Python 生态里（numpy、torch、triton、运筹实例库）。瓶颈是 LLM 延迟和评估器运行时间，不是 harness。放弃：Rust 核心加 Python 绑定，因为换不来任何可测量的收益，还让构建面翻倍。</p>
+<p><strong>产物是文件集，chat proposer 也一样。</strong> 内核是内核加 launcher；agent 改的是文件。单字符串以后会逼出第二套身份方案。单文件任务设好 <code>main_file</code> 就感觉不到差别。</p>
+<p><strong>JSONL 事件日志加 trace 文件，不是 pickle。</strong> pickle 把 checkpoint 绑死在类布局上，分析工具也读不了。完整 prompt 放 <code>traces/</code>，日志保持可 grep 的体积。放弃：SQLite，因为单写者的追加文件更简单、可 diff。</p>
+<p><strong>失败的调用不消耗提案预算。</strong> 预算是研究变量，一个不稳定的 API 不该悄悄把它吃掉。<code>max_calls</code> 防死循环。</p>
+<p><strong>隔离是 Evaluator 的职责。</strong> 核心提供 <code>subprocess_evaluate</code> 但不强制。任务族自己知道自己的信任要求。</p>
+<p><strong>Protocol，不是 ABC。</strong> 用户应该能传任何有正确方法的对象。放弃：ABC 继承，因为它迫使用户导入我们的基类，并绑定到我们的构造函数签名。</p>
+<p><strong>用 headless-cli 子进程接 agent，不写逐个 agent 的适配器。</strong> 一个依赖已经统一了 Claude Code、Codex、Cursor、Gemini、OpenCode。放弃：自己写适配器，那是没有研究价值的维护工作。</p>
+<p><strong>指令是数据，且与模态无关。</strong> prompt 模板是行，不是子类；围栏和解析放在 <code>output_format</code>。六个文件收成一张表。这让 EoH 的算子和 FunSearch 的 prompt 可比，也让元层面（场景 5）变成「进化这些行」的问题。</p>
+<p><strong><code>output_format</code> 是字符串枚举。</strong> 解析器在 <code>ChatProposer</code> 里按名字查表。放弃：把解析函数挂在 <code>Instruction</code> 上，因为模板必须能序列化成 JSON 或 YAML。</p>
+<p><strong>不兼容 1.x。</strong> 一次发版彻底切断。放弃：shim 和弃用周期，因为用户基数小，而且旧表面正是要被替换的东西。</p>
+<p><strong>除了 evolution 之外不用生物学词汇。</strong> Proposer、Proposal、Archive、Strategy、Evaluator、Instruction。放弃：gene、capsule、organism、crossover、mutation 作为核心名字。</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -16,7 +16,7 @@
         <link rel="prev" href="../quickstart/">
       
       
-        <link rel="next" href="../migration/">
+        <link rel="next" href="../design/">
       
       
         
@@ -27,7 +27,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -35,7 +35,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
       
 
@@ -72,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#extensions" class="md-skip">
+        <a href="#extensions-and-api" class="md-skip">
           Skip to content
         </a>
       
@@ -371,10 +371,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#custom-tasks" class="md-nav__link">
+  <a href="#contracts" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Custom Tasks
+        Contracts
       
     </span>
   </a>
@@ -382,10 +382,54 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#custom-methods" class="md-nav__link">
+  <a href="#built-ins" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Custom Methods
+        Built-ins
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chat-proposer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chat proposer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#agent-proposer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent proposer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evaluating-programs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evaluating programs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#event-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Event log
       
     </span>
   </a>
@@ -407,14 +451,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../migration/" class="md-nav__link">
+      <a href="../design/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Migration
+    Design 2.0
   
 
     
@@ -454,10 +498,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#custom-tasks" class="md-nav__link">
+  <a href="#contracts" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Custom Tasks
+        Contracts
       
     </span>
   </a>
@@ -465,10 +509,54 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#custom-methods" class="md-nav__link">
+  <a href="#built-ins" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Custom Methods
+        Built-ins
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chat-proposer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Chat proposer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#agent-proposer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Agent proposer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#evaluating-programs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Evaluating programs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#event-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Event log
       
     </span>
   </a>
@@ -492,28 +580,74 @@
 
 
 
-<h1 id="extensions">Extensions<a class="headerlink" href="#extensions" title="Permanent link">&para;</a></h1>
-<p>The core package is intentionally small. Extend it in one of two directions:</p>
+<h1 id="extensions-and-api">Extensions and API<a class="headerlink" href="#extensions-and-api" title="Permanent link">&para;</a></h1>
+<h2 id="contracts">Contracts<a class="headerlink" href="#contracts" title="Permanent link">&para;</a></h2>
+<p>Implement objects with the following members; inheritance is unnecessary. Types live in <code>evotoolkit.core</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Contract</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Evaluator</td>
+<td><code>spec: TaskSpec</code>, <code>evaluate(files) -&gt; EvaluationResult</code></td>
+</tr>
+<tr>
+<td>Proposer</td>
+<td><code>name: str</code>, <code>propose(ctx: ProposalContext) -&gt; list[Proposal]</code></td>
+</tr>
+<tr>
+<td>Archive</td>
+<td><code>add(solution)</code>, <code>sample(n, *, rng)</code>, <code>best()</code>, <code>len(archive)</code></td>
+</tr>
+<tr>
+<td>Strategy</td>
+<td><code>name</code>, <code>archive</code>, <code>next_batch(step, max_n, remaining_budget, rng)</code>, <code>observe(solutions)</code>, <code>should_stop(step)</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>Files</code> is <code>dict[str, str]</code>: relative paths with <code>/</code> separators to text contents. <code>TaskSpec</code> has name, prompt, modality, main_file, and optional extras. <code>Instruction</code> has name, num_parents, text, output_format. Templates interpolate <code>{modality}</code> and <code>{main_file}</code>; escape other literal braces as <code>{{</code> and <code>}}</code>.</p>
+<p><code>ProposalContext</code> contains spec, parents, instruction, best, hints and num_proposals. Return no more than the requested count. Every <code>Proposal</code> must echo <code>ctx.call_id</code> (the Runner mints it before dispatch and rejects proposals carrying any other ID); proposals from one call share it and the usage dictionary. A <code>Solution</code> adds content hash identity, parent IDs, proposer and instruction names, evaluation and created_step. Use <code>Solution.create(...)</code> for new solutions and <code>to_dict</code>/<code>from_dict</code> for serialization; unknown fields are ignored when reading.</p>
+<p>Strategy code runs serially on the Runner thread; proposal and evaluation calls run concurrently. Use the supplied RNG for selection. Keep replayable state in the archive and <code>observe</code>, not in <code>next_batch</code>. Evaluators must enforce their own timeouts and return invalid results on failure; Runner catches exceptions as a fallback. A valid score must be finite. Put extra objectives in <code>metrics</code>.</p>
+<h2 id="built-ins">Built-ins<a class="headerlink" href="#built-ins" title="Permanent link">&para;</a></h2>
 <ul>
-<li>define your own tasks on top of <code>PythonTask</code> or <code>StringTask</code></li>
-<li>define your own algorithms on top of <code>Method</code>, <code>IterativeMethod</code>, or <code>PopulationMethod</code></li>
+<li><code>RankedPopulation(max_size=5)</code>: finite valid unique solutions, descending scores and rank-weighted sampling with replacement.</li>
+<li><code>IslandArchive(num_islands=5, reset_interval=30000, ...)</code>: score clusters, temperature-weighted sampling, shorter artifacts within clusters. The first valid candidate seeds every island. Content hashes route later candidates; accepted unique solution counts trigger weak-island resets. These deterministic rules replace v1's sampled-island routing and wall-clock resets so replay reconstructs the archive.</li>
+<li><code>EoHStrategy(spec, pop_size=5, selection_num=2)</code>: i1, e1, e2, m1, m2 instructions.</li>
+<li><code>EvoEngineerStrategy(spec, pop_size=5)</code>: init, crossover and mutation, best candidate and rationale hints.</li>
+<li><code>FunSearchStrategy(spec, num_islands=5, num_parents=2, reset_interval=30000)</code>: island sampling with one improvement instruction.</li>
 </ul>
-<h2 id="custom-tasks">Custom Tasks<a class="headerlink" href="#custom-tasks" title="Permanent link">&para;</a></h2>
-<p>The recommended workflow for task authors is:</p>
-<ol>
-<li>Create a <code>PythonTask</code> or <code>StringTask</code> subclass.</li>
-<li>Return a <code>TaskSpec</code> from <code>build_python_spec()</code> or <code>build_string_spec()</code>.</li>
-<li>Implement the evaluation hook for your modality.</li>
-<li>Reuse a generic interface from <code>evotoolkit.task</code>, or provide a custom <code>MethodInterface</code>.</li>
-<li>Expose the task through explicit imports in your own package.</li>
-</ol>
-<h2 id="custom-methods">Custom Methods<a class="headerlink" href="#custom-methods" title="Permanent link">&para;</a></h2>
-<p>For new algorithms, start from:</p>
+<p>The built-ins stop on Runner's budget/call cap. For a custom stop criterion implement <code>should_stop(step)</code> in your strategy.</p>
+<h2 id="chat-proposer">Chat proposer<a class="headerlink" href="#chat-proposer" title="Permanent link">&para;</a></h2>
+<p><code>ChatProposer(llm, templates=None, *, eventlog=None)</code> uses <code>llm.get_response(messages) -&gt; (text, usage)</code>. Pass a mapping of instruction names to <code>Instruction</code> objects to override templates. Defaults are data in <code>evotoolkit.proposers.templates.INSTRUCTIONS</code>.</p>
+<p>Output formats:</p>
 <ul>
-<li><code>IterativeMethod</code> for general step-wise search</li>
-<li><code>PopulationMethod</code> for generation-based population search</li>
+<li><code>code_block</code>: exactly one fenced block, written to <code>spec.main_file</code>; optional leading <code>{rationale}</code>.</li>
+<li><code>name_code_thought</code>: <code>name:</code> before one code fence, then <code>thought:</code> after it.</li>
+<li><code>files</code>: multiple fences with a relative path directly after the opening fence, such as <code>```src/main.py</code>.</li>
 </ul>
-<p>Drop down to raw <code>Method</code> only if you need a non-standard lifecycle. Concrete methods own their initialization policy, and the runtime does not special-case task initialization beyond carrying <code>task.spec</code> into method state.</p>
+<p>Multiple alternatives are separated by a line containing only <code>===PROPOSAL===</code>. The number must equal <code>ctx.num_proposals</code>. Parse errors are failed calls, preserved in full traces. Runner attaches its EventLog to built-in proposers automatically.</p>
+<h2 id="agent-proposer">Agent proposer<a class="headerlink" href="#agent-proposer" title="Permanent link">&para;</a></h2>
+<p><code>AgentProposer(backend, workdir_factory=None, *, timeout=600, eventlog=None)</code> requires the separate executable installed by:</p>
+<div class="language-bash highlight"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>-g<span class="w"> </span>@roberttlange/headless
+</code></pre></div>
+<p>Authenticate your chosen backend separately. The adapter uses <code>headless &lt;backend&gt; --prompt-file TASK.md --work-dir DIR --json --usage --timeout N</code>, as specified by the <a href="https://github.com/RobertTLange/headless-cli/blob/main/docs/usage.md">upstream CLI documentation</a>.</p>
+<p>Each call is a fresh workspace and returns one candidate; request <code>num_proposals=1</code>. The last parent's files seed the workspace, while TASK.md describes every parent and the instruction. A custom <code>workdir_factory(ctx)</code> returns a context manager yielding a dedicated directory; it may provide <code>evaluate.py</code> and support files. Alternatively <code>spec.extras['evaluation_command']</code> can contain an argv list used to generate <code>evaluate.py</code>. Without either, evaluation occurs after proposal generation.</p>
+<p>TASK.md, evaluate.py and factory support files are harness inputs. Returned artifacts default to the main file and existing parent artifact paths. To add or remove files, the agent writes a JSON array of relative output paths to <code>ARTIFACTS.json</code>; this manifest is not itself an artifact. This keeps unrelated workspace outputs out of the proposal.</p>
+<p>Headless uses backend auto-approval. Temporary workspaces and subprocesses are not security sandboxes; provide OS/container isolation appropriate to the generated code. The adapter does not install agents or manage credentials.</p>
+<h2 id="evaluating-programs">Evaluating programs<a class="headerlink" href="#evaluating-programs" title="Permanent link">&para;</a></h2>
+<p><code>from evotoolkit.evaluators import subprocess_evaluate</code> provides an opt-in helper:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="n">result</span> <span class="o">=</span> <span class="n">subprocess_evaluate</span><span class="p">({</span><span class="s2">"main.py"</span><span class="p">:</span> <span class="s2">"print(42)"</span><span class="p">},</span> <span class="s2">"main.py"</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">==</span> <span class="mi">0</span>
+<span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"42"</span>
+</code></pre></div>
+<p>A string entry is a relative Python filename; an argv list runs an explicit command. The helper writes validated relative paths into a temporary directory and returns <code>subprocess.CompletedProcess</code>. Timeout uses return code 124; setup failures use 1. stdout/stderr are preserved. Timeout terminates the direct child; process-tree containment remains the evaluator's responsibility.</p>
+<h2 id="event-log">Event log<a class="headerlink" href="#event-log" title="Permanent link">&para;</a></h2>
+<p><code>EventLog</code> supports run_start, call_started, solution, call_failed, step_end and run_end. An unterminated final line left by an interrupted process is skipped by readers and removed when the log is next opened for writing; any other malformed line raises an error. Readers ignore unknown fields. Writes are flushed but not fsynced. Do not run two writers against one output directory.</p>
+<p>Resume checks the task, component names and the strategy's <code>config</code> (its constructor hyperparameters); callers must still supply the original proposer configuration. Logged solutions rebuild state; results that never reached the log are lost. RNG snapshots retain selection progress, but live scheduling and external model responses remain nondeterministic.</p>
 
 
 
@@ -566,7 +700,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

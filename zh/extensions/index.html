@@ -16,7 +16,7 @@
         <link rel="prev" href="../quickstart/">
       
       
-        <link rel="next" href="../migration/">
+        <link rel="next" href="../design/">
       
       
         
@@ -27,7 +27,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -35,7 +35,7 @@
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
       
       
 
@@ -72,7 +72,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#_1" class="md-skip">
+        <a href="#api" class="md-skip">
           跳转至
         </a>
       
@@ -371,10 +371,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#task" class="md-nav__link">
+  <a href="#_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        自定义 Task
+        组件契约
       
     </span>
   </a>
@@ -385,7 +385,51 @@
   <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        自定义算法
+        内置组件
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chatproposer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ChatProposer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#agentproposer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AgentProposer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        子进程评估
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        日志与恢复
       
     </span>
   </a>
@@ -407,14 +451,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../migration/" class="md-nav__link">
+      <a href="../design/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    迁移
+    2.0 设计
   
 
     
@@ -454,10 +498,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#task" class="md-nav__link">
+  <a href="#_1" class="md-nav__link">
     <span class="md-ellipsis">
       
-        自定义 Task
+        组件契约
       
     </span>
   </a>
@@ -468,7 +512,51 @@
   <a href="#_2" class="md-nav__link">
     <span class="md-ellipsis">
       
-        自定义算法
+        内置组件
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chatproposer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ChatProposer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#agentproposer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        AgentProposer
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        子进程评估
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        日志与恢复
       
     </span>
   </a>
@@ -492,28 +580,72 @@
 
 
 
-<h1 id="_1">扩展<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
-<p>核心包刻意保持精简。推荐从两个方向扩展：</p>
+<h1 id="api">扩展与 API<a class="headerlink" href="#api" title="Permanent link">&para;</a></h1>
+<h2 id="_1">组件契约<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>不要求继承基类；实现相应成员即可。类型从 <code>evotoolkit.core</code> 导入。</p>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>成员</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Evaluator</td>
+<td><code>spec: TaskSpec</code>；<code>evaluate(files) -&gt; EvaluationResult</code></td>
+</tr>
+<tr>
+<td>Proposer</td>
+<td><code>name</code>；<code>propose(ctx) -&gt; list[Proposal]</code></td>
+</tr>
+<tr>
+<td>Archive</td>
+<td><code>add(solution)</code>；<code>sample(n, *, rng)</code>；<code>best()</code>；<code>len(archive)</code></td>
+</tr>
+<tr>
+<td>Strategy</td>
+<td><code>name</code>、<code>archive</code>；<code>next_batch(step, max_n, remaining_budget, rng)</code>；<code>observe(solutions)</code>；<code>should_stop(step)</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>Files</code> 为相对路径到文本内容的字典，路径用 <code>/</code> 分隔。TaskSpec 包含 name、prompt、modality、main_file、extras。Instruction 包含 name、num_parents、text、output_format。模板可替换 <code>{modality}</code>、<code>{main_file}</code>；其他字面花括号需写作 <code>{{</code>、<code>}}</code>。</p>
+<p>ProposalContext 包含任务、父代、指令、最佳解、提示和请求数量。每个 Proposal 必须原样回填 <code>ctx.call_id</code>（由 Runner 在分发前生成，携带其他 ID 的提案会被拒绝）；同一调用的提案共享该 ID 和 usage；返回数量不得超过请求。Solution 添加内容哈希、父代 ID、指令与 proposer 名、评估和步号；新解使用 <code>Solution.create(...)</code>，序列化使用 <code>to_dict/from_dict</code>，读取时忽略未知字段。</p>
+<p>策略在主线程串行执行，提案器和评估器会并发调用。选择操作使用传入的 RNG；需恢复的状态放入 archive，通过 observe 更新。评估器自行处理超时和隔离，失败返回无效结果，Runner 另有异常兜底。有效分数必须有限且越大越好，多目标信息放入 metrics。</p>
+<h2 id="_2">内置组件<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
 <ul>
-<li>在 <code>PythonTask</code> 或 <code>StringTask</code> 之上定义你自己的 task</li>
-<li>在 <code>Method</code>、<code>IterativeMethod</code> 或 <code>PopulationMethod</code> 之上定义你自己的算法</li>
+<li><code>RankedPopulation(max_size=5)</code>：只保存有效、有限分数、内容唯一的解；排名加权有放回采样。</li>
+<li><code>IslandArchive(num_islands=5, reset_interval=30000, ...)</code>：分数聚类、温度采样、簇内偏好短产物。首个有效解播种所有岛；后续按内容哈希分配，并按已接受的唯一解数量重置弱岛。它替代旧版的采样岛分配和墙钟重置，以保证日志重放。</li>
+<li><code>EoHStrategy(spec, pop_size=5, selection_num=2)</code>：i1、e1、e2、m1、m2。</li>
+<li><code>EvoEngineerStrategy(spec, pop_size=5)</code>：init、crossover、mutation，附带最佳解和思路提示。</li>
+<li><code>FunSearchStrategy(spec, num_islands=5, num_parents=2, reset_interval=30000)</code>：岛屿父代采样和改进指令。</li>
 </ul>
-<h2 id="task">自定义 Task<a class="headerlink" href="#task" title="Permanent link">&para;</a></h2>
-<p>推荐的 task 扩展流程是：</p>
-<ol>
-<li>创建一个 <code>PythonTask</code> 或 <code>StringTask</code> 子类。</li>
-<li>在 <code>build_python_spec()</code> 或 <code>build_string_spec()</code> 中返回 <code>TaskSpec</code>。</li>
-<li>实现对应模态的评估 hook。</li>
-<li>优先复用 <code>evotoolkit.task</code> 中的通用 interface；只有在提示词或响应契约确实不同的时候，才添加自定义 <code>MethodInterface</code>。</li>
-<li>在你自己的包里通过显式导入暴露这些 task。</li>
-</ol>
-<h2 id="_2">自定义算法<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
-<p>新的算法通常从以下基类开始：</p>
+<p>内置策略由 Runner 的预算或调用上限停止；自定义停止规则实现 should_stop。</p>
+<h2 id="chatproposer">ChatProposer<a class="headerlink" href="#chatproposer" title="Permanent link">&para;</a></h2>
+<p><code>ChatProposer(llm, templates=None, *, eventlog=None)</code> 调用 <code>llm.get_response(messages)</code>，返回 <code>(text, usage)</code>。templates 是指令名到 Instruction 的覆盖表；默认模板位于 <code>evotoolkit.proposers.templates.INSTRUCTIONS</code>。</p>
 <ul>
-<li><code>IterativeMethod</code>：适合一般的逐步搜索</li>
-<li><code>PopulationMethod</code>：适合基于种群的代际搜索</li>
+<li>code_block：一个 fenced block，写入 main_file，可在前面写 <code>{思路}</code>。</li>
+<li>name_code_thought：代码块前写 <code>name:</code>，后写 <code>thought:</code>。</li>
+<li>files：每个文件一个代码块，开头标签直接写相对路径，例如 src/main.py。</li>
 </ul>
-<p>如果你需要非标准生命周期，再退回到底层 <code>Method</code>。具体方法自行管理初始化策略，运行时只负责把 <code>task.spec</code> 传入方法状态。</p>
+<p>同调用的多个候选用独占一行的 <code>===PROPOSAL===</code> 分隔，数量必须等于请求数量。解析失败记录为失败调用，并保留完整 trace。Runner 自动为内置 proposer 绑定 EventLog。</p>
+<h2 id="agentproposer">AgentProposer<a class="headerlink" href="#agentproposer" title="Permanent link">&para;</a></h2>
+<p><code>AgentProposer(backend, workdir_factory=None, *, timeout=600, eventlog=None)</code> 使用单独安装的 headless-cli：</p>
+<div class="language-bash highlight"><pre><span></span><code>npm<span class="w"> </span>install<span class="w"> </span>-g<span class="w"> </span>@roberttlange/headless
+</code></pre></div>
+<p>后端认证需自行配置。实际命令是 <code>headless &lt;backend&gt; --prompt-file TASK.md --work-dir DIR --json --usage --timeout N</code>，见<a href="https://github.com/RobertTLange/headless-cli/blob/main/docs/usage.md">上游文档</a>。</p>
+<p>每次调用一个独立工作目录，产生一个文件集；num_proposals 必须为 1。最后一个父代的文件写入目录，全部父代及指令写入 TASK.md。<code>workdir_factory(ctx)</code> 可返回产出专用目录的上下文管理器，其中可预置 evaluate.py 和支持文件；或在 <code>spec.extras['evaluation_command']</code> 提供 argv 列表以生成 evaluate.py。都未配置时，仅在生成后由 Runner 评估。</p>
+<p>TASK.md、evaluate.py 及工厂支持文件属于输入，不会作为产物返回。默认只返回 main_file 和已有父代文件；增删文件时由 agent 在 ARTIFACTS.json 中写出相对输出路径的 JSON 数组，清单本身不是产物。这能避免把工作目录里的无关输出误收集为候选。</p>
+<p>headless 使用后端自动批准模式；临时目录和子进程不是安全沙箱，运行不可信代码时应由调用方提供 OS 或容器隔离。适配器不安装后端、不管理认证。</p>
+<h2 id="_3">子进程评估<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">evotoolkit.evaluators</span><span class="w"> </span><span class="kn">import</span> <span class="n">subprocess_evaluate</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">subprocess_evaluate</span><span class="p">({</span><span class="s2">"main.py"</span><span class="p">:</span> <span class="s2">"print(42)"</span><span class="p">},</span> <span class="s2">"main.py"</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">==</span> <span class="mi">0</span>
+</code></pre></div>
+<p>entry 字符串表示相对 Python 入口文件，argv 列表表示显式命令。返回 CompletedProcess，含 stdout、stderr、returncode；超时码为 124，准备失败为 1。文件路径经过校验。超时终止直接子进程，不负责完整进程树隔离。</p>
+<h2 id="_4">日志与恢复<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>事件类型包括 run_start、call_started、solution、call_failed、step_end、run_end。进程被打断留下的末尾半行，读取时跳过，下次以写模式打开日志时删除；其他格式错误的行会报错。写入使用 flush，没有 fsync；同一目录只允许一个运行写入。</p>
+<p>恢复检查任务规格、组件名称以及策略的 <code>config</code>（构造超参数）；调用方仍需提供原 proposer 配置。已落盘结果可重建状态，未落盘结果无法恢复。RNG 快照保留选择进度，但并发完成顺序和外部模型响应仍可能变化。</p>
 
 
 
@@ -566,7 +698,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

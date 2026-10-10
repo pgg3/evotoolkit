@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
       
 
@@ -70,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#evotoolkit-core" class="md-skip">
+        <a href="#evotoolkit-20" class="md-skip">
           跳转至
         </a>
       
@@ -346,14 +346,14 @@
   
   
     <li class="md-nav__item">
-      <a href="migration/" class="md-nav__link">
+      <a href="design/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    迁移
+    2.0 设计
   
 
     
@@ -401,18 +401,10 @@
 
 
 
-<h1 id="evotoolkit-core">EvoToolkit Core<a class="headerlink" href="#evotoolkit-core" title="Permanent link">&para;</a></h1>
-<p>EvoToolkit 现在定位为面向 LLM 驱动进化搜索的核心运行时层。</p>
-<p>核心包提供：</p>
-<ul>
-<li>内置算法：<code>EoH</code>、<code>EvoEngineer</code>、<code>FunSearch</code></li>
-<li>生命周期基类：<code>Method</code>、<code>IterativeMethod</code>、<code>PopulationMethod</code></li>
-<li>通过 <code>RunStore</code> 提供的 checkpoint 与可读运行产物</li>
-<li>通用 <code>PythonTask</code> 与 <code>StringTask</code> SDK</li>
-<li>面向内置方法的通用 Python / 字符串 interface</li>
-<li><code>evotoolkit.tools</code> 中的 OpenAI 兼容 HTTP 客户端工具</li>
-</ul>
-<p>当前稳定版本是 <code>1.0.2</code>。这个仓库只描述可复用的 core 运行时。具体领域 task、数据集和硬件相关工作流应放在独立包或你自己的仓库里，在这个 core 之上扩展。</p>
+<h1 id="evotoolkit-20">EvoToolkit 2.0<a class="headerlink" href="#evotoolkit-20" title="Permanent link">&para;</a></h1>
+<p>由 Evaluator、Proposer、Archive、Strategy 和 Runner 组成的 Python 程序搜索工具。统一循环和事件格式，搜索 Python 模块、内核、提示或其他文本文件产物。</p>
+<p>先运行<a href="quickstart/">离线示例</a>，再组装自己的<a href="extensions/">组件</a>，或阅读<a href="design/">设计</a>。</p>
+<p>2.0 移除了 1.x 的 Method/Interface/Task API 和 pickle 检查点，不提供兼容层。需要留在 1.x 的用户请固定 <code>evotoolkit&lt;2</code>。</p>
 
 
 
@@ -465,7 +457,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

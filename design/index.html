@@ -1,0 +1,1276 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Core SDK for LLM-driven evolutionary search">
+      
+      
+        <meta name="author" content="Ping Guo">
+      
+      
+      
+        <link rel="prev" href="../extensions/">
+      
+      
+      
+        
+          <link rel="alternate" href="./" hreflang="en">
+        
+          <link rel="alternate" href="../zh/design/" hreflang="zh">
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Design 2.0 - EvoToolkit Core</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#evotoolkit-20-design" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="EvoToolkit Core" class="md-header__button md-logo" aria-label="EvoToolkit Core" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            EvoToolkit Core
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Design 2.0
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="Select language">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="./" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="../zh/design/" hreflang="zh" class="md-select__link">
+              简体中文
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="EvoToolkit Core" class="md-nav__button md-logo" aria-label="EvoToolkit Core" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    EvoToolkit Core
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quick Start
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../extensions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Extensions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Design 2.0
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Design 2.0
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Scope
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Scope">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-evotoolkit-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What EvoToolkit is
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#who-uses-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Who uses it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#usage-scenarios" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage scenarios
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Components
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data objects
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Invariants
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-interface-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Interface contracts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Interface contracts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#built-in-proposers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Built-in Proposers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#built-in-evaluator-helpers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Built-in Evaluator helpers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#built-in-archives" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Built-in Archives
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#built-in-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Built-in Strategies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-persistence-layout-v1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Persistence layout (v1)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-behavioral-baseline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Behavioral baseline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-deferred-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Deferred decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-scope" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Scope
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Scope">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-evotoolkit-is" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        What EvoToolkit is
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#who-uses-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Who uses it
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#usage-scenarios" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage scenarios
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Structure
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Structure">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Components
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#data-objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data objects
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#invariants" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Invariants
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-interface-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Interface contracts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Interface contracts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#built-in-proposers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Built-in Proposers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#built-in-evaluator-helpers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Built-in Evaluator helpers
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#built-in-archives" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Built-in Archives
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#built-in-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Built-in Strategies
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-persistence-layout-v1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Persistence layout (v1)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-behavioral-baseline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Behavioral baseline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-deferred-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Deferred decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Decisions
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="evotoolkit-20-design">EvoToolkit 2.0 Design<a class="headerlink" href="#evotoolkit-20-design" title="Permanent link">&para;</a></h1>
+<p>Status: implemented and released as 2.0.0. Where the implementation deviates
+from the original draft, the deviation is recorded in the section it belongs
+to. Usage is documented in <code>extensions.md</code>.</p>
+<p>2.0 is a clean break from 1.x: no compatibility shims, no deprecated paths.</p>
+<h2 id="1-scope">1. Scope<a class="headerlink" href="#1-scope" title="Permanent link">&para;</a></h2>
+<h3 id="what-evotoolkit-is">What EvoToolkit is<a class="headerlink" href="#what-evotoolkit-is" title="Permanent link">&para;</a></h3>
+<p>A minimal harness for LLM-driven program search. The problem shape it serves:</p>
+<ul>
+<li>an <strong>executable artifact</strong>, stored as a set of files (one Python module, a
+  CUDA kernel plus its launcher, a prompt file, ...),</li>
+<li>an <strong>evaluator</strong> that runs the artifact and returns a score,</li>
+<li>a <strong>budget</strong> (number of proposals, plus a cap on proposer calls; see invariant 6).</li>
+</ul>
+<p>Everything the toolkit does is: pick parents from an archive, ask a proposer
+for new artifacts, evaluate them, record them, repeat.</p>
+<h3 id="who-uses-it">Who uses it<a class="headerlink" href="#who-uses-it" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>User</th>
+<th>Needs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Researcher comparing search strategies</td>
+<td>Same loop, same budget accounting, same event log for FunSearch, EoH, EvoEngineer, and new strategies.</td>
+</tr>
+<tr>
+<td>Researcher comparing proposers</td>
+<td>API model vs coding agent (Claude Code, Codex, ...) on the same task with cost recorded.</td>
+</tr>
+<tr>
+<td>Practitioner optimizing a kernel or heuristic</td>
+<td>Write one <code>Evaluator</code>, pick a strategy, run.</td>
+</tr>
+<tr>
+<td>Analyst</td>
+<td>Read the JSONL event log; rebuild lineage, score trajectories, stagnation.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="usage-scenarios">Usage scenarios<a class="headerlink" href="#usage-scenarios" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Heuristic design for combinatorial optimization. Evaluator averages gap over an instance set.</li>
+<li>Kernel or operator optimization (EvoEngineer). Evaluator compiles, checks correctness, profiles.</li>
+<li>Mathematical constructions. Evaluator is a checker.</li>
+<li>Prompt or configuration search. Evaluator is downstream task score.</li>
+<li>Later: meta-level search over the instruction templates themselves. Not built now; the design must not block it.</li>
+</ol>
+<h2 id="2-structure">2. Structure<a class="headerlink" href="#2-structure" title="Permanent link">&para;</a></h2>
+<h3 id="components">Components<a class="headerlink" href="#components" title="Permanent link">&para;</a></h3>
+<p>Five components, each answering one question. Arrows show allowed dependencies.</p>
+<div class="language-text highlight"><pre><span></span><code>Runner  --&gt;  Strategy  --&gt;  Archive
+  |             |
+  |             +---&gt;  (instruction templates: data, not code)
+  +---&gt;  Proposer
+  +---&gt;  Evaluator
+  +---&gt;  EventLog
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Question it answers</th>
+<th>Knows about</th>
+<th>Must not know about</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Evaluator</td>
+<td>How good is this artifact?</td>
+<td>the artifact files</td>
+<td>proposers, archive, threads</td>
+</tr>
+<tr>
+<td>Proposer</td>
+<td>Given parents and an instruction, what are some new artifacts?</td>
+<td>ProposalContext</td>
+<td>archive, scoring, threads</td>
+</tr>
+<tr>
+<td>Archive</td>
+<td>What is stored and how are parents sampled?</td>
+<td>Solutions and their scores</td>
+<td>LLMs, prompts, files on disk</td>
+</tr>
+<tr>
+<td>Strategy</td>
+<td>This step, which parents and which instruction?</td>
+<td>Archive, templates</td>
+<td>LLM calls, threads, files on disk</td>
+</tr>
+<tr>
+<td>Runner</td>
+<td>Loop, concurrency, budget, persistence.</td>
+<td>all of the above</td>
+<td>prompt text, selection policy</td>
+</tr>
+</tbody>
+</table>
+<h3 id="data-objects">Data objects<a class="headerlink" href="#data-objects" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span class="n">Files</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>          <span class="c1"># relative path -&gt; content</span>
+
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TaskSpec</span><span class="p">:</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span>                 <span class="c1"># task description shown to the proposer</span>
+    <span class="n">modality</span><span class="p">:</span> <span class="nb">str</span>               <span class="c1"># "python" | "cuda" | "string" | ...</span>
+    <span class="n">main_file</span><span class="p">:</span> <span class="nb">str</span>              <span class="c1"># the file a single-file proposer writes, e.g. "solution.py"</span>
+    <span class="n">extras</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">EvaluationResult</span><span class="p">:</span>
+    <span class="n">valid</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">score</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span>         <span class="c1"># higher is better</span>
+    <span class="n">feedback</span><span class="p">:</span> <span class="nb">str</span>               <span class="c1"># human/LLM readable: errors, profiler output, ...</span>
+    <span class="n">metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>     <span class="c1"># structured extras, including any objective vector</span>
+    <span class="n">cost_seconds</span><span class="p">:</span> <span class="nb">float</span>
+
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Instruction</span><span class="p">:</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>                   <span class="c1"># "i1", "e1", "funsearch", "diff_refine", ...</span>
+    <span class="n">num_parents</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>                   <span class="c1"># modality-agnostic; may use {modality}, {main_file}</span>
+    <span class="n">output_format</span><span class="p">:</span> <span class="nb">str</span>          <span class="c1"># "code_block" | "name_code_thought" | "files"</span>
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ProposalContext</span><span class="p">:</span>
+    <span class="n">spec</span><span class="p">:</span> <span class="n">TaskSpec</span>
+    <span class="n">parents</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="s2">"Solution"</span><span class="p">]</span>
+    <span class="n">instruction</span><span class="p">:</span> <span class="n">Instruction</span>
+    <span class="n">best</span><span class="p">:</span> <span class="s2">"Solution | None"</span>
+    <span class="n">hints</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>            <span class="c1"># free-form, e.g. descriptions of other solutions</span>
+    <span class="n">num_proposals</span><span class="p">:</span> <span class="nb">int</span>          <span class="c1"># how many the strategy wants from this call</span>
+    <span class="n">call_id</span><span class="p">:</span> <span class="nb">str</span>                <span class="c1"># assigned by the Runner before dispatch; proposers echo it</span>
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Proposal</span><span class="p">:</span>
+    <span class="n">call_id</span><span class="p">:</span> <span class="nb">str</span>                <span class="c1"># shared by all proposals from one proposer call</span>
+    <span class="n">files</span><span class="p">:</span> <span class="n">Files</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">rationale</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">usage</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>       <span class="c1"># per call, not per proposal; dedupe by call_id</span>
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Solution</span><span class="p">:</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span>                     <span class="c1"># content hash of files, 16 hex chars</span>
+    <span class="n">files</span><span class="p">:</span> <span class="n">Files</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">rationale</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">parent_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">instruction</span><span class="p">:</span> <span class="nb">str</span>            <span class="c1"># Instruction.name</span>
+    <span class="n">proposer</span><span class="p">:</span> <span class="nb">str</span>               <span class="c1"># Proposer.name</span>
+    <span class="n">call_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">usage</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="n">evaluation</span><span class="p">:</span> <span class="n">EvaluationResult</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">created_step</span><span class="p">:</span> <span class="nb">int</span>
+</code></pre></div>
+<p><code>Solution.id = sha256("\0".join(f"{path}\0{content}" for path in sorted(files)))[:16]</code>.</p>
+<p>The GA labels are gone from the data model. A crossover is an instruction
+with <code>num_parents=2</code>, a mutation is an instruction with <code>num_parents=1</code>. EoH's
+five operators and FunSearch's one become rows in a template table.</p>
+<h3 id="invariants">Invariants<a class="headerlink" href="#invariants" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Log before archive.</strong> A Solution is appended to the event log before it is inserted into the archive. The log is append-only.</li>
+<li><strong>State is a function of the log.</strong> <code>Runner.resume()</code> rebuilds the archive and counters by replaying the log. No pickle.</li>
+<li><strong>Strategy is pure.</strong> <code>Strategy.next_batch()</code> reads the archive and returns contexts. It performs no I/O, no LLM calls, no threading. Parallelism belongs to the Runner: it tells the Strategy how many slots are free through <code>max_n</code> and calls <code>observe</code> serially, so a Strategy never needs a lock.</li>
+<li><strong>Proposer is stateless across calls.</strong> Any memory lives in the archive or the log.</li>
+<li><strong>Content-addressed identity.</strong> Two solutions with identical files have identical <code>id</code>. Archives may reject duplicates; the log still records the attempt.</li>
+<li><strong>Budget is counted in the Runner only, in proposals.</strong> Strategies see <code>remaining_budget</code> as a number; they never decrement it. A failed proposer call yields zero proposals and does not consume proposal budget; a separate <code>max_calls</code> cap bounds total calls.</li>
+<li><strong>The archive is the only shared channel between proposals.</strong> Any dependency that does not go through the archive is private to some Proposer and lives in its trace. Dependencies across an evaluation are expressed by the Strategy through <code>observe</code> and the next <code>next_batch</code>; chained proposers compose into one Proposer. The core does not model a dependency graph between proposals.</li>
+<li><strong>Evaluators never raise.</strong> Failure is <code>valid=False</code> with <code>feedback</code> set. Isolation and timeouts are the Evaluator's job; the Runner only measures <code>cost_seconds</code> and still catches as a last resort.</li>
+</ol>
+<h2 id="3-interface-contracts">3. Interface contracts<a class="headerlink" href="#3-interface-contracts" title="Permanent link">&para;</a></h2>
+<p>All contracts are <code>typing.Protocol</code>. Implementations do not inherit.</p>
+<div class="language-python highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Evaluator</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="n">spec</span><span class="p">:</span> <span class="n">TaskSpec</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files</span><span class="p">:</span> <span class="n">Files</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">EvaluationResult</span><span class="p">:</span> <span class="o">...</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Proposer</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">propose</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">ProposalContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Proposal</span><span class="p">]:</span> <span class="o">...</span>   <span class="c1"># may raise</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Archive</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">solution</span><span class="p">:</span> <span class="n">Solution</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Solution</span><span class="p">]:</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">best</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Solution</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span> <span class="o">...</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Strategy</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">archive</span><span class="p">:</span> <span class="n">Archive</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">next_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">max_n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">remaining_budget</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ProposalContext</span><span class="p">]:</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">observe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">solutions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Solution</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>   <span class="c1"># add to archive, trim, etc.</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">should_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span> <span class="o">...</span>
+</code></pre></div>
+<p>Runner is concrete, not a protocol:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Runner</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">evaluator</span><span class="p">,</span> <span class="n">proposer</span><span class="p">,</span> <span class="n">strategy</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="n">budget</span><span class="p">,</span>
+                 <span class="n">max_calls</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">propose_workers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">eval_workers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+                 <span class="n">mode</span><span class="o">=</span><span class="s2">"generational"</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Solution</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resume</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">evaluator</span><span class="p">,</span> <span class="n">proposer</span><span class="p">,</span> <span class="n">strategy</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"Runner"</span><span class="p">:</span> <span class="o">...</span>
+</code></pre></div>
+<p><code>Runner.step()</code> does exactly: <code>ctxs = strategy.next_batch(...)</code>, push them
+through the two-stage pipeline, build Solutions, append each to the log,
+<code>strategy.observe(solutions)</code>, bump counters, write checkpoint marker.</p>
+<p>Two pipeline stages with independent parallelism:</p>
+<ol>
+<li><strong>Propose stage</strong>: <code>propose_workers</code> threads call <code>proposer.propose(ctx)</code> concurrently; each call returns a list. An exception becomes a <code>call_failed</code> event.</li>
+<li><strong>Evaluate stage</strong>: every returned list is split immediately and each item is submitted to <code>eval_workers</code> threads running <code>evaluator.evaluate</code>, without waiting for sibling calls.</li>
+</ol>
+<p>Two scheduling modes run the same Strategy unchanged:</p>
+<ul>
+<li><code>generational</code>: dispatch a batch, wait for all of it, ask for the next. Behavior of EoH and EvoEngineer; the golden baseline is recorded in this mode.</li>
+<li><code>steady</code>: whenever a worker frees up, call <code>next_batch(max_n=1)</code> immediately. Behavior of the original FunSearch and AlphaEvolve. Higher throughput when LLM latency varies or evaluation is fast.</li>
+</ul>
+<h3 id="built-in-proposers">Built-in Proposers<a class="headerlink" href="#built-in-proposers" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>ChatProposer(llm, templates)</code>: formats <code>ctx</code> into messages using the
+  instruction's <code>text</code> and <code>output_format</code>, calls the LLM, parses by
+  <code>output_format</code> into <code>Files</code>. <code>code_block</code> and <code>name_code_thought</code> write
+  <code>spec.main_file</code>; <code>files</code> parses several fenced blocks tagged with paths.
+  Absorbs today's six interface files into one template table.</li>
+<li><code>AgentProposer(backend, workdir_factory)</code>: materializes a workspace
+  (<code>TASK.md</code> describing every parent, the last parent's files, and
+  <code>evaluate.py</code> only when a <code>workdir_factory</code> or <code>evaluation_command</code> supplies
+  one), runs a headless coding agent through <code>headless-cli</code>, reads back the
+  main file and parent paths plus anything declared in <code>ARTIFACTS.json</code>. The
+  transcript is the trace.</li>
+</ul>
+<h3 id="built-in-evaluator-helpers">Built-in Evaluator helpers<a class="headerlink" href="#built-in-evaluator-helpers" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>subprocess_evaluate(files, entry, timeout)</code>: writes files to a temp dir,
+  runs <code>entry</code> in a child process with a timeout, returns stdout/stderr and
+  exit code. Task families opt in; the core does not force isolation.</li>
+</ul>
+<h3 id="built-in-archives">Built-in Archives<a class="headerlink" href="#built-in-archives" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>RankedPopulation(max_size)</code>: 1.x <code>PopulationState</code> plus rank-based
+  sampling. Deviation: invalid solutions are never stored; 1.x kept them as
+  filler when the population had spare slots.</li>
+<li><code>IslandArchive(num_islands, ...)</code>: 1.x <code>ProgramsDatabase</code> with two
+  deliberate changes so that <code>resume</code> can rebuild it from the log alone. New
+  solutions route to an island by content hash instead of a random draw, and
+  weak islands reset after every <code>reset_interval</code> accepted unique solutions
+  instead of on a wall-clock timer.</li>
+</ul>
+<h3 id="built-in-strategies">Built-in Strategies<a class="headerlink" href="#built-in-strategies" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>FunSearchStrategy</code>: one instruction, <code>num_parents</code> 2, IslandArchive.</li>
+<li><code>EoHStrategy</code>: instructions i1, e1, e2, m1, m2 keeping the original
+  operator semantics, rewritten onto the shared template (which also adds
+  scores, feedback and the current best), RankedPopulation. Deviation: 1.x ran every operator over the whole
+  population each generation; 2.0 cycles the operators across the slots the
+  Runner offers, so one call to <code>next_batch(max_n=4)</code> yields e1, e2, m1, m2.</li>
+<li><code>EvoEngineerStrategy</code>: init, crossover, mutation with best-so-far and hints, RankedPopulation.</li>
+</ul>
+<p>Each is well under 150 lines.</p>
+<h2 id="4-persistence-layout-v1">4. Persistence layout (v1)<a class="headerlink" href="#4-persistence-layout-v1" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code>&lt;output_dir&gt;/
+  events.jsonl            append-only, one JSON object per line
+  traces/&lt;call_id&gt;.json   full prompt messages and raw response, or agent transcript
+</code></pre></div>
+<p>Event types:</p>
+<div class="language-json highlight"><pre><span></span><code><span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"run_start"</span><span class="p">,</span><span class="w"> </span><span class="nt">"ts"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"task"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="err">TaskSpec</span><span class="p">},</span><span class="w"> </span><span class="nt">"strategy"</span><span class="p">:</span><span class="w"> </span><span class="s2">"eoh"</span><span class="p">,</span><span class="w"> </span><span class="nt">"proposer"</span><span class="p">:</span><span class="w"> </span><span class="s2">"chat:gpt-4o"</span><span class="p">,</span><span class="w"> </span><span class="nt">"seed"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">"budget"</span><span class="p">:</span><span class="w"> </span><span class="mi">45</span><span class="p">,</span><span class="w"> </span><span class="nt">"config"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"max_calls"</span><span class="p">:</span><span class="w"> </span><span class="mi">135</span><span class="p">,</span><span class="w"> </span><span class="nt">"propose_workers"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">"eval_workers"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">"mode"</span><span class="p">:</span><span class="w"> </span><span class="s2">"generational"</span><span class="p">,</span><span class="w"> </span><span class="nt">"verbose"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">},</span><span class="w"> </span><span class="nt">"env"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"python"</span><span class="p">:</span><span class="w"> </span><span class="s2">"3.12.1"</span><span class="p">,</span><span class="w"> </span><span class="nt">"platform"</span><span class="p">:</span><span class="w"> </span><span class="s2">"linux"</span><span class="p">,</span><span class="w"> </span><span class="nt">"evotoolkit"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2.0.0"</span><span class="p">}}</span>
+<span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"call_started"</span><span class="p">,</span><span class="w"> </span><span class="nt">"ts"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"step"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="nt">"call_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"instruction"</span><span class="p">:</span><span class="w"> </span><span class="s2">"e1"</span><span class="p">,</span><span class="w"> </span><span class="nt">"rng_state"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="err">...</span><span class="p">}}</span>
+<span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"solution"</span><span class="p">,</span><span class="w"> </span><span class="nt">"ts"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"step"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="nt">"solution"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="err">Solu</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span><span class="p">}}</span>
+<span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"call_failed"</span><span class="p">,</span><span class="w"> </span><span class="nt">"ts"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"step"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="nt">"call_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"instruction"</span><span class="p">:</span><span class="w"> </span><span class="s2">"e1"</span><span class="p">,</span><span class="w"> </span><span class="nt">"error"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">}</span>
+<span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"step_end"</span><span class="p">,</span><span class="w"> </span><span class="nt">"ts"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"step"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="nt">"archive_size"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w"> </span><span class="nt">"best_id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ab12..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"best_score"</span><span class="p">:</span><span class="w"> </span><span class="mf">0.91</span><span class="p">,</span><span class="w"> </span><span class="nt">"proposals"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">"valid"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w"> </span><span class="nt">"calls"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="nt">"failed_calls"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">"rng_state"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="err">...</span><span class="p">}}</span>
+<span class="p">{</span><span class="nt">"v"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"run_end"</span><span class="p">,</span><span class="w"> </span><span class="nt">"ts"</span><span class="p">:</span><span class="w"> </span><span class="s2">"..."</span><span class="p">,</span><span class="w"> </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"completed"</span><span class="p">,</span><span class="w"> </span><span class="nt">"steps"</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="nt">"samples"</span><span class="p">:</span><span class="w"> </span><span class="mi">45</span><span class="p">}</span>
+</code></pre></div>
+<p><code>call_started</code> and the <code>config</code> and <code>rng_state</code> fields were added during
+implementation. <code>call_started</code> lets <code>resume</code> count calls that never produced a
+result, so <code>max_calls</code> survives a crash. <code>rng_state</code> is the numpy bit-generator
+state taken before each call and at each step end, so parent selection after a
+resume continues the original random stream instead of restarting it.</p>
+<p>Rules: <code>v</code> is bumped on any breaking field change. Readers must ignore
+unknown fields. <code>Solution.files</code> is stored in full in the log; <code>feedback</code> is
+truncated to 4 kB by the Runner before the solution reaches the archive, so the
+live archive, the prompts built from it, and a resumed archive are identical
+(the log writer keeps a <code>feedback_truncated: true</code> guard for foreign payloads).
+<code>run_start.config.strategy</code> records the strategy hyperparameters and <code>resume</code>
+refuses a strategy whose <code>config</code> differs. One <code>call_id</code> is minted by the
+Runner per call and shared by <code>call_started</code>, <code>call_failed</code>, every resulting
+<code>solution</code>, and the trace file. Traces are never
+truncated. An unterminated final line, left by an interrupted process, is
+skipped by readers and removed the next time the log is opened for writing;
+any other malformed line is an error.</p>
+<h2 id="5-behavioral-baseline">5. Behavioral baseline<a class="headerlink" href="#5-behavioral-baseline" title="Permanent link">&para;</a></h2>
+<p><code>tests/golden/</code> records, for each built-in strategy with a scripted LLM and a
+fixed seed: per step, the sorted multiset of <code>(main file content, valid,
+score, parent ids)</code>, the instructions issued, the best score, and the failed-call count;
+plus final sample, call, and status counters.</p>
+<p>The original plan was to record this against 1.x and require 2.0 to reproduce
+it. That turned out to be impossible by construction: invariant 6 says an
+unparseable response is a failed call that does not spend budget, whereas 1.x
+counted it as an invalid sample, so step boundaries and sample counts differ
+for the same scripted responses. The 1.x snapshots were therefore retired (they
+remain in git history before the rewrite) and <code>*-v2.json</code> was recorded against
+2.0. The weaker evidence that was checked by hand: for all three strategies the
+set of valid programs produced and the final best score are identical between
+the 1.x and 2.0 runs.</p>
+<p>The v2 files now guard against unintended drift in 2.0, not against drift from
+1.x. Re-record them only with a deliberate behavior change, and say so in the
+commit.</p>
+<p>Known ceiling: thread completion order is not deterministic, so the baseline
+records per-step multisets rather than sequences. Parent selection happens on
+the main thread before dispatch, and generational batches are handed to
+<code>observe</code> sorted by id, so archive state and selection are reproducible from
+the seed (the parent-id column found that island seeding depended on thread
+completion order before this ordering existed).</p>
+<h2 id="6-deferred-decisions">6. Deferred decisions<a class="headerlink" href="#6-deferred-decisions" title="Permanent link">&para;</a></h2>
+<p>Considered, not built, revisit when a real need appears. Each item names its trigger.</p>
+<ul>
+<li><strong>Proposal dependency graph.</strong> See invariant 7. Trigger: with agents wired in, a dependency shape appears that is neither inside one call nor through the archive.</li>
+<li><strong>Baseline for steady mode.</strong> Results depend on timing, so golden comparison does not apply; only invariants are checked (log solution count equals budget, every parent id appears earlier).</li>
+<li><strong>Multi-objective selection.</strong> <code>score</code> stays a single float, higher is better; objective vectors go in <code>metrics</code>. Multi-objective is a new Archive implementation that samples on <code>metrics</code>. No core change needed. Trigger: a task family and a strategy both need it.</li>
+<li><strong>Meta-level search.</strong> Instruction templates are data and serialize to files, so a template table can be a Solution. The Evaluator runs an inner <code>Runner</code> on a small budget and scores the inner best. Needs nothing from the core beyond what exists. Trigger: someone actually does scenario 5.</li>
+</ul>
+<h2 id="7-decisions">7. Decisions<a class="headerlink" href="#7-decisions" title="Permanent link">&para;</a></h2>
+<p><strong>Python, not Node or Rust.</strong> Evaluators live in the Python ecosystem (numpy,
+torch, triton, OR instance libraries). The bottleneck is LLM latency and
+evaluator runtime, not the harness. Rejected: a Rust core with Python
+bindings, because it buys nothing measurable and doubles the build surface.</p>
+<p><strong>Artifacts are file sets, even for chat proposers.</strong> A kernel is a kernel
+plus a launcher; an agent edits files. A single string would force a second
+identity scheme later. Single-file tasks set <code>main_file</code> and never notice.</p>
+<p><strong>JSONL event log plus trace files, not pickle.</strong> Pickle ties checkpoints to
+class layouts and is unreadable by analysis tools. Full prompts go to
+<code>traces/</code> so the log stays small enough to grep. Rejected: SQLite, because a
+single-writer append-only file is simpler and diffable.</p>
+<p><strong>Failed calls do not consume proposal budget.</strong> Budget is a research
+variable; a flaky API should not silently shrink it. <code>max_calls</code> prevents
+infinite loops.</p>
+<p><strong>Isolation is the Evaluator's job.</strong> The core offers <code>subprocess_evaluate</code>
+but does not force it. Task families know their own trust requirements.</p>
+<p><strong>Protocol, not ABC.</strong> Users should be able to pass any object with the right
+methods. Rejected: ABC inheritance, because it forces users to import our base
+classes and couples them to our constructor signatures.</p>
+<p><strong>headless-cli subprocess for agents, not per-agent adapters.</strong> One dependency
+already normalizes Claude Code, Codex, Cursor, Gemini, OpenCode. Rejected:
+writing our own adapters, which is maintenance with no research value.</p>
+<p><strong>Instructions are data and modality-agnostic.</strong> Prompt templates are rows,
+not subclasses; fences and parsing live in <code>output_format</code>. Six files become
+one table. This makes EoH's operators and FunSearch's prompt comparable and
+makes the meta level (scenario 5) a matter of evolving rows.</p>
+<p><strong><code>output_format</code> is a string enum.</strong> Parsers are looked up by name inside
+<code>ChatProposer</code>. Rejected: attaching parser callables to <code>Instruction</code>, because
+templates must serialize to JSON or YAML.</p>
+<p><strong>No 1.x compatibility.</strong> Clean break, one release. Rejected: shims and
+deprecation cycles, because the user base is small and the old surface is the
+thing being replaced.</p>
+<p><strong>No biological vocabulary beyond "evolution".</strong> Proposer, Proposal, Archive,
+Strategy, Evaluator, Instruction. Rejected: gene, capsule, organism, crossover,
+mutation as core names.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

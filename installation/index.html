@@ -27,7 +27,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -35,7 +35,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
       
 
@@ -348,14 +348,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../migration/" class="md-nav__link">
+      <a href="../design/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Migration
+    Design 2.0
   
 
     
@@ -404,19 +404,15 @@
 
 
 <h1 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h1>
-<p>Install the latest stable core SDK:</p>
+<p>Python 3.10 or newer is required.</p>
 <div class="language-bash highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>evotoolkit
 </code></pre></div>
-<p>This is enough if you want to:</p>
-<ul>
-<li>build your own <code>PythonTask</code> or <code>StringTask</code></li>
-<li>run the built-in methods on your own objectives</li>
-<li>use EvoToolkit as a runtime dependency in another package</li>
-</ul>
-<p>For local development inside the repository:</p>
+<p>To work from a checkout instead:</p>
 <div class="language-bash highlight"><pre><span></span><code>uv<span class="w"> </span>sync<span class="w"> </span>--group<span class="w"> </span>dev
+uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span>tests/
 </code></pre></div>
-<p>The core package does not ship application-specific task dependencies. If you build on EvoToolkit, declare those dependencies in your own package.</p>
+<p>The core dependency is NumPy. Chat models use any client exposing get_response(messages); the included HttpsApi speaks the chat-completions wire format. Model access requires your own endpoint and credentials.</p>
+<p>AgentProposer additionally requires a separate headless-cli installation and authenticated backend. See <a href="../extensions/">Extensions</a>. No agent dependency is installed by importing EvoToolkit.</p>
 
 
 
@@ -469,7 +465,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>
