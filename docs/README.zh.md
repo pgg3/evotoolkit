@@ -8,9 +8,9 @@
 [![PyPI](https://img.shields.io/pypi/v/evotoolkit)](https://pypi.org/project/evotoolkit/)
 [![Python](https://img.shields.io/pypi/pyversions/evotoolkit)](https://pypi.org/project/evotoolkit/)
 [![Docs](https://readthedocs.org/projects/evotoolkit/badge/?version=latest)](https://evotoolkit.readthedocs.io/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](../LICENSE)
 
-[English](README.md) · 简体中文
+[English](../README.md) · 简体中文
 
 </div>
 
@@ -85,7 +85,7 @@ Runner ──► Strategy ──► Archive        选哪些父代、用哪条�
   └──────► EventLog                    追加写 JSONL，resume 时回放
 ```
 
-组件是 protocol 而非基类：任何有对应方法的对象都能用。契约与内置实现见[扩展与 API](docs/extensions.zh.md)。
+组件是 protocol 而非基类：任何有对应方法的对象都能用。契约与内置实现见[扩展与 API](extensions.zh.md)。
 
 ### 断点续跑
 
@@ -97,7 +97,7 @@ best = runner.run()
 
 ### 文档
 
-[evotoolkit.readthedocs.io](https://evotoolkit.readthedocs.io/zh/latest/) · [快速开始](docs/quickstart.zh.md) · [扩展与 API](docs/extensions.zh.md) · [设计](docs/design.zh.md)
+[evotoolkit.readthedocs.io](https://evotoolkit.readthedocs.io/zh/latest/) · [快速开始](quickstart.zh.md) · [扩展与 API](extensions.zh.md) · [设计](design.zh.md)
 
 ### 从 1.x 升级
 
@@ -111,6 +111,6 @@ best = runner.run()
 
 <div align="center">
 
-[MIT License](LICENSE) · © Ping Guo
+[MIT License](../LICENSE) · © Ping Guo
 
 </div>

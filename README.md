@@ -10,7 +10,7 @@
 [![Docs](https://readthedocs.org/projects/evotoolkit/badge/?version=latest)](https://evotoolkit.readthedocs.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-English · [简体中文](https://github.com/pgg3/evotoolkit/blob/master/README.zh.md)
+English · [简体中文](https://github.com/pgg3/evotoolkit/blob/master/docs/README.zh.md)
 
 </div>
 
