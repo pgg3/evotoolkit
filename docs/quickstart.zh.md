@@ -1,86 +1,55 @@
 # 快速开始
 
-当前稳定 `1.0.2` 的工作流如下：
+在仓库中执行：
 
-1. 定义一个 task。
-2. 返回 `TaskSpec`。
-3. 用 method interface 包装 task。
-4. 显式实例化一个方法类。
-5. 调用 `run()`。
+```bash
+uv sync --group dev
+uv run python examples/custom_task/my_custom_task.py --offline --output-dir results/demo
+uv run python examples/custom_task/my_custom_task.py --offline --mode steady --output-dir results/steady
+```
+
+离线示例无需密钥：生成 12 个 Python 函数提案，在子进程中计算与 sin(x) 的误差，返回最佳文件。真实模型调用需设置 `LLM_API_KEY`，可选 `LLM_API_URL`、`LLM_MODEL`，并去掉 `--offline`。
+
+## 组装搜索
 
 ```python
-from evotoolkit import EvoEngineer
-from evotoolkit.core import EvaluationResult, TaskSpec
-from evotoolkit.task.python_task import EvoEngineerPythonInterface, PythonTask
-from evotoolkit.tools import HttpsApi
+from evotoolkit import EvaluationResult, Runner, TaskSpec
+from evotoolkit.proposers import ChatProposer
+from evotoolkit.strategies import EoHStrategy
 
+class GreetingEvaluator:
+    spec = TaskSpec("greeting", "在 answer.txt 中写 hello。", "string", "answer.txt")
 
-class SquareTask(PythonTask):
-    def build_python_spec(self, data) -> TaskSpec:
-        return TaskSpec(
-            name="square",
-            prompt="Write a Python function `f(x)` that returns a numeric value.",
-            modality="python",
-        )
+    def evaluate(self, files):
+        return EvaluationResult(True, float(files.get("answer.txt", "").strip() == "hello"), "")
 
-    def _evaluate_code_impl(self, candidate_code: str) -> EvaluationResult:
-        namespace = {}
-        exec(candidate_code, namespace)  # noqa: S102
-        if "f" not in namespace:
-            return EvaluationResult(valid=False, score=float("-inf"), additional_info={"error": "Function `f` was not defined."})
-        return EvaluationResult(valid=True, score=float(namespace["f"](3)), additional_info={})
-
-
-task = SquareTask(data=None)
-interface = EvoEngineerPythonInterface(task)
-llm_api = HttpsApi(
-    api_url="https://api.openai.com/v1/chat/completions",
-    key="your-api-key",
-    model="gpt-4o",
-)
-algo = EvoEngineer(
-    interface=interface,
-    output_path="./results",
-    running_llm=llm_api,
-    max_generations=5,
-)
-best_solution = algo.run()
+# llm.get_response(messages) 返回 (响应文本, usage 字典)。
+evaluator = GreetingEvaluator()
+runner = Runner(evaluator=evaluator, proposer=ChatProposer(llm),
+                strategy=EoHStrategy(evaluator.spec), output_dir="results/greeting",
+                budget=20, seed=42, propose_workers=4, eval_workers=4,
+                mode="generational")
+best = runner.run()
 ```
 
-对于字符串问题，请使用 `StringTask`，并搭配 `EoHStringInterface`、`EvoEngineerStringInterface` 或 `FunSearchStringInterface`。
+可直接替换为 `EvoEngineerStrategy(spec)` 或 `FunSearchStrategy(spec)`。分数越大越好；失败返回 `EvaluationResult(False, None, feedback)`。
 
-如果你想看一个可直接运行的完整示例，请参考仓库中的 `examples/custom_task/my_custom_task.py`。
+## 预算与并发
 
-## 断点续跑
+`budget` 统计实际提案，包含评估无效和重复文件。失败、空返回或解析失败的调用记录为 `call_failed`，不扣提案预算。`max_calls` 限制全部调用，默认 `max(1, 3 * budget)`；崩溃时未完成的调用也计入。Runner 预留在途提案额度，避免并发超预算。返回数量超过请求数量时拒绝整个调用。
 
-EvoToolkit 在每次迭代结束后会自动保存 checkpoint。如果运行被中断，可以在调用 `run()` 前加载 checkpoint 来恢复进度：
+`generational` 一批全部完成后更新档案并选择下一批；`steady` 持续填补空闲 proposer worker，每个评估完成后立即更新档案。单个调用完成即可进入独立评估线程池，无需等待其他调用。`step()` 执行一个有限批次，`run()` 才持续调度 steady 模式。
+
+`runner.samples`、`calls`、`failed_calls`、`steps`、`status`、`best_solution` 提供进展。状态分别为预算耗尽 `completed`、调用上限 `max_calls`、策略停止或无任务 `stopped`。`run()` 自动关闭日志；手动逐步执行时使用上下文管理器或 `close()`。
+
+## 恢复
 
 ```python
-algo = EvoEngineer(
-    interface=interface,
-    output_path="./results",
-    running_llm=llm_api,
-    max_generations=20,
-)
-
-# 如果存在 checkpoint，则从断点恢复
-if algo.checkpoint_exists():
-    algo.load_checkpoint()
-
-best_solution = algo.run()
+runner = Runner.resume("results/greeting", evaluator=evaluator,
+                       proposer=ChatProposer(llm), strategy=EoHStrategy(evaluator.spec))
+best = runner.run()
 ```
 
-每次运行会生成如下输出结构：
+传入同配置的新策略，档案必须为空。任务规格及组件名称需一致。预算、线程数、调度模式和随机数状态从日志恢复；已落盘结果重建档案，未完成调用只占调用额度。外部模型状态和线程完成顺序无法恢复，因此不承诺继续运行的结果逐位一致。
 
-```
-output_path/
-├── checkpoint/
-│   ├── state.pkl        # 完整算法状态（pickle 序列化）
-│   └── manifest.json    # 元数据（算法类型、代数、运行状态等）
-├── history/
-│   └── gen_0.json, ...  # 每代的解记录
-└── summary/
-    └── best_per_generation.json, usage_history.json
-```
-
-checkpoint 包含完整的算法状态——种群、代数、解历史和 LLM 用量——因此续跑可以无缝衔接。
+`events.jsonl` 保存完整文件、评估、父代、计数器和随机数状态。`traces/<call_id>.json` 保存完整提示、响应或 agent 转录。事件中的反馈限长 4 KiB，trace 不截断。usage 按调用计算，汇总 token 时应按 `Solution.call_id` 去重。

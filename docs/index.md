@@ -1,14 +1,7 @@
-# EvoToolkit Core
+# EvoToolkit 2.0
 
-EvoToolkit is the runtime layer for LLM-driven evolutionary search.
+A Python program-search harness built from Evaluator, Proposer, Archive, Strategy and Runner. Search Python modules, kernels, prompts or any text file artifact with one loop and one event format.
 
-The core package provides:
+Start with the [offline example](quickstart.md), compose your own [components](extensions.md), or read the [design](design.md).
 
-- built-in methods: `EoH`, `EvoEngineer`, `FunSearch`
-- lifecycle bases: `Method`, `IterativeMethod`, `PopulationMethod`
-- checkpointing and readable artifacts through `RunStore`
-- generic `PythonTask` and `StringTask` SDKs
-- generic Python and string interfaces for the built-in methods
-- OpenAI-compatible HTTP client helpers in `evotoolkit.tools`
-
-The stable `1.0.2` repository documents only the reusable core. Keep concrete task families, datasets, and hardware-specific workflows in your own package or repository, and build them on top of this runtime.
+2.0 removes the 1.x Method/Interface/Task API and pickle checkpoints without compatibility adapters. Pin `evotoolkit<2` to stay on 1.x.

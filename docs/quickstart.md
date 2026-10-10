@@ -1,86 +1,55 @@
-# Quick Start
+# Quick start
 
-The stable `1.0.2` workflow is:
+From a checkout, run `uv sync --group dev`, then a deterministic local search:
 
-1. Define a task.
-2. Return a `TaskSpec`.
-3. Wrap the task with a method interface.
-4. Instantiate a method explicitly.
-5. Call `run()`.
+```bash
+uv run python examples/custom_task/my_custom_task.py --offline --output-dir results/demo
+uv run python examples/custom_task/my_custom_task.py --offline --mode steady --output-dir results/steady
+```
+
+The example supplies twelve proposals, scores a Python function against sin(x), and prints the best artifact. Set `LLM_API_KEY` (plus optional `LLM_API_URL`, `LLM_MODEL`) and omit `--offline` for live calls.
+
+## Compose a search
 
 ```python
-from evotoolkit import EvoEngineer
-from evotoolkit.core import EvaluationResult, TaskSpec
-from evotoolkit.task.python_task import EvoEngineerPythonInterface, PythonTask
-from evotoolkit.tools import HttpsApi
+from evotoolkit import EvaluationResult, Runner, TaskSpec
+from evotoolkit.proposers import ChatProposer
+from evotoolkit.strategies import EoHStrategy
 
+class GreetingEvaluator:
+    spec = TaskSpec("greeting", "Write hello in answer.txt.", "string", "answer.txt")
 
-class SquareTask(PythonTask):
-    def build_python_spec(self, data) -> TaskSpec:
-        return TaskSpec(
-            name="square",
-            prompt="Write a Python function `f(x)` that returns a numeric value.",
-            modality="python",
-        )
+    def evaluate(self, files):
+        return EvaluationResult(True, float(files.get("answer.txt", "").strip() == "hello"), "")
 
-    def _evaluate_code_impl(self, candidate_code: str) -> EvaluationResult:
-        namespace = {}
-        exec(candidate_code, namespace)  # noqa: S102
-        if "f" not in namespace:
-            return EvaluationResult(valid=False, score=float("-inf"), additional_info={"error": "Function `f` was not defined."})
-        return EvaluationResult(valid=True, score=float(namespace["f"](3)), additional_info={})
-
-
-task = SquareTask(data=None)
-interface = EvoEngineerPythonInterface(task)
-llm_api = HttpsApi(
-    api_url="https://api.openai.com/v1/chat/completions",
-    key="your-api-key",
-    model="gpt-4o",
-)
-algo = EvoEngineer(
-    interface=interface,
-    output_path="./results",
-    running_llm=llm_api,
-    max_generations=5,
-)
-best_solution = algo.run()
+# llm.get_response(messages) returns (response_text, usage_dict).
+evaluator = GreetingEvaluator()
+proposer = ChatProposer(llm)
+strategy = EoHStrategy(evaluator.spec)
+runner = Runner(evaluator=evaluator, proposer=proposer, strategy=strategy,
+                output_dir="results/greeting", budget=20, seed=42,
+                propose_workers=4, eval_workers=4, mode="generational")
+best = runner.run()
 ```
 
-For string problems, use `StringTask` together with `EoHStringInterface`, `EvoEngineerStringInterface`, or `FunSearchStringInterface`.
+Replace the strategy with `EvoEngineerStrategy(spec)` or `FunSearchStrategy(spec)` without changing the loop. Scores are scalar and higher is better. Invalid results use `EvaluationResult(False, None, feedback)`.
 
-For a runnable end-to-end example, see `examples/custom_task/my_custom_task.py` in the repository.
+## Budgets and concurrency
 
-## Checkpoint and Resume
+`budget` counts evaluated proposals, including invalid and duplicate artifacts. Failed/empty/malformed calls produce `call_failed` events without consuming proposal budget. `max_calls` bounds all dispatched calls, including calls interrupted by a crash; its default is `max(1, 3 * budget)`. Each context reserves its requested proposals, so concurrent calls cannot exceed the remaining budget. Returning more than requested rejects the entire call.
 
-EvoToolkit automatically saves a checkpoint after every iteration. If a run is interrupted, you can resume from where it left off by loading the checkpoint before calling `run()`:
+`generational` selects a batch from the current archive and observes its results before the next batch. `steady` refills available proposer workers continuously and observes each completed evaluation. Both feed evaluation workers immediately when an individual proposer call finishes. `step()` executes one bounded batch; `run()` enables continuous steady scheduling.
+
+`runner.samples`, `calls`, `failed_calls`, `steps`, `status`, and `best_solution` expose progress. Final status is `completed` when the proposal budget is used, `max_calls` when the call cap is reached, or `stopped` when the strategy stops or yields no work. `run()` closes the log; manual stepping should use a context manager or call `close()`.
+
+## Resume
 
 ```python
-algo = EvoEngineer(
-    interface=interface,
-    output_path="./results",
-    running_llm=llm_api,
-    max_generations=20,
-)
-
-# Resume from checkpoint if one exists
-if algo.checkpoint_exists():
-    algo.load_checkpoint()
-
-best_solution = algo.run()
+runner = Runner.resume("results/greeting", evaluator=evaluator,
+                       proposer=ChatProposer(llm), strategy=EoHStrategy(evaluator.spec))
+best = runner.run()
 ```
 
-Each run produces the following output structure:
+Supply a fresh empty strategy with the same parameters. Task specification and component names must match. Budget, scheduling, worker counts and RNG state come from the event log. Completed solutions rebuild the archive; unfinished calls consume the call cap but not proposal budget. Resume cannot restore an external model's hidden state or guarantee identical completion order.
 
-```
-output_path/
-├── checkpoint/
-│   ├── state.pkl        # Full algorithm state (pickle)
-│   └── manifest.json    # Metadata (algorithm, generation, status, ...)
-├── history/
-│   └── gen_0.json, ...  # Per-generation solution records
-└── summary/
-    └── best_per_generation.json, usage_history.json
-```
-
-The checkpoint contains the complete algorithm state — population, generation count, solution history, and LLM usage — so the resumed run continues seamlessly.
+`events.jsonl` contains full artifact files, evaluations, parent IDs, counters and checkpoint RNG state. `traces/<call_id>.json` contains full prompts, responses or agent transcripts. Feedback in solution events is limited to 4 KiB; traces are untruncated. Call usage is per call: deduplicate `Solution.call_id` when totaling tokens.

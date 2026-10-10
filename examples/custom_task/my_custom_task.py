@@ -1,88 +1,90 @@
-# Copyright (c) 2025 Ping Guo
-# Licensed under the MIT License
+"""Run with --offline for a local smoke test, or configure LLM_API_KEY."""
 
-
-"""Runnable PythonTask example for the EvoToolkit core package."""
-
+import argparse
+import json
+import math
 import os
+import threading
+from pathlib import Path
 
-import numpy as np
-
-from evotoolkit import EvoEngineer
-from evotoolkit.core import EvaluationResult, TaskSpec
-from evotoolkit.task.python_task import EvoEngineerPythonInterface, PythonTask
+from evotoolkit import EvaluationResult, Runner, TaskSpec
+from evotoolkit.evaluators import subprocess_evaluate
+from evotoolkit.proposers import ChatProposer
+from evotoolkit.strategies import EvoEngineerStrategy
 from evotoolkit.tools import HttpsApi
 
 
-class FunctionApproximationTask(PythonTask):
-    """Optimize a Python function against numeric targets."""
+class FunctionApproximationEvaluator:
+    spec = TaskSpec(
+        name="function_approximation",
+        prompt="Write solution.py defining my_function(x), approximating sin(x) for 0 <= x <= 3. Use the Python standard library.",
+        modality="python",
+        main_file="solution.py",
+    )
 
-    def __init__(self, data, target, timeout_seconds=30.0):
-        self.target = np.asarray(target, dtype=float)
-        super().__init__(np.asarray(data, dtype=float), timeout_seconds=timeout_seconds)
-
-    def build_python_spec(self, data) -> TaskSpec:
-        return TaskSpec(
-            name="function_approximation",
-            prompt=(
-                "Write a Python function `my_function(x)` that maps a scalar input to a scalar output. "
-                "The goal is to match the hidden target function as closely as possible."
-            ),
-            modality="python",
+    def evaluate(self, files):
+        scorer = (
+            "import json, math\nfrom solution import my_function\n"
+            "xs = [i / 10 for i in range(31)]\n"
+            "mse = sum((my_function(x) - math.sin(x)) ** 2 for x in xs) / len(xs)\n"
+            "print(json.dumps({'mse': mse}))\n"
         )
-
-    def _evaluate_code_impl(self, candidate_code: str) -> EvaluationResult:
+        result = subprocess_evaluate(files | {"_score.py": scorer}, "_score.py", timeout=5)
+        if result.returncode:
+            return EvaluationResult(False, None, result.stderr)
         try:
-            namespace = {"np": np}
-            exec(candidate_code, namespace)  # noqa: S102
-            if "my_function" not in namespace:
-                return EvaluationResult(
-                    valid=False,
-                    score=float("-inf"),
-                    additional_info={"error": "Function `my_function` was not defined."},
-                )
-
-            predictions = np.array([namespace["my_function"](x) for x in self.data], dtype=float)
-            mse = float(np.mean((predictions - self.target) ** 2))
-            return EvaluationResult(valid=True, score=-mse, additional_info={"mse": mse})
-        except Exception as exc:
-            return EvaluationResult(
-                valid=False,
-                score=float("-inf"),
-                additional_info={"error": str(exc)},
-            )
+            mse = float(json.loads(result.stdout.splitlines()[-1])["mse"])
+            if not math.isfinite(mse):
+                raise ValueError("Non-finite MSE")
+            return EvaluationResult(True, -mse, "", metrics={"mse": mse})
+        except (ValueError, KeyError, IndexError, TypeError) as exc:
+            return EvaluationResult(False, None, str(exc))
 
 
-def build_llm_api() -> HttpsApi:
-    api_key = os.environ.get("LLM_API_KEY")
-    if not api_key:
-        raise RuntimeError("Set LLM_API_KEY before running this example.")
+class ScriptedLLM:
+    """Deterministic local responses; no API calls."""
 
-    return HttpsApi(
-        api_url=os.environ.get("LLM_API_URL", "https://api.openai.com/v1/chat/completions"),
-        key=api_key,
-        model=os.environ.get("LLM_MODEL", "gpt-4o"),
-    )
+    def __init__(self):
+        self._index = 0
+        self._lock = threading.Lock()
+
+    def get_response(self, messages):
+        expressions = ["0", "x", "x - x**3 / 6", "math.sin(x)"]
+        with self._lock:
+            expression = expressions[self._index % len(expressions)]
+            self._index += 1
+        return f"name: approximation\n```python\nimport math\ndef my_function(x):\n    return {expression}\n```\nthought: Try a candidate.", {}
 
 
-def run_example() -> None:
-    data = np.linspace(0.0, 10.0, 50)
-    target = np.sin(data)
+def build_llm_api():
+    key = os.environ.get("LLM_API_KEY")
+    if not key:
+        raise RuntimeError("Set LLM_API_KEY or pass --offline.")
+    return HttpsApi(api_url=os.environ.get("LLM_API_URL", "https://api.openai.com/v1/chat/completions"), key=key, model=os.environ.get("LLM_MODEL", "gpt-4o"))
 
-    task = FunctionApproximationTask(data, target)
-    interface = EvoEngineerPythonInterface(task)
-    algo = EvoEngineer(
-        interface=interface,
-        output_path="./results/custom_task_python",
-        running_llm=build_llm_api(),
-        max_generations=5,
-    )
-    result = algo.run()
 
-    print(f"Best score: {result.evaluation_res.score:.4f}")
-    print(f"Best MSE: {result.evaluation_res.additional_info['mse']:.4f}")
-    print(result.sol_string)
+def run_example(*, output_dir, offline=False, mode="generational", resume=False):
+    evaluator = FunctionApproximationEvaluator()
+    proposer = ChatProposer(ScriptedLLM() if offline else build_llm_api())
+    strategy = EvoEngineerStrategy(evaluator.spec)
+    if resume:
+        runner = Runner.resume(output_dir, evaluator=evaluator, proposer=proposer, strategy=strategy)
+    else:
+        runner = Runner(evaluator=evaluator, proposer=proposer, strategy=strategy, output_dir=output_dir, budget=12, mode=mode, seed=42)
+    best = runner.run()
+    if best is None:
+        print("No valid solution; inspect events.jsonl and traces/.")
+    else:
+        print(f"Best score: {best.score:.6f}")
+        print(best.files[evaluator.spec.main_file])
+    return best
 
 
 if __name__ == "__main__":
-    run_example()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--offline", action="store_true")
+    parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--mode", choices=["generational", "steady"], default="generational")
+    parser.add_argument("--output-dir", type=Path, default=Path("results/custom_task"))
+    args = parser.parse_args()
+    run_example(output_dir=args.output_dir, offline=args.offline, mode=args.mode, resume=args.resume)

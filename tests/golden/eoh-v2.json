@@ -1,0 +1,153 @@
+{
+  "steps": [
+    {
+      "new": [
+        [
+          "def f(x):\n    return 7",
+          true,
+          -18,
+          []
+        ],
+        [
+          "def f(x):\n    return x * 2",
+          true,
+          -15,
+          []
+        ],
+        [
+          "def f(x):\n    return x * 3",
+          true,
+          -10,
+          []
+        ],
+        [
+          "def f(x):\n    return x / 2",
+          true,
+          -22.5,
+          []
+        ]
+      ],
+      "instructions": [
+        "i1",
+        "i1",
+        "i1",
+        "i1"
+      ],
+      "best": -10,
+      "failed_calls": 0
+    },
+    {
+      "new": [
+        [
+          "def f(x):\n    return x * 3",
+          true,
+          -10,
+          [
+            "65bdbd5ad0a22dd6"
+          ]
+        ],
+        [
+          "def f(x):\n    return x + 10",
+          true,
+          -10,
+          [
+            "399399a506e602a8",
+            "555c02e6f3c4eba2"
+          ]
+        ],
+        [
+          "def f(x):\n    return x / 2",
+          true,
+          -22.5,
+          [
+            "65bdbd5ad0a22dd6"
+          ]
+        ]
+      ],
+      "instructions": [
+        "e1",
+        "e2",
+        "m1",
+        "m2"
+      ],
+      "best": -10,
+      "failed_calls": 1
+    },
+    {
+      "new": [
+        [
+          "def f(x):\n    return 7",
+          true,
+          -18,
+          [
+            "3b39c277b4c0a3d5",
+            "f4337239d4445147"
+          ]
+        ],
+        [
+          "def f(x):\n    return x * 2",
+          true,
+          -15,
+          [
+            "555c02e6f3c4eba2"
+          ]
+        ],
+        [
+          "def f(x):\n    return x + 10",
+          true,
+          -10,
+          [
+            "3b39c277b4c0a3d5",
+            "3b39c277b4c0a3d5"
+          ]
+        ],
+        [
+          "def f(x):\n    return x / 2",
+          true,
+          -22.5,
+          [
+            "65bdbd5ad0a22dd6"
+          ]
+        ]
+      ],
+      "instructions": [
+        "e1",
+        "e2",
+        "m1",
+        "m2"
+      ],
+      "best": -10,
+      "failed_calls": 0
+    },
+    {
+      "new": [],
+      "instructions": [
+        "m2"
+      ],
+      "best": -10,
+      "failed_calls": 1
+    },
+    {
+      "new": [
+        [
+          "def f(x):\n    return x / 2",
+          true,
+          -22.5,
+          [
+            "555c02e6f3c4eba2",
+            "f4337239d4445147"
+          ]
+        ]
+      ],
+      "instructions": [
+        "e1"
+      ],
+      "best": -10,
+      "failed_calls": 0
+    }
+  ],
+  "samples": 12,
+  "calls": 14,
+  "failed_calls": 2,
+  "status": "completed"
+}

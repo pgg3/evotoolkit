@@ -1,0 +1,144 @@
+{
+  "steps": [
+    {
+      "new": [
+        [
+          "def f(x):\n    return x * 3",
+          true,
+          -10,
+          []
+        ],
+        [
+          "def f(x):\n    return x ** 2 + 1",
+          true,
+          -1,
+          []
+        ],
+        [
+          "def f(x):\n    return x + 10",
+          true,
+          -10,
+          []
+        ],
+        [
+          "def g(x):\n    return x",
+          false,
+          null,
+          []
+        ]
+      ],
+      "instructions": [
+        "funsearch",
+        "funsearch",
+        "funsearch",
+        "funsearch"
+      ],
+      "best": -1,
+      "failed_calls": 0
+    },
+    {
+      "new": [
+        [
+          "def f(x):\n    return 7",
+          true,
+          -18,
+          [
+            "287f7e9627688451"
+          ]
+        ],
+        [
+          "def f(x):\n    return x + 10",
+          true,
+          -10,
+          [
+            "287f7e9627688451",
+            "3b39c277b4c0a3d5"
+          ]
+        ],
+        [
+          "def f(x):\n    return x / 2",
+          true,
+          -22.5,
+          [
+            "287f7e9627688451"
+          ]
+        ]
+      ],
+      "instructions": [
+        "funsearch",
+        "funsearch",
+        "funsearch",
+        "funsearch"
+      ],
+      "best": -1,
+      "failed_calls": 1
+    },
+    {
+      "new": [
+        [
+          "def f(x):\n    return x * 2",
+          true,
+          -15,
+          [
+            "287f7e9627688451"
+          ]
+        ],
+        [
+          "def f(x):\n    return x * 3",
+          true,
+          -10,
+          [
+            "287f7e9627688451"
+          ]
+        ],
+        [
+          "def f(x):\n    return x + 10",
+          true,
+          -10,
+          [
+            "287f7e9627688451"
+          ]
+        ],
+        [
+          "def g(x):\n    return x",
+          false,
+          null,
+          [
+            "287f7e9627688451",
+            "3b39c277b4c0a3d5"
+          ]
+        ]
+      ],
+      "instructions": [
+        "funsearch",
+        "funsearch",
+        "funsearch",
+        "funsearch"
+      ],
+      "best": -1,
+      "failed_calls": 0
+    },
+    {
+      "new": [
+        [
+          "def f(x):\n    return x ** 2 + 1",
+          true,
+          -1,
+          [
+            "287f7e9627688451",
+            "3b39c277b4c0a3d5"
+          ]
+        ]
+      ],
+      "instructions": [
+        "funsearch"
+      ],
+      "best": -1,
+      "failed_calls": 0
+    }
+  ],
+  "samples": 12,
+  "calls": 13,
+  "failed_calls": 1,
+  "status": "completed"
+}

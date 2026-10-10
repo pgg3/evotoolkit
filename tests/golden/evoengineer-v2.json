@@ -1,0 +1,146 @@
+{
+  "steps": [
+    {
+      "new": [
+        [
+          "def f(x):\n    return 7",
+          true,
+          -18,
+          []
+        ],
+        [
+          "def f(x):\n    return x * 2",
+          true,
+          -15,
+          []
+        ],
+        [
+          "def f(x):\n    return x * 3",
+          true,
+          -10,
+          []
+        ],
+        [
+          "def f(x):\n    return x / 2",
+          true,
+          -22.5,
+          []
+        ]
+      ],
+      "instructions": [
+        "init",
+        "init",
+        "init",
+        "init"
+      ],
+      "best": -10,
+      "failed_calls": 0
+    },
+    {
+      "new": [
+        [
+          "def f(x):\n    return x * 3",
+          true,
+          -10,
+          [
+            "65bdbd5ad0a22dd6"
+          ]
+        ],
+        [
+          "def f(x):\n    return x + 10",
+          true,
+          -10,
+          [
+            "f4337239d4445147"
+          ]
+        ],
+        [
+          "def g(x):\n    return x",
+          false,
+          null,
+          [
+            "399399a506e602a8",
+            "f4337239d4445147"
+          ]
+        ]
+      ],
+      "instructions": [
+        "crossover",
+        "crossover",
+        "mutation",
+        "mutation"
+      ],
+      "best": -10,
+      "failed_calls": 1
+    },
+    {
+      "new": [
+        [
+          "def f(x):\n    return x * 3",
+          true,
+          -10,
+          [
+            "3b39c277b4c0a3d5",
+            "f4337239d4445147"
+          ]
+        ],
+        [
+          "def f(x):\n    return x ** 2 + 1",
+          true,
+          -1,
+          [
+            "555c02e6f3c4eba2"
+          ]
+        ],
+        [
+          "def f(x):\n    return x + 10",
+          true,
+          -10,
+          [
+            "3b39c277b4c0a3d5",
+            "65bdbd5ad0a22dd6"
+          ]
+        ]
+      ],
+      "instructions": [
+        "crossover",
+        "crossover",
+        "mutation",
+        "mutation"
+      ],
+      "best": -1,
+      "failed_calls": 1
+    },
+    {
+      "new": [
+        [
+          "def f(x):\n    return x * 2",
+          true,
+          -15,
+          [
+            "287f7e9627688451",
+            "555c02e6f3c4eba2"
+          ]
+        ],
+        [
+          "def f(x):\n    return x * 2",
+          true,
+          -15,
+          [
+            "3b39c277b4c0a3d5"
+          ]
+        ]
+      ],
+      "instructions": [
+        "crossover",
+        "mutation"
+      ],
+      "best": -1,
+      "failed_calls": 0
+    }
+  ],
+  "samples": 12,
+  "calls": 14,
+  "failed_calls": 2,
+  "status": "completed"
+}

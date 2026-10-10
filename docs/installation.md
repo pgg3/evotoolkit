@@ -1,21 +1,18 @@
 # Installation
 
-Install the latest stable core SDK:
+Python 3.10 or newer is required.
 
 ```bash
 pip install evotoolkit
 ```
 
-This is enough if you want to:
-
-- build your own `PythonTask` or `StringTask`
-- run the built-in methods on your own objectives
-- use EvoToolkit as a runtime dependency in another package
-
-For local development inside the repository:
+To work from a checkout instead:
 
 ```bash
 uv sync --group dev
+uv run pytest tests/
 ```
 
-The core package does not ship application-specific task dependencies. If you build on EvoToolkit, declare those dependencies in your own package.
+The core dependency is NumPy. Chat models use any client exposing get_response(messages); the included HttpsApi speaks the chat-completions wire format. Model access requires your own endpoint and credentials.
+
+AgentProposer additionally requires a separate headless-cli installation and authenticated backend. See [Extensions](extensions.md). No agent dependency is installed by importing EvoToolkit.
