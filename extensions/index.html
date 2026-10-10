@@ -616,8 +616,8 @@
 <ul>
 <li><code>RankedPopulation(max_size=5)</code>: finite valid unique solutions, descending scores and rank-weighted sampling with replacement.</li>
 <li><code>IslandArchive(num_islands=5, reset_interval=30000, ...)</code>: score clusters, temperature-weighted sampling, shorter artifacts within clusters. The first valid candidate seeds every island. Content hashes route later candidates; accepted unique solution counts trigger weak-island resets. These deterministic rules replace v1's sampled-island routing and wall-clock resets so replay reconstructs the archive.</li>
-<li><code>EoHStrategy(spec, pop_size=5, selection_num=2)</code>: i1, e1, e2, m1, m2 instructions.</li>
 <li><code>EvoEngineerStrategy(spec, pop_size=5)</code>: init, crossover and mutation, best candidate and rationale hints.</li>
+<li><code>EoHStrategy(spec, pop_size=5, selection_num=2)</code>: i1, e1, e2, m1, m2 instructions.</li>
 <li><code>FunSearchStrategy(spec, num_islands=5, num_parents=2, reset_interval=30000)</code>: island sampling with one improvement instruction.</li>
 </ul>
 <p>The built-ins stop on Runner's budget/call cap. For a custom stop criterion implement <code>should_stop(step)</code> in your strategy.</p>
